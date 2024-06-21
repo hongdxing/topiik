@@ -10,6 +10,10 @@ import (
 	"topiik/internal/proto"
 )
 
+const (
+	BUF_SIZE = 512
+)
+
 func main() {
 	// Connect to the server
 	//conn, err := net.Dial("tcp", "localhost:8302")
@@ -37,13 +41,17 @@ func main() {
 		}
 
 		strs := strings.SplitN(line, " ", 2)
-		if strs[0] == command.QUIT {
+		if strings.ToUpper(strs[0]) == command.QUIT {
 			conn.Close()
 		}
 		// TODO: valid command
-		// Send some data to the server
+		// Enocde
 		data, err := proto.Encode(line)
+		if err != nil {
+			fmt.Println(err)
+		}
 
+		// Send
 		_, err = conn.Write(data)
 		if err != nil {
 			fmt.Println(err)
@@ -55,7 +63,7 @@ func main() {
 }
 
 func response(conn net.Conn) {
-	buf := make([]byte, 512)
+	buf := make([]byte, BUF_SIZE)
 	/*n, err := conn.Read(buf[0:])
 	fmt.Println(n)
 	if err != nil {
@@ -69,9 +77,10 @@ func response(conn net.Conn) {
 			fmt.Println(err)
 			return
 		}
-		if n <= 0 {
+		fmt.Printf("%s", buf)
+		if n <= 0 || n < BUF_SIZE {
 			break
 		}
-		fmt.Printf("%s\n", buf)
 	}
+	fmt.Println()
 }
