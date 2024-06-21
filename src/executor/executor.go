@@ -1,4 +1,4 @@
-package main
+package executor
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"topiik/internal/command"
+	"topiik/raft"
 )
 
 const (
@@ -18,10 +19,10 @@ const (
 
 	/*** VOTE response ***/
 	RES_ACCEPTED = "A"
-	RES_REJECTED = "J"
+	RES_REJECTED = "R"
 )
 
-func Execute(conn net.Conn, msg string) {
+func Execute(conn net.Conn, msg string, nodestatus *raft.NodeStatus) {
 	// split into command + arg
 	strs := strings.SplitN(msg, " ", 2)
 	CMD := strings.TrimSpace(strs[0])
@@ -36,7 +37,7 @@ func Execute(conn net.Conn, msg string) {
 			if err != nil {
 				result = RES_ERROR_CMD
 			} else {
-				result = vote(cTerm)
+				result = vote(cTerm, nodestatus)
 				conn.Write([]byte(result))
 			}
 		}

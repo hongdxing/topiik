@@ -2,8 +2,11 @@ package raft
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"net"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 	"topiik/internal/proto"
 )
@@ -22,51 +25,60 @@ const (
 *
  */
 
+var voteMeResults []string
+var wg sync.WaitGroup
+
 /*
 * Candidate issues RequestVote RPCs to other nodes to request for votes.
  */
 func RequestVote(address *[]string, nodestatus *NodeStatus) {
 
-	quota := 0
-	heartbeat := time.Duration(1000 * 30)
+	var quota int
+	//var voteMeResults []string
+	var heartbeat time.Duration
 	for {
-		//time.Sleep(time.Duration(time.Duration(term).Milliseconds()))
+		quota = 0
+		voteMeResults = voteMeResults[:0]
+		heartbeat = time.Duration(rand.IntN(1000-500) + 500)
 		time.Sleep(heartbeat * time.Millisecond)
+		// Change role to Candidator
+		nodestatus.Role = ROLE_CANDIDATOR
 		nodestatus.Term += 1
 		for _, addr := range *address {
-			result := voteMe(addr, int(nodestatus.Term))
-			if result == VOTE_ACCEPTED {
-				quota++
-			} else {
+			/*
+				result := voteMe(addr, int(nodestatus.Term))
+				fmt.Printf("voteMe result: %s \n", result)
+				if result == VOTE_ACCEPTED {
+					quota++
+					fmt.Println(quota)
+				} else {
 
+				}*/
+			wg.Add(1)
+			go voteMe(addr, int(nodestatus.Term))
+		}
+		//fmt.Println(voteMeResults)
+		for _, s := range voteMeResults {
+			//fmt.Printf("----------%q---------\n", s)
+			if strings.Compare(s, "A") == 0 {
+				quota++
 			}
 		}
 
-		if quota >= (len(*address) + 1) {
+		fmt.Printf("Total nodes %v, quota: %v\n", len(*address)+1, quota)
+		if quota >= ((len(*address)+1)/2 + 1) {
 			// promote to Leader
-
+			nodestatus.Role = ROLE_LEADER
 			// Leader no RequestVote
 			break
+		} else {
+			nodestatus.Role = ROLE_FOLLOWER
 		}
 	}
 }
 
-/***
-* leader issues AppendEntries RPCs to replicate log entries to followers,
-* or send heartbeats (AppendEntries RPCs that carry no log entries)
- */
-func AppendEntries() {
-
-}
-
-/***
-* InstallSnapshot
- */
-func InstallSnapshot() {
-
-}
-
 func voteMe(address string, term int) string {
+	defer wg.Done()
 	tcpServer, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
 		println("ResolveTCPAddr failed:", err.Error())
@@ -77,6 +89,7 @@ func voteMe(address string, term int) string {
 		fmt.Println(err)
 		return VOTE_REJECTED
 	}
+	defer conn.Close()
 
 	line := "VOTE " + strconv.Itoa(term)
 
@@ -94,8 +107,13 @@ func voteMe(address string, term int) string {
 	}
 
 	buf := make([]byte, 512)
-	conn.Read(buf)
-	fmt.Println(string(buf))
+	n, err := conn.Read(buf)
+	if err != nil {
+		voteMeResults = append(voteMeResults, VOTE_REJECTED)
+	} else {
+		//fmt.Println(string(buf))
+		voteMeResults = append(voteMeResults, string(buf[:n]))
+	}
 	return string(buf)
 
 	//go response(conn)

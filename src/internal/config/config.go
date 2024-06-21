@@ -61,7 +61,7 @@ func ParseServerConfig(configPath string) *ServerConfig {
 	fmt.Printf("Using config file: %s\n", theConfigPath)
 	printConfig(serverConfig)
 	// when server start, default to FOLLOWER
-	serverConfig.NodeRole = raft.NODE_LEADER
+	serverConfig.NodeRole = raft.ROLE_LEADER
 	return &serverConfig
 }
 

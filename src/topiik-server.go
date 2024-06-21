@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"time"
+	"topiik/executor"
 	"topiik/internal/config"
 	"topiik/internal/consts"
 	"topiik/internal/proto"
@@ -18,14 +19,14 @@ const (
 	CONFIG   = "--config" // the config file path
 )
 
-var NodeStatus raft.NodeStatus
+var nodeStatus raft.NodeStatus
 
 func main() {
 	printMark()
 	serverConfig := readConfig()
-	NodeStatus = raft.NodeStatus{}
-	NodeStatus.Role = raft.NODE_FOLLOWER
-	NodeStatus.Term = 0
+	nodeStatus = raft.NodeStatus{}
+	nodeStatus.Role = raft.ROLE_FOLLOWER
+	nodeStatus.Term = 0
 
 	// Listen for incoming connections on port 8080
 	ln, err := net.Listen("tcp", serverConfig.Listen)
@@ -35,7 +36,7 @@ func main() {
 	}
 	fmt.Printf("Listen to address %s\n", serverConfig.Listen)
 
-	go raft.RequestVote(&serverConfig.JoinList, &NodeStatus)
+	go raft.RequestVote(&serverConfig.JoinList, &nodeStatus)
 
 	// Accept incoming connections and handle them
 	for {
@@ -59,14 +60,14 @@ func handleConnection(conn net.Conn) {
 		cmd, err := proto.Decode(reader)
 		if err != nil {
 			if err == io.EOF {
-				fmt.Printf("Client %s connection closed", conn.RemoteAddr())
+				fmt.Printf("Client %s connection closed\n", conn.RemoteAddr())
 				break
 			}
 			fmt.Println(err)
 			return
 		}
 		fmt.Printf("%s: %s\n", time.Now().Format(consts.DATA_FMT_MICRO_SECONDS), cmd)
-		Execute(conn, cmd)
+		executor.Execute(conn, cmd, &nodeStatus)
 	}
 }
 
