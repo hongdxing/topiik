@@ -1,4 +1,4 @@
-package internal
+package datatype
 
 type Key struct {
 	TheKey string

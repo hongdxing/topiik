@@ -12,6 +12,9 @@ const (
 	RPUSH = "RPUSH"
 	RPOP  = "RPOP"
 
+	/*** CLUSTER ***/
+	VOTE = "VOTE"
+
 	/*** OTHERS ***/
 	EXPIRE = "EXPIRE"
 	DEL    = "DEL"
