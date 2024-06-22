@@ -13,7 +13,8 @@ const (
 	RPOP  = "RPOP"
 
 	/*** CLUSTER ***/
-	VOTE = "VOTE"
+	VOTE         = "VOTE"
+	APPEND_ENTRY = "APPENDENTRY"
 
 	/*** OTHERS ***/
 	EXPIRE = "EXPIRE"

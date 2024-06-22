@@ -2,7 +2,6 @@ package raft
 
 import (
 	"fmt"
-	"math/rand/v2"
 	"net"
 	"strconv"
 	"strings"
@@ -25,69 +24,90 @@ const (
 *
  */
 
-var voteMeResults []string
-var wg sync.WaitGroup
+var voteMeResults []string // Return values from other Nodes, "R": Rejected or "A": Accepted
+var wgRequestVote sync.WaitGroup
 
 /*
 * Candidate issues RequestVote RPCs to other nodes to request for votes.
  */
-func RequestVote(address *[]string, nodestatus *NodeStatus) {
+func RequestVote(addresses *[]string, interval uint16, nodestatus *NodeStatus) {
 
 	var quota int
-	//var voteMeResults []string
+	//heartbeat := time.Duration(interval)
 	var heartbeat time.Duration
+	// Vote retry counter
+	counter := 0
 	for {
-		quota = 0
+		quota = 1 // Initial value 1, means vote current node
 		voteMeResults = voteMeResults[:0]
-		heartbeat = time.Duration(rand.IntN(1000-500) + 500)
+
+		heartbeat = time.Duration(99) + time.Duration(interval) //[0,99) + 200(interval), this must less than RaftHeartbeat(300)
 		time.Sleep(heartbeat * time.Millisecond)
+		if time.Now().UTC().UnixMilli() < nodestatus.HeartbeatAt+int64(nodestatus.Heartbeat) {
+			if nodestatus.Role != ROLE_FOLLOWER {
+				nodestatus.Role = ROLE_FOLLOWER
+			}
+			continue
+		}
+
 		// Change role to Candidator
 		nodestatus.Role = ROLE_CANDIDATOR
 		nodestatus.Term += 1
-		for _, addr := range *address {
-			/*
-				result := voteMe(addr, int(nodestatus.Term))
-				fmt.Printf("voteMe result: %s \n", result)
-				if result == VOTE_ACCEPTED {
-					quota++
-					fmt.Println(quota)
-				} else {
-
-				}*/
-			wg.Add(1)
+		for _, addr := range *addresses {
+			wgRequestVote.Add(1)
 			go voteMe(addr, int(nodestatus.Term))
 		}
 		//fmt.Println(voteMeResults)
 		for _, s := range voteMeResults {
 			//fmt.Printf("----------%q---------\n", s)
-			if strings.Compare(s, "A") == 0 {
+			strs := strings.Split(s, ":")
+			if len(strs) != 2 {
+				break
+			}
+			if strings.Compare(strs[0], VOTE_REJECTED) == 0 {
+				if strings.Compare(strs[1], "L") == 0 {
+					//nodestatus.Role = ROLE_FOLLOWER
+					break
+				}
+			} else if strings.Compare(strs[0], "A") == 0 {
 				quota++
 			}
 		}
 
-		fmt.Printf("Total nodes %v, quota: %v\n", len(*address)+1, quota)
-		if quota >= ((len(*address)+1)/2 + 1) {
+		canPromote := quota >= ((len(*addresses)+1)/2 + 1)
+		if counter%10 == 0 || canPromote {
+			fmt.Printf("Total nodes %v, quota: %v\n", len(*addresses)+1, quota)
+			// in case overflow
+			if counter > 10000 {
+				counter = 0
+			}
+		}
+		if canPromote {
 			// promote to Leader
 			nodestatus.Role = ROLE_LEADER
-			// Leader no RequestVote
+			// Leader start to AppendEntries
+			go AppendEntries(*addresses)
+			// Print Selected Leader
+			fmt.Printf(">>>selected as new Leader<<<\n")
+			// Leader no RequestVote, quite RequestVote
 			break
 		} else {
-			nodestatus.Role = ROLE_FOLLOWER
+			//nodestatus.Role = ROLE_FOLLOWER
 		}
+		counter++
 	}
 }
 
-func voteMe(address string, term int) string {
-	defer wg.Done()
+func voteMe(address string, term int) {
+	defer wgRequestVote.Done()
 	tcpServer, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
 		println("ResolveTCPAddr failed:", err.Error())
-
 	}
 	conn, err := net.DialTCP("tcp", nil, tcpServer)
 	if err != nil {
-		fmt.Println(err)
-		return VOTE_REJECTED
+		//fmt.Println(err)
+		return
 	}
 	defer conn.Close()
 
@@ -103,19 +123,14 @@ func voteMe(address string, term int) string {
 	_, err = conn.Write(data)
 	if err != nil {
 		fmt.Println(err)
-		return VOTE_REJECTED
 	}
 
 	buf := make([]byte, 512)
 	n, err := conn.Read(buf)
 	if err != nil {
-		voteMeResults = append(voteMeResults, VOTE_REJECTED)
+		return
 	} else {
 		//fmt.Println(string(buf))
 		voteMeResults = append(voteMeResults, string(buf[:n]))
 	}
-	return string(buf)
-
-	//go response(conn)
-
 }

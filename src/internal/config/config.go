@@ -18,12 +18,14 @@ import (
 )
 
 type ServerConfig struct {
-	Host     string
-	Port     string
-	Listen   string
-	Join     string // comma seprated host list
-	JoinList []string
-	NodeRole uint8
+	Host             string
+	Port             string
+	Listen           string
+	Join             string   // comma seprated host list
+	JoinList         []string // Internal use
+	NodeRole         uint8
+	RaftHeartbeatMin uint16 // Raft random heartbeat Min
+	RaftHeartbeatMax uint16 // Raft random heartbeat Max
 }
 
 func ParseServerConfig(configPath string) *ServerConfig {
@@ -62,6 +64,10 @@ func ParseServerConfig(configPath string) *ServerConfig {
 	printConfig(serverConfig)
 	// when server start, default to FOLLOWER
 	serverConfig.NodeRole = raft.ROLE_LEADER
+
+	// Set Raft Heartbeat
+	serverConfig.RaftHeartbeatMin = 300
+	serverConfig.RaftHeartbeatMax = 600
 	return &serverConfig
 }
 
