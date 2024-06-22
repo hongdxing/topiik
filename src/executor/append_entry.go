@@ -5,7 +5,7 @@
 * 		When received appendEntry, this node need to do:
 *		1): update nodeStatus.Heartbeat with random number(200, 500) milli seconds
 *		2): append log(data)
- */
+***/
 
 package executor
 

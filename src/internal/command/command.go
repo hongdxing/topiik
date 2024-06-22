@@ -3,7 +3,7 @@ package command
 const (
 	/*** String ***/
 	SET   = "SET"
-	SETEX = "SETEX"
+	//SETEX = "SETEX"
 	GET   = "GET"
 
 	/*** List ***/
