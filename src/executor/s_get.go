@@ -32,7 +32,7 @@ func get(pieces []string) (result string, err error) {
 
 	if val, ok := memMap[strings.TrimSpace(pieces[0])]; ok {
 		if val.Type != datatype.TTYPE_STRING {
-			return "", errors.New(RES_INVALID_OP)
+			return "", errors.New(RES_DATA_TYPE_NOT_MATCH)
 		}
 		return string(val.String), nil
 	} else {

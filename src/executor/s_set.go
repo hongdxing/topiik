@@ -17,15 +17,12 @@ import (
 /***
 ** Set STRING kv
 ** Parameter:
-**	- pieces: command line that CMD stripped, the first piece is the KEY
+**	- pieces: command line that CMD(SET) stripped, the first piece is the KEY
 ** Return:
 **	- OK if success
 **	- SYNTAX_ERROR if syntax error
 **/
 func set(pieces []string) (result string, err error) {
-	//strs := strings.SplitN(params, consts.SPACE, 2)
-	fmt.Println(pieces)
-	fmt.Println(len(pieces))
 	if len(pieces) == 2 {
 		fmt.Println(memMap)
 		memMap[strings.TrimSpace(pieces[0])] = &datatype.TValue{

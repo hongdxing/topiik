@@ -2,9 +2,8 @@ package command
 
 const (
 	/*** String ***/
-	SET   = "SET"
-	//SETEX = "SETEX"
-	GET   = "GET"
+	SET = "SET"
+	GET = "GET"
 
 	/*** List ***/
 	LPUSH = "LPUSH"

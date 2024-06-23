@@ -7,7 +7,6 @@
 package executor
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -26,10 +25,13 @@ const (
 
 /***Command RESponse***/
 const (
-	RES_OK           = "OK"
-	RES_NIL          = "NIL"
-	RES_SYNTAX_ERROR = "ERR:SYNTAX"
-	RES_INVALID_OP   = "ERR:INVALID_OP"
+	RES_OK                   = "OK"
+	RES_NIL                  = "NIL"
+	RES_WRONG_ARG            = "WRONG_ARG"
+	RES_WRONG_NUMBER_OF_ARGS = "WRONG_NUM_OF_ARGS"
+	RES_DATA_TYPE_NOT_MATCH  = "DATA_TYPE_NOT_MATCH"
+	RES_SYNTAX_ERROR         = "SYNTAX_ERR"
+	RES_INVALID_OP           = "INVALID_OP"
 
 	/*** VOTE response ***/
 	RES_ACCEPTED = "A"
@@ -46,7 +48,7 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 
 	if CMD == command.GET {
 		/***String SET***/
-		pieces, err := needKEY(strs[1])
+		pieces, err := needKEY(strs)
 		if err != nil {
 			return marshalResponseError(err)
 		}
@@ -57,7 +59,7 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 		return marshalResponseSuccess(result)
 	} else if CMD == command.SET {
 		/***String GET***/
-		pieces, err := needKEY(strs[1])
+		pieces, err := needKEY(strs)
 		if err != nil {
 			return marshalResponseError(err)
 		}
@@ -66,6 +68,32 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 			return marshalResponseError(err)
 		}
 		return marshalResponseSuccess(result)
+	} else if CMD == command.LPUSH {
+		/***List LPUSH***/
+		pieces, err := needKEY(strs)
+		if err != nil {
+			return marshalResponseError(err)
+		}
+		result, err := lPush(pieces)
+		if err != nil {
+			return marshalResponseError(err)
+		}
+		return marshalIntegerResponseSuccess(result)
+
+	} else if CMD == command.LPOP {
+		pieces, err := needKEY(strs)
+		if err != nil {
+			return marshalResponseError(err)
+		}
+		result, err := lPop(pieces)
+		if err != nil {
+			return marshalResponseError(err)
+		}
+		return marshalListResponseSuccess(result)
+	} else if CMD == command.RPUSH {
+
+	} else if CMD == command.RPOP {
+
 	} else if CMD == command.VOTE {
 		//conn.Write([]byte(command.RES_REJECTED))
 		if len(strs) != 2 {
@@ -96,25 +124,11 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 **	- pieces: [0] the KEY, [1] the request params if have
 **	- error: if len(pieces) < 1, means no KEY
 **/
-func needKEY(keyAndParams string) (pieces []string, err error) {
-	pieces = strings.SplitN(strings.TrimLeft(keyAndParams, consts.SPACE), consts.SPACE, 2)
-	if len(pieces) < 1 {
+func needKEY(cmdKeyParams []string) (pieces []string, err error) {
+	if len(cmdKeyParams) < 2 { // first piece is CMD, second is KEY
 		return nil, errors.New(RES_SYNTAX_ERROR)
 	}
-	return pieces, nil
-}
-
-func marshalResponseError(err error) []byte {
-	return marshalResponse(err.Error(), false)
-}
-
-func marshalResponseSuccess(response string) []byte {
-	return marshalResponse(response, true)
-}
-
-func marshalResponse(response string, success bool) []byte {
-	b, _ := json.Marshal(&datatype.Response{S: success, R: response})
-	return b
+	return strings.SplitN(strings.TrimLeft(cmdKeyParams[1], consts.SPACE), consts.SPACE, 2), nil
 }
 
 /*
