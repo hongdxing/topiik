@@ -65,7 +65,7 @@ func handleConnection(conn net.Conn) {
 		}
 		//fmt.Printf("%s: %s\n", time.Now().Format(consts.DATA_FMT_MICRO_SECONDS), cmd)
 		result := executor.Execute(cmd, serverConfig, nodeStatus)
-		conn.Write([]byte(result))
+		conn.Write(result)
 	}
 }
 

@@ -7,21 +7,33 @@
 package executor
 
 import (
+	"errors"
+	"fmt"
 	"strings"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 )
 
-func set(params string) string {
-	strs := strings.SplitN(params, consts.SPACE, 2)
-	if len(strs) == 2 {
-		memMap[strings.TrimSpace(strs[0])] = &datatype.TValue{
+/***
+** Set STRING kv
+** Parameter:
+**	- pieces: command line that CMD stripped, the first piece is the KEY
+** Return:
+**	- OK if success
+**	- SYNTAX_ERROR if syntax error
+**/
+func set(pieces []string) (result string, err error) {
+	//strs := strings.SplitN(params, consts.SPACE, 2)
+	fmt.Println(pieces)
+	fmt.Println(len(pieces))
+	if len(pieces) == 2 {
+		fmt.Println(memMap)
+		memMap[strings.TrimSpace(pieces[0])] = &datatype.TValue{
 			Type:   datatype.TTYPE_STRING,
-			String: []byte(strs[1]),
+			String: []byte(pieces[1]),
 			Expire: consts.UINT32_MAX}
-		return RES_OK
+		return RES_OK, nil
 	} else {
-		return RES_SYNTAX_ERROR
+		return "", errors.New(RES_SYNTAX_ERROR)
 	}
-
 }
