@@ -8,6 +8,7 @@
 package executor
 
 import (
+	"container/list"
 	"errors"
 	"strconv"
 	"strings"
@@ -83,25 +84,34 @@ func listPop(args []string, cmd string) (result []string, err error) {
 		if val.Type != datatype.TTYPE_LIST {
 			return result, errors.New(RES_DATA_TYPE_NOT_MATCH)
 		}
-		for i := 0; i < count; i++ {
-			if cmd == command.LPOP { //LPOP
-				looper := 0
-				for ele := val.TList.Front(); ele != nil && looper <= count; ele = ele.Next() {
-					looper++
-					result = append(result, ele.Value.(string))
-					val.TList.Remove(ele)
-				}
-			} else if cmd == command.RPOP { //RPOP
-				looper := 0
-				for ele := val.TList.Back(); ele != nil && looper <= count; ele = ele.Prev() {
-					looper++
-					result = append(result, ele.Value.(string))
-					val.TList.Remove(ele)
-				}
-			} else {
-				return result, errors.New(RES_INVALID_CMD) // This should never happen
+
+		var eleToBeRemoved []*list.Element
+		if cmd == command.LPOP { //LPOP
+			looper := 0
+			for ele := val.TList.Front(); ele != nil && looper < count; ele = ele.Next() {
+				looper++
+				result = append(result, ele.Value.(string))
+				eleToBeRemoved = append(eleToBeRemoved, ele)
 			}
+		} else if cmd == command.RPOP { //RPOP
+			looper := 0
+			for ele := val.TList.Back(); ele != nil && looper < count; ele = ele.Prev() {
+				looper++
+				result = append(result, ele.Value.(string))
+				eleToBeRemoved = append(eleToBeRemoved, ele)
+			}
+		} else {
+			return result, errors.New(RES_INVALID_CMD) // This should never happen
 		}
+		// remove ele from list
+		for _, ele := range eleToBeRemoved {
+			val.TList.Remove(ele)
+		}
+		// if no element, delete the list
+		if val.TList.Len() == 0 {
+			delete(memMap, key)
+		}
+
 		return result, nil
 	}
 	return result, errors.New(RES_NIL)
