@@ -11,6 +11,7 @@ import (
 	"container/list"
 	"errors"
 	"strings"
+	"topiik/internal/command"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/internal/util"
@@ -24,8 +25,9 @@ import (
 ** 	- Lenght of the list after push
 **	- INVALID_OP if the key exists but data type is not list
 **
+** Syntax: LPUSH|RPUSH key value1 [... valueN]
 **/
-func lPush(args []string) (result int, err error) {
+func pushList(args []string, CMD string) (result int, err error) {
 	if len(args) < 2 { // except KEY, at least need one value
 		return 0, errors.New(RES_WRONG_NUMBER_OF_ARGS)
 	}
@@ -41,8 +43,16 @@ func lPush(args []string) (result int, err error) {
 			Expire: consts.UINT32_MAX,
 		}
 	}
-	for _, piece := range pieces {
-		memMap[key].TList.PushFront(piece)
+	if CMD == command.LPUSH {
+		for _, piece := range pieces {
+			memMap[key].TList.PushFront(piece)
+		}
+	} else if CMD == command.RPUSH {
+		for _, piece := range pieces {
+			memMap[key].TList.PushBack(piece)
+		}
+	} else {
+		return 0, errors.New(RES_INVALID_CMD)
 	}
 
 	return memMap[key].TList.Len(), nil

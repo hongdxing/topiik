@@ -69,36 +69,24 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 			return marshalResponseError(err)
 		}
 		return marshalResponseSuccess(result)
-	} else if CMD == command.LPUSH {
+	} else if CMD == command.LPUSH || CMD == command.RPUSH {
 		/***List LPUSH***/
 		pieces, err := needKEY(strs)
 		if err != nil {
 			return marshalResponseError(err)
 		}
-		result, err := lPush(pieces)
+		result, err := pushList(pieces, CMD)
 		if err != nil {
 			return marshalResponseError(err)
 		}
 		return marshalIntegerResponseSuccess(result)
 
-	} else if CMD == command.LPOP {
+	} else if CMD == command.LPOP || CMD == command.RPOP {
 		pieces, err := needKEY(strs)
 		if err != nil {
 			return marshalResponseError(err)
 		}
-		result, err := listPop(pieces, CMD)
-		if err != nil {
-			return marshalResponseError(err)
-		}
-		return marshalListResponseSuccess(result)
-	} else if CMD == command.RPUSH {
-
-	} else if CMD == command.RPOP {
-		pieces, err := needKEY(strs)
-		if err != nil {
-			return marshalResponseError(err)
-		}
-		result, err := listPop(pieces, CMD)
+		result, err := popList(pieces, CMD)
 		if err != nil {
 			return marshalResponseError(err)
 		}
