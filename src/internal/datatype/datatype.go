@@ -19,7 +19,7 @@ const (
 type TValue struct {
 	Type   uint8
 	String []byte
-	List   list.List
+	TList  *list.List
 	/***
 	* -1: no expire
 	* -2: key not exists

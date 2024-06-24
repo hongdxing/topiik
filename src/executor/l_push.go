@@ -37,13 +37,13 @@ func lPush(args []string) (result int, err error) {
 	if memMap[key] == nil {
 		memMap[key] = &datatype.TValue{
 			Type:   datatype.TTYPE_LIST,
-			List:   *list.New(),
+			TList:  list.New(),
 			Expire: consts.UINT32_MAX,
 		}
 	}
 	for _, piece := range pieces {
-		memMap[key].List.PushFront(piece)
+		memMap[key].TList.PushFront(piece)
 	}
 
-	return memMap[key].List.Len(), nil
+	return memMap[key].TList.Len(), nil
 }

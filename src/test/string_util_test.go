@@ -7,7 +7,7 @@ import (
 )
 
 func TestSplitCommandLine(t *testing.T) {
-	strs := util.SplitCommandLine(`"aaa" bbb "this, for sanity, should not be parts"`)
+	strs, _ := util.SplitCommandLine(`"aaa" bbb "this, for sanity, should not be parts"`)
 	fmt.Println(strs)
 	if len(strs) != 3 {
 		t.Fatal()
@@ -16,7 +16,7 @@ func TestSplitCommandLine(t *testing.T) {
 }
 
 func TestSplitCommandLineWithEscape(t *testing.T) {
-	strs := util.SplitCommandLine(`"aaa" bbb "this, for sanity,\" should not be parts'"`)
+	strs, _ := util.SplitCommandLine(`"aaa" bbb "this, for sanity,\" should not be parts'"`)
 	for _, s := range strs {
 		fmt.Println(s)
 	}
@@ -26,7 +26,7 @@ func TestSplitCommandLineWithEscape(t *testing.T) {
 }
 
 func TestSplitCommandLineWithUnpairedQuote(t *testing.T) {
-	strs := util.SplitCommandLine(`"aaa bbb "this, for sanity,\" should not be parts'"`)
+	strs, _ := util.SplitCommandLine(`"aaa bbb "this, for sanity,\" should not be parts'"`)
 	fmt.Println(strs)
 	for _, s := range strs {
 		fmt.Println(s)

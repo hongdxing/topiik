@@ -31,6 +31,7 @@ const (
 	RES_WRONG_NUMBER_OF_ARGS = "WRONG_NUM_OF_ARGS"
 	RES_DATA_TYPE_NOT_MATCH  = "DATA_TYPE_NOT_MATCH"
 	RES_SYNTAX_ERROR         = "SYNTAX_ERR"
+	RES_INVALID_CMD          = "INVALID_CMD"
 	RES_INVALID_OP           = "INVALID_OP"
 
 	/*** VOTE response ***/
@@ -85,7 +86,7 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 		if err != nil {
 			return marshalResponseError(err)
 		}
-		result, err := lPop(pieces)
+		result, err := listPop(pieces, CMD)
 		if err != nil {
 			return marshalResponseError(err)
 		}
@@ -93,7 +94,15 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 	} else if CMD == command.RPUSH {
 
 	} else if CMD == command.RPOP {
-
+		pieces, err := needKEY(strs)
+		if err != nil {
+			return marshalResponseError(err)
+		}
+		result, err := listPop(pieces, CMD)
+		if err != nil {
+			return marshalResponseError(err)
+		}
+		return marshalListResponseSuccess(result)
 	} else if CMD == command.VOTE {
 		//conn.Write([]byte(command.RES_REJECTED))
 		if len(strs) != 2 {

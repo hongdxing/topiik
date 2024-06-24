@@ -32,13 +32,13 @@ var wgRequestVote sync.WaitGroup
  */
 func RequestVote(addresses *[]string, interval uint16, nodestatus *NodeStatus) {
 
-	var quota int
+	var quorum int
 	//heartbeat := time.Duration(interval)
 	var heartbeat time.Duration
 	// Vote retry counter
 	counter := 0
 	for {
-		quota = 1 // Initial value 1, means vote current node
+		quorum = 1 // Initial value 1, means vote current node(I vote myself)
 		voteMeResults = voteMeResults[:0]
 
 		heartbeat = time.Duration(99) + time.Duration(interval) //[0,99) + 200(interval), this must less than RaftHeartbeat(300)
@@ -70,13 +70,13 @@ func RequestVote(addresses *[]string, interval uint16, nodestatus *NodeStatus) {
 					break
 				}
 			} else if strings.Compare(strs[0], "A") == 0 {
-				quota++
+				quorum++
 			}
 		}
 
-		canPromote := quota >= ((len(*addresses)+1)/2 + 1)
+		canPromote := quorum >= ((len(*addresses)+1)/2 + 1)
 		if counter%10 == 0 || canPromote {
-			fmt.Printf("Total nodes %v, quota: %v\n", len(*addresses)+1, quota)
+			fmt.Printf("Total nodes %v, quota: %v\n", len(*addresses)+1, quorum)
 			// in case overflow
 			if counter > 10000 {
 				counter = 0
