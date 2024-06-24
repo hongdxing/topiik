@@ -9,6 +9,7 @@ import (
 	"topiik/executor"
 	"topiik/internal/config"
 	"topiik/internal/proto"
+	"topiik/persistent"
 	"topiik/raft"
 )
 
@@ -23,6 +24,16 @@ var serverConfig *config.ServerConfig
 func main() {
 	printBanner()
 	serverConfig = readConfig()
+	err := validateConfig()
+	if err != nil {
+		fmt.Printf("")
+		return
+	}
+	// self check
+	err = persistent.SelfCheck()
+	if err != nil {
+		return
+	}
 	nodeStatus = &raft.NodeStatus{Role: raft.ROLE_FOLLOWER, Term: 0}
 
 	// Listen for incoming connections on port 8080
@@ -70,15 +81,15 @@ func handleConnection(conn net.Conn) {
 }
 
 /***
-* Print banner
- */
+** Print banner
+**/
 func printBanner() {
 	fmt.Println("Starting Topiik Server...")
 }
 
 /***
-* Read config values from server.env
- */
+** Read config values from server.env
+**/
 func readConfig() *config.ServerConfig {
 	configFile := ""
 	if len(os.Args) > 1 {
@@ -95,4 +106,12 @@ func readConfig() *config.ServerConfig {
 
 	// Get config
 	return config.ParseServerConfig(configFile)
+}
+
+/***
+**
+**
+**/
+func validateConfig() (err error) {
+	return nil
 }
