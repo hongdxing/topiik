@@ -6,17 +6,22 @@
 
 package datatype
 
-type StrResponse struct {
-	R bool   // Success or not
-	M string // Message: The Value if S is true, else the Error message
+type Response[T any] struct {
+	R bool
+	M T
 }
 
-type IntegerResponse struct {
-	R bool
-	M int
+// cluster
+type PartitionInfo struct {
+	Id string
 }
 
-type ListResponse struct {
-	R bool
-	M []string
+type NodeInfo struct {
+	Id         string
+	Partitions []PartitionInfo
+	Replicas   []PartitionInfo
+}
+
+type ClusterInfoResponse struct {
+	Nodes []NodeInfo
 }

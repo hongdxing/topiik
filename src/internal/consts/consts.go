@@ -7,3 +7,9 @@ const (
 const SPACE = " "
 
 const UINT32_MAX = 4294967295
+
+
+// relate to Topic
+const (
+	CONSUMER_OFFSET_PREFIX = "__topiik_consumer_"
+)

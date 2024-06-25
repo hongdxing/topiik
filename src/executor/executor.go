@@ -51,46 +51,46 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 		/***String SET***/
 		pieces, err := needKEY(strs)
 		if err != nil {
-			return marshalResponseError(err)
+			return responseError(err)
 		}
 		result, err := get(pieces)
 		if err != nil {
-			return marshalResponseError(err)
+			return responseError(err)
 		}
-		return marshalResponseSuccess(result)
+		return responseSuccess(result)
 	} else if CMD == command.SET {
 		/***String GET***/
 		pieces, err := needKEY(strs)
 		if err != nil {
-			return marshalResponseError(err)
+			return responseError(err)
 		}
 		result, err := set(pieces)
 		if err != nil {
-			return marshalResponseError(err)
+			return responseError(err)
 		}
-		return marshalResponseSuccess(result)
+		return responseSuccess(result)
 	} else if CMD == command.LPUSH || CMD == command.RPUSH {
 		/***List LPUSH***/
 		pieces, err := needKEY(strs)
 		if err != nil {
-			return marshalResponseError(err)
+			return responseError(err)
 		}
 		result, err := pushList(pieces, CMD)
 		if err != nil {
-			return marshalResponseError(err)
+			return responseError(err)
 		}
-		return marshalIntegerResponseSuccess(result)
+		return responseSuccess(result)
 
 	} else if CMD == command.LPOP || CMD == command.RPOP {
 		pieces, err := needKEY(strs)
 		if err != nil {
-			return marshalResponseError(err)
+			return responseError(err)
 		}
 		result, err := popList(pieces, CMD)
 		if err != nil {
-			return marshalResponseError(err)
+			return responseError(err)
 		}
-		return marshalListResponseSuccess(result)
+		return responseSuccess(result)
 	} else if CMD == command.VOTE {
 		//conn.Write([]byte(command.RES_REJECTED))
 		if len(strs) != 2 {
@@ -111,7 +111,7 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 	} else {
 		fmt.Printf("Invalid cmd: %s\n", CMD)
 	}
-	return marshalResponseError(errors.New(RES_SYNTAX_ERROR))
+	return responseError(errors.New(RES_SYNTAX_ERROR))
 
 }
 
