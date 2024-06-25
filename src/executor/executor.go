@@ -69,7 +69,7 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 			return responseError(err)
 		}
 		return responseSuccess(result)
-	} else if CMD == command.LPUSH || CMD == command.RPUSH {
+	} else if CMD == command.LPUSH || CMD == command.LPUSHR {
 		/***List LPUSH***/
 		pieces, err := needKEY(strs)
 		if err != nil {
@@ -81,7 +81,7 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 		}
 		return responseSuccess(result)
 
-	} else if CMD == command.LPOP || CMD == command.RPOP {
+	} else if CMD == command.LPOP || CMD == command.LPOPR {
 		pieces, err := needKEY(strs)
 		if err != nil {
 			return responseError(err)

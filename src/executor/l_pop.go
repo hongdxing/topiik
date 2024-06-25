@@ -53,7 +53,7 @@ func popList(args []string, cmd string) (result []string, err error) {
 				result = append(result, ele.Value.(string))
 				eleToBeRemoved = append(eleToBeRemoved, ele)
 			}
-		} else if cmd == command.RPOP { //RPOP
+		} else if cmd == command.LPOPR { //RPOP
 			looper := 0
 			for ele := val.TList.Back(); ele != nil && looper < count; ele = ele.Prev() {
 				looper++

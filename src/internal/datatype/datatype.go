@@ -21,9 +21,8 @@ type TValue struct {
 	String []byte
 	TList  *list.List
 	/***
-	* -1: no expire
-	* -2: key not exists
-	* >1: seconds to epxire
+	* unint32 Max(-1): no expire
+	* else: seconds to epxire
 	* max value: 4294967295 = Sunday, February 7, 2106 6:28:15 AM
 	 */
 	Expire uint32

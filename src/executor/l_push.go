@@ -47,7 +47,7 @@ func pushList(args []string, CMD string) (result int, err error) {
 		for _, piece := range pieces {
 			memMap[key].TList.PushFront(piece)
 		}
-	} else if CMD == command.RPUSH {
+	} else if CMD == command.LPUSHR {
 		for _, piece := range pieces {
 			memMap[key].TList.PushBack(piece)
 		}

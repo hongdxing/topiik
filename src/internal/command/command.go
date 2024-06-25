@@ -9,10 +9,16 @@ const (
 	INCR = "INCR"
 
 	/*** List ***/
-	LPUSH = "LPUSH"
-	LPOP  = "LPOP"
-	RPUSH = "RPUSH"
-	RPOP  = "RPOP"
+	LPUSH  = "LPUSH"
+	LPOP   = "LPOP"
+	LPUSHR = "LPUSHR"
+	LPOPR  = "LPOPR"
+
+	// List blocking
+	LPUSHB  = "LPUSHB"
+	LPOPB   = "LPOPB"
+	LPUSHRB = "LPUSHRB"
+	LPOPRB  = "LPOPRB"
 
 	/*** Key ***/
 	EXISTS = "EXISTS"
