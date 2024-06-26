@@ -42,11 +42,13 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	fmt.Printf("Listen to address %s\n", serverConfig.Listen)
-
+	
+	// Start routines
 	go raft.RequestVote(&serverConfig.JoinList, 200, nodeStatus)
+	go persistent.Persist(*serverConfig)
 
 	// Accept incoming connections and handle them
+	fmt.Printf("Listen to address %s\n", serverConfig.Listen)
 	for {
 		conn, err := ln.Accept()
 		if err != nil {

@@ -2,6 +2,7 @@
 * author: duan hongxing
 * date: 22 Jun 2024
 * desc:
+
 ***/
 
 package executor
@@ -11,6 +12,7 @@ import (
 	"fmt"
 	"strings"
 	"topiik/internal/datatype"
+	"topiik/shared"
 )
 
 /***
@@ -30,7 +32,7 @@ func get(pieces []string) (result string, err error) {
 		return "", errors.New(RES_SYNTAX_ERROR)
 	}
 
-	if val, ok := memMap[strings.TrimSpace(pieces[0])]; ok {
+	if val, ok := shared.MemMap[strings.TrimSpace(pieces[0])]; ok {
 		if val.Type != datatype.TTYPE_STRING {
 			return "", errors.New(RES_DATA_TYPE_NOT_MATCH)
 		}

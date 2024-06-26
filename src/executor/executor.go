@@ -7,6 +7,8 @@
 package executor
 
 import (
+	"container/list"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -16,6 +18,7 @@ import (
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/raft"
+	"topiik/shared"
 )
 
 const (
@@ -39,60 +42,86 @@ const (
 	RES_REJECTED = "R"
 )
 
-var memMap = make(map[string]*datatype.TValue)
-
 func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.NodeStatus) []byte {
 	// split into command + arg
 	strs := strings.SplitN(strings.TrimLeft(msg, consts.SPACE), consts.SPACE, 2)
 	CMD := strings.ToUpper(strings.TrimSpace(strs[0]))
 	//result := RES_OK
 
-	if CMD == command.GET {
+	if CMD == command.GET { // STRING COMMANDS
 		/***String SET***/
 		pieces, err := needKEY(strs)
 		if err != nil {
-			return responseError(err)
+			return returnError(err)
 		}
 		result, err := get(pieces)
 		if err != nil {
-			return responseError(err)
+			return returnError(err)
 		}
-		return responseSuccess(result)
+		return returnSuccessPersistMsg(result, msg)
 	} else if CMD == command.SET {
 		/***String GET***/
 		pieces, err := needKEY(strs)
 		if err != nil {
-			return responseError(err)
+			return returnError(err)
 		}
 		result, err := set(pieces)
 		if err != nil {
-			return responseError(err)
+			return returnError(err)
 		}
-		return responseSuccess(result)
-	} else if CMD == command.LPUSH || CMD == command.LPUSHR {
+		return returnSuccessPersistMsg(result, msg)
+	} else if CMD == command.GETM {
+		pieces, err := needKEY(strs)
+		if err != nil {
+			return returnError(err)
+		}
+		result, err := getM(pieces)
+		if err != nil {
+			return returnError(err)
+		}
+		return returnSuccessPersistMsg(result, msg)
+	} else if CMD == command.SETM {
+		pieces, err := needKEY(strs)
+		if err != nil {
+			return returnError(err)
+		}
+		result, err := setM(pieces)
+		if err != nil {
+			return returnError(err)
+		}
+		return returnSuccessPersistMsg(result, msg)
+	} else if CMD == command.INCR {
+		pieces, err := needKEY(strs)
+		if err != nil {
+			return returnError(err)
+		}
+		result, err := incr(pieces)
+		if err != nil {
+			return returnError(err)
+		}
+		return returnSuccessPersistMsg(result, msg)
+	} else if CMD == command.LPUSH || CMD == command.LPUSHR { // LIST COMMANDS
 		/***List LPUSH***/
 		pieces, err := needKEY(strs)
 		if err != nil {
-			return responseError(err)
+			return returnError(err)
 		}
 		result, err := pushList(pieces, CMD)
 		if err != nil {
-			return responseError(err)
+			return returnError(err)
 		}
-		return responseSuccess(result)
-
+		return returnSuccessPersistMsg(result, msg)
 	} else if CMD == command.LPOP || CMD == command.LPOPR {
 		pieces, err := needKEY(strs)
 		if err != nil {
-			return responseError(err)
+			return returnError(err)
 		}
 		result, err := popList(pieces, CMD)
 		if err != nil {
-			return responseError(err)
+			return returnError(err)
 		}
-		return responseSuccess(result)
-	} else if CMD == command.VOTE {
-		//conn.Write([]byte(command.RES_REJECTED))
+		return returnSuccessPersistMsg(result, msg)
+	} else if CMD == command.VOTE { // CLUSTER COMMANDS
 		if len(strs) != 2 {
 			fmt.Printf("%s %s", WRONG_CMD_MSG, msg)
 			return []byte(RES_SYNTAX_ERROR)
@@ -102,7 +131,6 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 				return []byte(RES_SYNTAX_ERROR)
 			} else {
 				return []byte(vote(cTerm, nodestatus))
-				//conn.Write([]byte(result))
 			}
 		}
 
@@ -111,7 +139,7 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 	} else {
 		fmt.Printf("Invalid cmd: %s\n", CMD)
 	}
-	return responseError(errors.New(RES_SYNTAX_ERROR))
+	return returnError(errors.New(RES_SYNTAX_ERROR))
 
 }
 
@@ -128,12 +156,36 @@ func needKEY(cmdKeyParams []string) (pieces []string, err error) {
 	return strings.SplitN(strings.TrimLeft(cmdKeyParams[1], consts.SPACE), consts.SPACE, 2), nil
 }
 
-/*
-func marshalResponse(response string, err error) []byte {
-	success := true
-	if err != nil {
-		success = false
+/***
+** Persist command
+**
+**/
+func enqueuePersistentMsg(msg string) {
+	if shared.MemMap[consts.PERSISTENT_BUF_QUEUE] == nil {
+		shared.MemMap[consts.PERSISTENT_BUF_QUEUE] = &datatype.TValue{
+			Type:   datatype.TTYPE_LIST,
+			TList:  list.New(),
+			Expire: consts.UINT32_MAX,
+		}
 	}
-	b, _ := json.Marshal(&datatype.Response{S: success, R: response})
+	shared.MemMap[consts.PERSISTENT_BUF_QUEUE].TList.PushFront(msg)
+}
+
+/*** Response ***/
+func returnError(err error) []byte {
+	return response[string](false, err.Error())
+}
+
+func returnSuccess[T any](result T) []byte {
+	return response[T](true, result)
+}
+
+func returnSuccessPersistMsg[T any](result T, msg string) []byte {
+	enqueuePersistentMsg(msg)
+	return response[T](true, result)
+}
+
+func response[T any](success bool, response T) []byte {
+	b, _ := json.Marshal(&datatype.Response[T]{R: success, M: response})
 	return b
-}*/
+}

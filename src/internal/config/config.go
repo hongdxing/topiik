@@ -18,14 +18,17 @@ import (
 )
 
 type ServerConfig struct {
-	Host             string
-	Port             string
-	Listen           string
-	Join             string   // comma seprated host list
+	Host       string
+	Port       string
+	Listen     string
+	Join       string // comma seprated host list
+	SaveMillis uint   // Persistent Job interval
+
+	/*** Internal Use Only***/
+	RaftHeartbeatMin uint16   // Raft random heartbeat Min
+	RaftHeartbeatMax uint16   // Raft random heartbeat Max
 	JoinList         []string // Internal use
-	NodeRole         uint8
-	RaftHeartbeatMin uint16 // Raft random heartbeat Min
-	RaftHeartbeatMax uint16 // Raft random heartbeat Max
+	NodeRole         uint8    // Internal use
 }
 
 func ParseServerConfig(configPath string) *ServerConfig {
@@ -60,6 +63,7 @@ func ParseServerConfig(configPath string) *ServerConfig {
 			serverConfig.JoinList[i] = strings.Trim(s, consts.SPACE)
 		}
 	}
+
 	fmt.Printf("Using config file: %s\n", theConfigPath)
 	printConfig(serverConfig)
 	// when server start, default to FOLLOWER
@@ -68,6 +72,12 @@ func ParseServerConfig(configPath string) *ServerConfig {
 	// Set Raft Heartbeat
 	serverConfig.RaftHeartbeatMin = 300
 	serverConfig.RaftHeartbeatMax = 600
+
+	// set default SaveMillis
+	if serverConfig.SaveMillis == 0 {
+		serverConfig.SaveMillis = 1000
+	}
+
 	return &serverConfig
 }
 

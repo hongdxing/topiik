@@ -4,12 +4,20 @@ const (
 	DATA_FMT_MICRO_SECONDS = "2006-01-02 15:04:05.000000"
 )
 
-const SPACE = " "
+// relate to message
+const (
+	SPACE           = " "
+	UINT32_MAX      = 4294967295
+	RESEVERD_PREFIX = "__toPIIK"
+)
 
-const UINT32_MAX = 4294967295
-
+// relate to persistent
+const (
+	// the Queue that waiting to be persistent
+	PERSISTENT_BUF_QUEUE = "__toPIIK_persistent_buf_queue"
+)
 
 // relate to Topic
 const (
-	CONSUMER_OFFSET_PREFIX = "__topiik_consumer_"
+	CONSUMER_OFFSET_PREFIX = "__toPIIK_consumer_"
 )

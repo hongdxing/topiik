@@ -10,11 +10,11 @@ package executor
 import (
 	"container/list"
 	"errors"
-	"strings"
 	"topiik/internal/command"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/internal/util"
+	"topiik/shared"
 )
 
 /***
@@ -35,9 +35,9 @@ func pushList(args []string, CMD string) (result int, err error) {
 	if err != nil {
 		return 0, err
 	}
-	key := strings.Clone(args[0])
-	if memMap[key] == nil {
-		memMap[key] = &datatype.TValue{
+	key := args[0]
+	if shared.MemMap[key] == nil {
+		shared.MemMap[key] = &datatype.TValue{
 			Type:   datatype.TTYPE_LIST,
 			TList:  list.New(),
 			Expire: consts.UINT32_MAX,
@@ -45,15 +45,15 @@ func pushList(args []string, CMD string) (result int, err error) {
 	}
 	if CMD == command.LPUSH {
 		for _, piece := range pieces {
-			memMap[key].TList.PushFront(piece)
+			shared.MemMap[key].TList.PushFront(piece)
 		}
 	} else if CMD == command.LPUSHR {
 		for _, piece := range pieces {
-			memMap[key].TList.PushBack(piece)
+			shared.MemMap[key].TList.PushBack(piece)
 		}
 	} else {
 		return 0, errors.New(RES_INVALID_CMD)
 	}
 
-	return memMap[key].TList.Len(), nil
+	return shared.MemMap[key].TList.Len(), nil
 }

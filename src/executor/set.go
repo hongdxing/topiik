@@ -8,10 +8,10 @@ package executor
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
+	"topiik/shared"
 )
 
 /***
@@ -24,8 +24,7 @@ import (
 **/
 func set(pieces []string) (result string, err error) {
 	if len(pieces) == 2 {
-		fmt.Println(memMap)
-		memMap[strings.TrimSpace(pieces[0])] = &datatype.TValue{
+		shared.MemMap[strings.TrimSpace(pieces[0])] = &datatype.TValue{
 			Type:   datatype.TTYPE_STRING,
 			String: []byte(pieces[1]),
 			Expire: consts.UINT32_MAX}
