@@ -95,7 +95,7 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 		if err != nil {
 			return returnError(err)
 		}
-		result, err := incr(pieces)
+		result, err := INCR(pieces)
 		if err != nil {
 			return returnError(err)
 		}
@@ -189,3 +189,4 @@ func response[T any](success bool, response T) []byte {
 	b, _ := json.Marshal(&datatype.Response[T]{R: success, M: response})
 	return b
 }
+

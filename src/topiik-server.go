@@ -42,7 +42,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	
+
 	// Start routines
 	go raft.RequestVote(&serverConfig.JoinList, 200, nodeStatus)
 	go persistent.Persist(*serverConfig)

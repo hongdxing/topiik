@@ -28,7 +28,7 @@ var voteMeResults []string // Return values from other Nodes, "R": Rejected or "
 var wgRequestVote sync.WaitGroup
 
 /*
-* Candidate issues RequestVote RPCs to other nodes to request for votes.
+* Candidator issues RequestVote RPCs to other nodes to request for votes.
  */
 func RequestVote(addresses *[]string, interval uint16, nodestatus *NodeStatus) {
 
