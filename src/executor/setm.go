@@ -10,6 +10,7 @@ package executor
 import (
 	"errors"
 	"strings"
+	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/shared"
 )
@@ -26,18 +27,26 @@ func setM(pieces []string) (result int, err error) {
 	if len(pieces)%2 == 1 {
 		return 0, errors.New(RES_SYNTAX_ERROR)
 	}
-	kv :=make(map[string]string)
+	kv := make(map[string]string)
 	for i := 0; i < len(pieces)-1; i += 2 {
 		key := strings.TrimSpace(pieces[i])
 		if val, ok := shared.MemMap[key]; ok {
-			if val.Type != datatype.TTYPE_STRING {
+			if val.Typ != datatype.V_TYPE_STRING {
 				return 0, errors.New(RES_DATA_TYPE_NOT_MATCH + ":" + key)
 			}
 		}
 		kv[key] = pieces[i+1]
 	}
-	for k, v:= range kv{
-		shared.MemMap[k]
+	for k, v := range kv {
+		if val, ok := shared.MemMap[k]; ok {
+			val.Str = []byte(v)
+		} else {
+			shared.MemMap[k] = &datatype.TValue{
+				Typ: datatype.V_TYPE_STRING,
+				Str: []byte(v),
+				Exp: consts.UINT32_MAX,
+			}
+		}
 	}
-	return 1, nil
+	return len(kv), nil
 }

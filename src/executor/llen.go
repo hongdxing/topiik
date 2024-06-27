@@ -30,10 +30,10 @@ func llen(pieces []string) (result int, err error) {
 	}
 	key := strings.TrimSpace(pieces[0])
 	if val, ok := shared.MemMap[key]; ok {
-		if val.Type != datatype.TTYPE_LIST {
+		if val.Typ != datatype.V_TYPE_LIST {
 			return 0, errors.New(RES_DATA_TYPE_NOT_MATCH)
 		}
-		return val.TList.Len(), nil
+		return val.Lst.Len(), nil
 	} else {
 		return 0, errors.New(RES_NIL)
 	}

@@ -181,12 +181,12 @@ func needKEY(cmdKeyParams []string) (pieces []string, err error) {
 func enqueuePersistentMsg(msg string) {
 	if shared.MemMap[consts.PERSISTENT_BUF_QUEUE] == nil {
 		shared.MemMap[consts.PERSISTENT_BUF_QUEUE] = &datatype.TValue{
-			Type:   datatype.TTYPE_LIST,
-			TList:  list.New(),
-			Expire: consts.UINT32_MAX,
+			Typ: datatype.V_TYPE_LIST,
+			Lst: list.New(),
+			Exp: consts.UINT32_MAX,
 		}
 	}
-	shared.MemMap[consts.PERSISTENT_BUF_QUEUE].TList.PushFront(msg)
+	shared.MemMap[consts.PERSISTENT_BUF_QUEUE].Lst.PushFront(msg)
 }
 
 /*** Response ***/

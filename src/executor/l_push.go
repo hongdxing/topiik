@@ -38,22 +38,22 @@ func pushList(args []string, CMD string) (result int, err error) {
 	key := args[0]
 	if shared.MemMap[key] == nil {
 		shared.MemMap[key] = &datatype.TValue{
-			Type:   datatype.TTYPE_LIST,
-			TList:  list.New(),
-			Expire: consts.UINT32_MAX,
+			Typ:   datatype.V_TYPE_LIST,
+			Lst:  list.New(),
+			Exp: consts.UINT32_MAX,
 		}
 	}
 	if CMD == command.LPUSH {
 		for _, piece := range pieces {
-			shared.MemMap[key].TList.PushFront(piece)
+			shared.MemMap[key].Lst.PushFront(piece)
 		}
 	} else if CMD == command.LPUSHR {
 		for _, piece := range pieces {
-			shared.MemMap[key].TList.PushBack(piece)
+			shared.MemMap[key].Lst.PushBack(piece)
 		}
 	} else {
 		return 0, errors.New(RES_INVALID_CMD)
 	}
 
-	return shared.MemMap[key].TList.Len(), nil
+	return shared.MemMap[key].Lst.Len(), nil
 }

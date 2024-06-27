@@ -31,10 +31,10 @@ func getM(pieces []string) (result []any, err error) {
 	for _, key := range pieces {
 		key = strings.TrimSpace(key)
 		if val, ok := shared.MemMap[key]; ok {
-			if val.Type != datatype.TTYPE_STRING {
+			if val.Typ != datatype.V_TYPE_STRING {
 				return nil, errors.New(RES_DATA_TYPE_NOT_MATCH)
 			}
-			result = append(result, string(val.String))
+			result = append(result, string(val.Str))
 		} else {
 			result = append(result, nil)
 		}

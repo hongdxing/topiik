@@ -42,21 +42,21 @@ func popList(args []string, cmd string) (result []string, err error) {
 	}
 	key := strings.TrimSpace(args[0])
 	if val, ok := shared.MemMap[key]; ok {
-		if val.Type != datatype.TTYPE_LIST {
+		if val.Typ != datatype.V_TYPE_LIST {
 			return result, errors.New(RES_DATA_TYPE_NOT_MATCH)
 		}
 
 		var eleToBeRemoved []*list.Element
 		if cmd == command.LPOP { //LPOP
 			looper := 0
-			for ele := val.TList.Front(); ele != nil && looper < count; ele = ele.Next() {
+			for ele := val.Lst.Front(); ele != nil && looper < count; ele = ele.Next() {
 				looper++
 				result = append(result, ele.Value.(string))
 				eleToBeRemoved = append(eleToBeRemoved, ele)
 			}
 		} else if cmd == command.LPOPR { //RPOP
 			looper := 0
-			for ele := val.TList.Back(); ele != nil && looper < count; ele = ele.Prev() {
+			for ele := val.Lst.Back(); ele != nil && looper < count; ele = ele.Prev() {
 				looper++
 				result = append(result, ele.Value.(string))
 				eleToBeRemoved = append(eleToBeRemoved, ele)
@@ -66,10 +66,10 @@ func popList(args []string, cmd string) (result []string, err error) {
 		}
 		// remove ele from list
 		for _, ele := range eleToBeRemoved {
-			val.TList.Remove(ele)
+			val.Lst.Remove(ele)
 		}
 		// if no element, delete the list
-		if val.TList.Len() == 0 {
+		if val.Lst.Len() == 0 {
 			delete(shared.MemMap, key)
 		}
 

@@ -42,10 +42,10 @@ func doPersist() {
 	if shared.MemMap[consts.PERSISTENT_BUF_QUEUE] == nil {
 		return
 	}
-	for ele := shared.MemMap[consts.PERSISTENT_BUF_QUEUE].TList.Back(); ele != nil; ele = ele.Prev() {
+	for ele := shared.MemMap[consts.PERSISTENT_BUF_QUEUE].Lst.Back(); ele != nil; ele = ele.Prev() {
 		//result = append(result, ele.Value.(string))
 		//eleToBeRemoved = append(eleToBeRemoved, ele)
 		fmt.Printf("%b", []byte(ele.Value.(string)))
-		shared.MemMap[consts.PERSISTENT_BUF_QUEUE].TList.Remove(ele)
+		shared.MemMap[consts.PERSISTENT_BUF_QUEUE].Lst.Remove(ele)
 	}
 }

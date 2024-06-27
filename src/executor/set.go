@@ -25,9 +25,9 @@ import (
 func set(pieces []string) (result string, err error) {
 	if len(pieces) == 2 {
 		shared.MemMap[strings.TrimSpace(pieces[0])] = &datatype.TValue{
-			Type:   datatype.TTYPE_STRING,
-			String: []byte(pieces[1]),
-			Expire: consts.UINT32_MAX}
+			Typ: datatype.V_TYPE_STRING,
+			Str: []byte(pieces[1]),
+			Exp: consts.UINT32_MAX}
 		return RES_OK, nil
 	} else {
 		return "", errors.New(RES_SYNTAX_ERROR)

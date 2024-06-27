@@ -33,10 +33,10 @@ func get(pieces []string) (result string, err error) {
 	}
 
 	if val, ok := shared.MemMap[strings.TrimSpace(pieces[0])]; ok {
-		if val.Type != datatype.TTYPE_STRING {
+		if val.Typ != datatype.V_TYPE_STRING {
 			return "", errors.New(RES_DATA_TYPE_NOT_MATCH)
 		}
-		return string(val.String), nil
+		return string(val.Str), nil
 	} else {
 		return "", errors.New(RES_NIL)
 	}

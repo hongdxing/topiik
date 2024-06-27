@@ -35,7 +35,7 @@ func incr(pieces []string) (result string, err error) {
 			return "", err
 		}
 		i++
-		shared.MemMap[key].String = []byte(strconv.Itoa(i))
+		shared.MemMap[key].Str = []byte(strconv.Itoa(i))
 		return strconv.Itoa(i), nil
 	} else if len(pieces) == 2 { // KEY num
 		var i int
@@ -50,7 +50,7 @@ func incr(pieces []string) (result string, err error) {
 			return "", err
 		}
 		i += num
-		shared.MemMap[key].String = []byte(strconv.Itoa(i))
+		shared.MemMap[key].Str = []byte(strconv.Itoa(i))
 		return strconv.Itoa(i), nil
 	} else {
 		return RES_NIL, errors.New(RES_WRONG_NUMBER_OF_ARGS)
@@ -59,15 +59,15 @@ func incr(pieces []string) (result string, err error) {
 
 func preINCR(key string) (i int, err error) {
 	if val, ok := shared.MemMap[key]; ok {
-		i, err = strconv.Atoi(string(val.String))
+		i, err = strconv.Atoi(string(val.Str))
 		if err != nil {
 			return i, errors.New(RES_DATA_TYPE_NOT_MATCH)
 		}
 	} else {
 		shared.MemMap[key] = &datatype.TValue{
-			Type:   datatype.TTYPE_STRING,
-			String: []byte("0"),
-			Expire: consts.UINT32_MAX}
+			Typ: datatype.V_TYPE_STRING,
+			Str: []byte("0"),
+			Exp: consts.UINT32_MAX}
 	}
 	return i, nil
 }
