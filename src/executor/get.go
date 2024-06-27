@@ -21,8 +21,8 @@ import (
 **	- pieces: command line that CMD stripped, the first piece is the KEY
 ** Return:
 **	- the value of the key if success
-**	- NIL if KEY not exists
-**	- invalide operation if the key found but wrong type
+**	- RES_NIL if KEY not exists
+**	- RES_DATA_TYPE_NOT_MATCH if the key found but wrong type
 ** Syntax:
 ** 	GET KEY
 **/

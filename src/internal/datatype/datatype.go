@@ -27,3 +27,14 @@ type TValue struct {
 	 */
 	Expire uint32
 }
+
+type ValueT[T any] struct {
+	Type  uint8
+	Value T
+	/***
+	* unint32 Max(-1): no expire
+	* else: seconds to epxire
+	* max value: 4294967295 = Sunday, February 7, 2106 6:28:15 AM
+	 */
+	Expire uint32
+}

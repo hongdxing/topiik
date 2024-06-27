@@ -26,7 +26,7 @@ import (
 **
 ** Syntax: INCR KEY [num]
 **/
-func INCR(pieces []string) (result string, err error) {
+func incr(pieces []string) (result string, err error) {
 	if (len(pieces)) == 1 { // KEY
 		i := 0
 		key := strings.TrimSpace(pieces[0])

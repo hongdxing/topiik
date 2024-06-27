@@ -13,6 +13,7 @@ const (
 	LPOP   = "LPOP"
 	LPUSHR = "LPUSHR"
 	LPOPR  = "LPOPR"
+	LLEN   = "LLEN"
 
 	// List blocking
 	LPUSHB  = "LPUSHB"

@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"topiik/internal/command"
@@ -42,8 +43,13 @@ const (
 	RES_REJECTED = "R"
 )
 
+var needPersistCMD = []string{
+	command.SET, command.SETM,
+	command.LPUSH, command.LPUSHR, command.LPUSHB, command.LPUSHRB, command.LPOP, command.LPOPR, command.LPOPB, command.LPOPRB,
+}
+
 func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.NodeStatus) []byte {
-	// split into command + arg
+	// split msg into [CMD, rest]
 	strs := strings.SplitN(strings.TrimLeft(msg, consts.SPACE), consts.SPACE, 2)
 	CMD := strings.ToUpper(strings.TrimSpace(strs[0]))
 	//result := RES_OK
@@ -58,7 +64,7 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 		if err != nil {
 			return returnError(err)
 		}
-		return returnSuccessPersistMsg(result, msg)
+		return returnSuccess(result, CMD, msg)
 	} else if CMD == command.SET {
 		/***String GET***/
 		pieces, err := needKEY(strs)
@@ -69,37 +75,39 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 		if err != nil {
 			return returnError(err)
 		}
-		return returnSuccessPersistMsg(result, msg)
+		return returnSuccess(result, CMD, msg)
 	} else if CMD == command.GETM {
-		pieces, err := needKEY(strs)
-		if err != nil {
-			return returnError(err)
+		//pieces, err := needKEY(strs)
+		pieces := []string{}
+		if len(strs) == 2 {
+			pieces = strings.Split(strs[1], consts.SPACE)
 		}
 		result, err := getM(pieces)
 		if err != nil {
 			return returnError(err)
 		}
-		return returnSuccessPersistMsg(result, msg)
+		return returnSuccess(result, CMD, msg)
 	} else if CMD == command.SETM {
-		pieces, err := needKEY(strs)
-		if err != nil {
-			return returnError(err)
+		//pieces, err := needKEY(strs)
+		pieces := []string{}
+		if len(strs) == 2 {
+			pieces = strings.Split(strs[1], consts.SPACE)
 		}
 		result, err := setM(pieces)
 		if err != nil {
 			return returnError(err)
 		}
-		return returnSuccessPersistMsg(result, msg)
+		return returnSuccess(result, CMD, msg)
 	} else if CMD == command.INCR {
 		pieces, err := needKEY(strs)
 		if err != nil {
 			return returnError(err)
 		}
-		result, err := INCR(pieces)
+		result, err := incr(pieces)
 		if err != nil {
 			return returnError(err)
 		}
-		return returnSuccessPersistMsg(result, msg)
+		return returnSuccess(result, CMD, msg)
 	} else if CMD == command.LPUSH || CMD == command.LPUSHR { // LIST COMMANDS
 		/***List LPUSH***/
 		pieces, err := needKEY(strs)
@@ -110,7 +118,7 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 		if err != nil {
 			return returnError(err)
 		}
-		return returnSuccessPersistMsg(result, msg)
+		return returnSuccess(result, CMD, msg)
 	} else if CMD == command.LPOP || CMD == command.LPOPR {
 		pieces, err := needKEY(strs)
 		if err != nil {
@@ -120,7 +128,17 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 		if err != nil {
 			return returnError(err)
 		}
-		return returnSuccessPersistMsg(result, msg)
+		return returnSuccess(result, CMD, msg)
+	} else if CMD == command.LLEN {
+		pieces, err := needKEY(strs)
+		if err != nil {
+			return returnError(err)
+		}
+		result, err := llen(pieces)
+		if err != nil {
+			return returnError(err)
+		}
+		return returnSuccess(result, CMD, msg)
 	} else if CMD == command.VOTE { // CLUSTER COMMANDS
 		if len(strs) != 2 {
 			fmt.Printf("%s %s", WRONG_CMD_MSG, msg)
@@ -176,12 +194,10 @@ func returnError(err error) []byte {
 	return response[string](false, err.Error())
 }
 
-func returnSuccess[T any](result T) []byte {
-	return response[T](true, result)
-}
-
-func returnSuccessPersistMsg[T any](result T, msg string) []byte {
-	enqueuePersistentMsg(msg)
+func returnSuccess[T any](result T, CMD string, msg string) []byte {
+	if slices.Contains(needPersistCMD, CMD) {
+		enqueuePersistentMsg(msg)
+	}
 	return response[T](true, result)
 }
 
@@ -189,4 +205,3 @@ func response[T any](success bool, response T) []byte {
 	b, _ := json.Marshal(&datatype.Response[T]{R: success, M: response})
 	return b
 }
-
