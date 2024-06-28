@@ -6,9 +6,10 @@ const (
 
 // relate to message
 const (
-	SPACE           = " "
-	UINT32_MAX      = 4294967295
-	RESEVERD_PREFIX = "__toPIIK"
+	SPACE                 = " "
+	UINT32_MAX            = 4294967295
+	INT64_MAX       int64 = 9_223_372_036_854_775_807
+	RESEVERD_PREFIX       = "__toPIIK"
 )
 
 // relate to persistent

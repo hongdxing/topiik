@@ -35,7 +35,7 @@ func set(pieces []string) (result any, err error) {
 
 	key := strings.TrimSpace(pieces[0])
 	returnOld := false
-	ttl := consts.UINT32_MAX
+	ttl := consts.INT64_MAX
 	if len(pieces) > 2 {
 		for i := 2; i < len(pieces); i++ {
 			if i == 0 || i == 1 {
@@ -49,17 +49,17 @@ func set(pieces []string) (result any, err error) {
 				if len(pieces) <= i+1 {
 					return nil, errors.New(RES_SYNTAX_ERROR + " near TTL")
 				}
-				ttl, err = strconv.Atoi(pieces[i+1])
+				ttl, err = strconv.ParseInt(pieces[i+1], 10, 64)
 				if err != nil {
 					return nil, errors.New(RES_SYNTAX_ERROR + " near TTL")
 				}
 				i++
-				ttl += time.Now().UTC().Second() // will overflow??? or should limit ttl user can type???
+				ttl += time.Now().UTC().Unix() // will overflow??? or should limit ttl user can type???
 			} else if piece == "TTLAT" {
 				if len(pieces) <= i+1 {
 					return nil, errors.New(RES_SYNTAX_ERROR + " near TTLAT")
 				}
-				ttl, err = strconv.Atoi(pieces[i+1])
+				ttl, err = strconv.ParseInt(pieces[i+1], 10, 64)
 				if err != nil {
 					return nil, errors.New(RES_SYNTAX_ERROR + " near TTLAT")
 				}
@@ -90,13 +90,13 @@ func set(pieces []string) (result any, err error) {
 		}
 
 		shared.MemMap[key].Str = []byte(pieces[1])
-		shared.MemMap[key].Exp = uint32(ttl)
+		shared.MemMap[key].Exp = ttl
 		return oldValue, nil
 	} else {
 		shared.MemMap[key] = &datatype.TValue{
 			Typ: datatype.V_TYPE_STRING,
 			Str: []byte(pieces[1]),
-			Exp: uint32(ttl)}
+			Exp: ttl}
 		if returnOld {
 			return nil, nil
 		}

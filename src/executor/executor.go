@@ -143,6 +143,13 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 			return returnError(err)
 		}
 		return returnSuccess(result, CMD, msg)
+	} else if CMD == command.TTL { // KEY COMMANDS
+		pieces := splitParams(strs)
+		result, err := ttl(pieces)
+		if err != nil {
+			return returnError(err)
+		}
+		return returnSuccess(result, CMD, msg)
 	} else if CMD == command.VOTE { // CLUSTER COMMANDS
 		if len(strs) != 2 {
 			fmt.Printf("%s %s", WRONG_CMD_MSG, msg)
@@ -176,6 +183,13 @@ func needKEY(cmdKeyParams []string) (pieces []string, err error) {
 		return nil, errors.New(RES_SYNTAX_ERROR)
 	}
 	return strings.SplitN(strings.TrimLeft(cmdKeyParams[1], consts.SPACE), consts.SPACE, 2), nil
+}
+
+func splitParams(strs []string) (pieces []string) {
+	if len(strs) == 2 {
+		pieces = strings.Split(strs[1], consts.SPACE)
+	}
+	return pieces
 }
 
 /***
