@@ -38,6 +38,6 @@ func get(pieces []string) (result string, err error) {
 		}
 		return string(val.Str), nil
 	} else {
-		return "", errors.New(RES_NIL)
+		return "", errors.New(RES_KEY_NOT_EXIST)
 	}
 }

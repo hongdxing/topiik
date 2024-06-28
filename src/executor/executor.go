@@ -35,8 +35,11 @@ const (
 	RES_WRONG_NUMBER_OF_ARGS = "WRONG_NUM_OF_ARGS"
 	RES_DATA_TYPE_NOT_MATCH  = "DATA_TYPE_NOT_MATCH"
 	RES_SYNTAX_ERROR         = "SYNTAX_ERR"
-	RES_INVALID_CMD          = "INVALID_CMD"
-	RES_INVALID_OP           = "INVALID_OP"
+	RES_KEY_NOT_EXIST        = "KEY_NOT_EXIST"
+	RES_KEY_EXIST_ALREADY    = "KEY_EXIST_ALREADY"
+
+	RES_INVALID_CMD = "INVALID_CMD"
+	RES_INVALID_OP  = "INVALID_OP"
 
 	/*** VOTE response ***/
 	RES_ACCEPTED = "A"
@@ -56,9 +59,10 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 
 	if CMD == command.GET { // STRING COMMANDS
 		/***String SET***/
-		pieces, err := needKEY(strs)
-		if err != nil {
-			return returnError(err)
+		//pieces, err := needKEY(strs)
+		pieces := []string{}
+		if len(strs) == 2 {
+			pieces = strings.Split(strs[1], consts.SPACE)
 		}
 		result, err := get(pieces)
 		if err != nil {
@@ -67,9 +71,9 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 		return returnSuccess(result, CMD, msg)
 	} else if CMD == command.SET {
 		/***String GET***/
-		pieces, err := needKEY(strs)
-		if err != nil {
-			return returnError(err)
+		pieces := []string{}
+		if len(strs) == 2 {
+			pieces = strings.Split(strs[1], consts.SPACE)
 		}
 		result, err := set(pieces)
 		if err != nil {
