@@ -67,7 +67,8 @@ func handleConnection(conn net.Conn) {
 	reader := bufio.NewReader(conn)
 
 	for {
-		cmd, err := proto.Decode(reader)
+		//cmd, err := proto.Decode(reader)
+		msg, err := proto.Decode(reader)
 		if err != nil {
 			if err == io.EOF {
 				//fmt.Printf("Client %s connection closed\n", conn.RemoteAddr())
@@ -77,7 +78,7 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 		//fmt.Printf("%s: %s\n", time.Now().Format(consts.DATA_FMT_MICRO_SECONDS), cmd)
-		result := executor.Execute(cmd, serverConfig, nodeStatus)
+		result := executor.Execute(msg, serverConfig, nodeStatus)
 		conn.Write(result)
 	}
 }

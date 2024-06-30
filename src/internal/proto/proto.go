@@ -25,6 +25,7 @@ func Encode(message string) ([]byte, error) {
 }
 
 // Decode
+/*
 func Decode(reader *bufio.Reader) (string, error) {
 	// Read message HEADER(int32 4 bytes)
 	lengthByte, _ := reader.Peek(4)
@@ -47,4 +48,28 @@ func Decode(reader *bufio.Reader) (string, error) {
 		return "", err
 	}
 	return string(pack[4:]), nil
+}*/
+
+func Decode(reader *bufio.Reader) ([]byte, error) {
+	// Read message HEADER(int32 4 bytes)
+	lengthByte, _ := reader.Peek(4)
+	lengthBuff := bytes.NewBuffer(lengthByte)
+	var length int32
+	err := binary.Read(lengthBuff, binary.LittleEndian, &length)
+	if err != nil {
+		return nil, err
+	}
+
+	// Readable data in Buffer
+	if int32(reader.Buffered()) < length+4 {
+		return nil, err
+	}
+
+	// Read message
+	pack := make([]byte, int(4+length))
+	_, err = reader.Read(pack)
+	if err != nil {
+		return nil, err
+	}
+	return pack, nil
 }

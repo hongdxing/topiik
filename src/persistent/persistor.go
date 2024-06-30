@@ -24,6 +24,9 @@ func Persist(serverConfig config.ServerConfig) {
 	persistentTicker = time.NewTicker(time.Duration(serverConfig.SaveMillis) * time.Millisecond)
 	quit = make(chan struct{})
 
+	// Start compress routine
+	go compress()
+
 	for {
 		select {
 		case <-persistentTicker.C:
@@ -45,7 +48,7 @@ func doPersist() {
 	for ele := shared.MemMap[consts.PERSISTENT_BUF_QUEUE].Lst.Back(); ele != nil; ele = ele.Prev() {
 		//result = append(result, ele.Value.(string))
 		//eleToBeRemoved = append(eleToBeRemoved, ele)
-		fmt.Printf("%b", []byte(ele.Value.(string)))
+		fmt.Printf("%b", ele.Value)
 		shared.MemMap[consts.PERSISTENT_BUF_QUEUE].Lst.Remove(ele)
 	}
 }

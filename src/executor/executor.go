@@ -51,9 +51,10 @@ var needPersistCMD = []string{
 	command.LPUSH, command.LPUSHR, command.LPUSHB, command.LPUSHRB, command.LPOP, command.LPOPR, command.LPOPB, command.LPOPRB,
 }
 
-func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.NodeStatus) []byte {
+func Execute(msg []byte, serverConfig *config.ServerConfig, nodestatus *raft.NodeStatus) []byte {
+	strMsg := msg[4:]
 	// split msg into [CMD, rest]
-	strs := strings.SplitN(strings.TrimLeft(msg, consts.SPACE), consts.SPACE, 2)
+	strs := strings.SplitN(strings.TrimLeft(string(strMsg), consts.SPACE), consts.SPACE, 2)
 	CMD := strings.ToUpper(strings.TrimSpace(strs[0]))
 	//result := RES_OK
 
@@ -66,9 +67,9 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 		}
 		result, err := get(pieces)
 		if err != nil {
-			return returnError(err)
+			return errorResponse(err)
 		}
-		return returnSuccess(result, CMD, msg)
+		return successResponse(result, CMD, msg)
 	} else if CMD == command.SET {
 		/***String GET***/
 		pieces := []string{}
@@ -77,9 +78,9 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 		}
 		result, err := set(pieces)
 		if err != nil {
-			return returnError(err)
+			return errorResponse(err)
 		}
-		return returnSuccess(result, CMD, msg)
+		return successResponse(result, CMD, msg)
 	} else if CMD == command.GETM {
 		//pieces, err := needKEY(strs)
 		pieces := []string{}
@@ -88,9 +89,9 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 		}
 		result, err := getM(pieces)
 		if err != nil {
-			return returnError(err)
+			return errorResponse(err)
 		}
-		return returnSuccess(result, CMD, msg)
+		return successResponse(result, CMD, msg)
 	} else if CMD == command.SETM {
 		//pieces, err := needKEY(strs)
 		pieces := []string{}
@@ -99,57 +100,64 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 		}
 		result, err := setM(pieces)
 		if err != nil {
-			return returnError(err)
+			return errorResponse(err)
 		}
-		return returnSuccess(result, CMD, msg)
+		return successResponse(result, CMD, msg)
 	} else if CMD == command.INCR {
 		pieces, err := needKEY(strs)
 		if err != nil {
-			return returnError(err)
+			return errorResponse(err)
 		}
 		result, err := incr(pieces)
 		if err != nil {
-			return returnError(err)
+			return errorResponse(err)
 		}
-		return returnSuccess(result, CMD, msg)
+		return successResponse(result, CMD, msg)
 	} else if CMD == command.LPUSH || CMD == command.LPUSHR { // LIST COMMANDS
 		/***List LPUSH***/
 		pieces, err := needKEY(strs)
 		if err != nil {
-			return returnError(err)
+			return errorResponse(err)
 		}
 		result, err := pushList(pieces, CMD)
 		if err != nil {
-			return returnError(err)
+			return errorResponse(err)
 		}
-		return returnSuccess(result, CMD, msg)
+		return successResponse(result, CMD, msg)
 	} else if CMD == command.LPOP || CMD == command.LPOPR {
 		pieces, err := needKEY(strs)
 		if err != nil {
-			return returnError(err)
+			return errorResponse(err)
 		}
 		result, err := popList(pieces, CMD)
 		if err != nil {
-			return returnError(err)
+			return errorResponse(err)
 		}
-		return returnSuccess(result, CMD, msg)
+		return successResponse(result, CMD, msg)
 	} else if CMD == command.LLEN {
 		pieces, err := needKEY(strs)
 		if err != nil {
-			return returnError(err)
+			return errorResponse(err)
 		}
 		result, err := llen(pieces)
 		if err != nil {
-			return returnError(err)
+			return errorResponse(err)
 		}
-		return returnSuccess(result, CMD, msg)
+		return successResponse(result, CMD, msg)
 	} else if CMD == command.TTL { // KEY COMMANDS
 		pieces := splitParams(strs)
 		result, err := ttl(pieces)
 		if err != nil {
-			return returnError(err)
+			return errorResponse(err)
 		}
-		return returnSuccess(result, CMD, msg)
+		return successResponse(result, CMD, msg)
+	} else if CMD == command.KEYS {
+		pieces := splitParams(strs)
+		result, err := keys(pieces)
+		if err != nil {
+			return errorResponse(err)
+		}
+		return successResponse(result, CMD, msg)
 	} else if CMD == command.VOTE { // CLUSTER COMMANDS
 		if len(strs) != 2 {
 			fmt.Printf("%s %s", WRONG_CMD_MSG, msg)
@@ -165,11 +173,11 @@ func Execute(msg string, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 
 	} else if CMD == command.APPEND_ENTRY {
 		appendEntry(serverConfig, nodestatus)
+		return successResponse(RES_OK, CMD, msg)
 	} else {
 		fmt.Printf("Invalid cmd: %s\n", CMD)
+		return errorResponse(errors.New(RES_INVALID_CMD))
 	}
-	return returnError(errors.New(RES_SYNTAX_ERROR))
-
 }
 
 /***
@@ -185,6 +193,11 @@ func needKEY(cmdKeyParams []string) (pieces []string, err error) {
 	return strings.SplitN(strings.TrimLeft(cmdKeyParams[1], consts.SPACE), consts.SPACE, 2), nil
 }
 
+/***
+** Split command parameters if any
+**
+**
+**/
 func splitParams(strs []string) (pieces []string) {
 	if len(strs) == 2 {
 		pieces = strings.Split(strs[1], consts.SPACE)
@@ -196,7 +209,7 @@ func splitParams(strs []string) (pieces []string) {
 ** Persist command
 **
 **/
-func enqueuePersistentMsg(msg string) {
+func enqueuePersistentMsg(msg []byte) {
 	if shared.MemMap[consts.PERSISTENT_BUF_QUEUE] == nil {
 		shared.MemMap[consts.PERSISTENT_BUF_QUEUE] = &datatype.TValue{
 			Typ: datatype.V_TYPE_LIST,
@@ -208,11 +221,11 @@ func enqueuePersistentMsg(msg string) {
 }
 
 /*** Response ***/
-func returnError(err error) []byte {
+func errorResponse(err error) []byte {
 	return response[string](false, err.Error())
 }
 
-func returnSuccess[T any](result T, CMD string, msg string) []byte {
+func successResponse[T any](result T, CMD string, msg []byte) []byte {
 	if slices.Contains(needPersistCMD, CMD) {
 		enqueuePersistentMsg(msg)
 	}

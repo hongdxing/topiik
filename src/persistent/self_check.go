@@ -20,7 +20,7 @@ func SelfCheck() (err error) {
 	dataDir := "data"
 	nodeFile := path.Join(dataDir, string(os.PathSeparator), "node")
 	var hasDataDir bool
-	hasDataDir, err = exists("data")
+	hasDataDir, err = pathExists("data")
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,9 @@ func SelfCheck() (err error) {
 		file.WriteString(nodeId.String())
 		file.Close()
 	} else {
-		//
+		// need check node file exists or not ?
+		
+
 	}
 
 	if err != nil {
@@ -56,15 +58,4 @@ func SelfCheck() (err error) {
 	}
 	fmt.Printf("Self check done\n")
 	return nil
-}
-
-func exists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
 }
