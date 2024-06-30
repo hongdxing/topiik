@@ -75,5 +75,5 @@ func popList(args []string, cmd string) (result []string, err error) {
 
 		return result, nil
 	}
-	return result, errors.New(RES_NIL)
+	return result, errors.New(RES_KEY_NOT_EXIST)
 }

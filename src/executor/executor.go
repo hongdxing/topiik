@@ -14,17 +14,13 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"topiik/cluster"
 	"topiik/internal/command"
 	"topiik/internal/config"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/raft"
 	"topiik/shared"
-)
-
-const (
-	WRONG_CMD_MSG = "Wrong command format: "
-	INVALID_CMD   = "Invalid command"
 )
 
 /***Command RESponse***/
@@ -40,6 +36,8 @@ const (
 
 	RES_INVALID_CMD = "INVALID_CMD"
 	RES_INVALID_OP  = "INVALID_OP"
+
+	RES_INVALID_ADDR = "INVALID_ADDR"
 
 	/*** VOTE response ***/
 	RES_ACCEPTED = "A"
@@ -158,9 +156,33 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 			return errorResponse(err)
 		}
 		return successResponse(result, CMD, msg)
-	} else if CMD == command.VOTE { // CLUSTER COMMANDS
+	} else if CMD == command.CLUSTER { // CLUSTER INIT/INFO/__CONFIRM__
+		pieces := splitParams(strs)
+		if len(pieces) < 1 {
+			return errorResponse(errors.New(RES_SYNTAX_ERROR))
+		}
+		if strings.ToUpper(pieces[0]) == "INIT" {
+			err := clusterInit(pieces[1:], serverConfig) // exclude INIT
+			if err != nil {
+				return errorResponse(err)
+			}
+			return successResponse("", CMD, msg)
+		} else if strings.ToLower(pieces[0]) == "INFO" {
+			clusterInfo()
+			return successResponse("", CMD, msg)
+		} else if pieces[0] == "__CONFIRM__" {
+			err := clusterInitConfirm()
+			if err != nil {
+				//return errorResponse(err)
+				return []byte(err.Error())
+			}
+			//return successResponse(cluster.CLUSTER_INIT_OK, CMD, msg)
+			return []byte(cluster.CLUSTER_INIT_OK)
+		}
+		return errorResponse(errors.New(RES_SYNTAX_ERROR))
+	} else if CMD == command.VOTE { //obsoleted
 		if len(strs) != 2 {
-			fmt.Printf("%s %s", WRONG_CMD_MSG, msg)
+			fmt.Printf("%s %s", RES_SYNTAX_ERROR, msg)
 			return []byte(RES_SYNTAX_ERROR)
 		} else {
 			cTerm, err := strconv.Atoi(strs[1])

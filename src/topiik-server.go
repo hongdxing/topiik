@@ -44,7 +44,7 @@ func main() {
 	}
 
 	// Start routines
-	go raft.RequestVote(&serverConfig.JoinList, 200, nodeStatus)
+	//go raft.RequestVote(&serverConfig.JoinList, 200, nodeStatus)
 	go persistent.Persist(*serverConfig)
 
 	// Accept incoming connections and handle them
