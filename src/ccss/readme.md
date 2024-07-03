@@ -1,4 +1,4 @@
-# Capital-Chief Officer-Salors (CCSS) Model #
+# Capital-Chief-Salors (CCSS) Model #
 
 ## Capital(CA) ##
 
@@ -6,15 +6,15 @@ Capital is the cluster leader, who in charge of
 - Receive client connection and forword to salors
 - Maintain health of Captial(CA) and Chief Officer(CO) by sending heartbeat to CO periodically
 - Maintain metadata of cluster
--- How many salors
--- Patition info of leader and follower(s)
+    - How many salors
+    - Patition info of leader and follower(s)
 
-How first Capial init?
+How first Capital init?
 - When create a cluster via command CCSS INIT, the current is assign to Capital
 - After Capital created, can join Chief Officer and Salor(s) via command CCSS JOIN --capital host:port
 
 
-## Chief Officer(CO) ##
+## Chief officer(CO) ##
 Chief Officer is standby of Capital, who in charge of
 - Receive heartbeat of Capital
 - Receive metadata received from Capital
