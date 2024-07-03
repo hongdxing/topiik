@@ -5,7 +5,7 @@
 **
 **/
 
-package executor
+package executer
 
 import (
 	"container/list"

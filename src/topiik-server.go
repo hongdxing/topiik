@@ -6,7 +6,7 @@ import (
 	"io"
 	"net"
 	"os"
-	"topiik/executor"
+	"topiik/executer"
 	"topiik/internal/config"
 	"topiik/internal/proto"
 	"topiik/persistent"
@@ -36,7 +36,7 @@ func main() {
 	}
 	nodeStatus = &raft.NodeStatus{Role: raft.ROLE_FOLLOWER, Term: 0}
 
-	// Listen for incoming connections on port 8080
+	// Listen for incoming connections
 	ln, err := net.Listen("tcp", serverConfig.Listen)
 	if err != nil {
 		fmt.Println(err)
@@ -78,7 +78,7 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 		//fmt.Printf("%s: %s\n", time.Now().Format(consts.DATA_FMT_MICRO_SECONDS), cmd)
-		result := executor.Execute(msg, serverConfig, nodeStatus)
+		result := executer.Execute(msg, serverConfig, nodeStatus)
 		conn.Write(result)
 	}
 }

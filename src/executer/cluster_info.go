@@ -5,7 +5,7 @@
 **
 **/
 
-package executor
+package executer
 
 /***
 **
@@ -13,6 +13,6 @@ package executor
 ** Syntax: CLUSTER INFO
 **
 **/
-func clusterInfo(){
+func clusterInfo() {
 
 }

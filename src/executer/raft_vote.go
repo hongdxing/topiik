@@ -3,7 +3,7 @@
 * date: 21 Jun 2024
 * desc:
 ***/
-package executor
+package executer
 
 import (
 	"topiik/raft"

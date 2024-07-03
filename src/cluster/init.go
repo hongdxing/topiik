@@ -25,7 +25,7 @@ const errClearDataMsg = "err: run FLUSHDB to clear data on node: "
 
 func ClusterInit(addresses []string, serverConfig *config.ServerConfig) (err error) {
 	if !IsNodeEmpty() {
-		return errors.New(errClearDataMsg + serverConfig.Host)
+		return errors.New(errClearDataMsg + serverConfig.Listen)
 	}
 
 	// pre check with each node, whether they can join or not

@@ -7,7 +7,7 @@
 *		2): append log(data)
 ***/
 
-package executor
+package executer
 
 import (
 	"math/rand/v2"

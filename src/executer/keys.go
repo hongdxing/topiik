@@ -5,7 +5,7 @@
 **	return keys
 **
 **/
-package executor
+package executer
 
 import (
 	"errors"

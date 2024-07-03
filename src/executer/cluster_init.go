@@ -6,7 +6,7 @@
 **
 **/
 
-package executor
+package executer
 
 import (
 	"errors"
