@@ -170,14 +170,20 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 		} else if strings.ToLower(pieces[0]) == "INFO" {
 			clusterInfo()
 			return successResponse("", CMD, msg)
-		} else if pieces[0] == "__CONFIRM__" {
-			err := clusterInitConfirm()
+		} else if pieces[0] == cluster.CLUSTER_INIT_PRE_CHECK {
+			err := clusterInitPrecheck()
 			if err != nil {
 				//return errorResponse(err)
 				return []byte(err.Error())
 			}
 			//return successResponse(cluster.CLUSTER_INIT_OK, CMD, msg)
-			return []byte(cluster.CLUSTER_INIT_OK)
+			return []byte(cluster.RES_CLUSTER_INIT_OK)
+		} else if pieces[0] == cluster.CLUSTER_INIT_CONFIRM {
+			err := clusterInitConfirm()
+			if err != nil {
+				return []byte(err.Error())
+			}
+			return []byte(cluster.RES_CLUSTER_INIT_OK)
 		}
 		return errorResponse(errors.New(RES_SYNTAX_ERROR))
 	} else if CMD == command.VOTE { //obsoleted

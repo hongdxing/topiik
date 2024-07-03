@@ -11,43 +11,46 @@ package cluster
 import (
 	"errors"
 	"fmt"
-	"net"
 	"sync"
 	"topiik/internal/config"
 	"topiik/internal/proto"
+	"topiik/internal/util"
 	"topiik/shared"
 )
 
 var clusterInitWG sync.WaitGroup
 var clusterInitResults = make(map[string]string)
 
-const errClearDataMsg = "err: Run FLUSHDB to clear data on node: "
+const errClearDataMsg = "err: run FLUSHDB to clear data on node: "
 
 func ClusterInit(addresses []string, serverConfig *config.ServerConfig) (err error) {
 	if !IsNodeEmpty() {
 		return errors.New(errClearDataMsg + serverConfig.Host)
 	}
 
+	// pre check with each node, whether they can join or not
 	for _, addr := range addresses {
 		clusterInitWG.Add(1)
-		go initPeers(addr)
+		go preCheckPeers(addr)
 	}
 
+	// if any address not in the pre check results, then return error
 	for _, addr := range addresses {
 		if _, ok := clusterInitResults[addr]; !ok {
 			return errors.New("err: cannot connect to node: " + addr)
 		}
 	}
 
-	fmt.Println(clusterInitResults)
-
+	// if any node pre check failed, then return error
 	for addr, result := range clusterInitResults {
-		if result == CLUSTER_INIT_FAILED {
+		if result == RES_CLUSTER_INIT_FAILED {
 			return errors.New(errClearDataMsg + addr)
-		} else if result == CLUSTER_INIT_NETWORK_ISSUE {
+		} else if result == RES_CLUSTER_INIT_NETWORK_ISSUE {
 			return errors.New("err: cannot connect to node: " + addr)
 		}
 	}
+	// if pre check no issue, then start to init cluster
+	//err = initPeers(addresses)
 	return nil
 }
 
@@ -57,30 +60,25 @@ func IsNodeEmpty() bool {
 
 /***
 ** Confirm other nodes via rpc
-**
-**
+**	1) check connectivity
+**	2) check whether nodes are empty, i.e. no data
 **
 **/
-func initPeers(address string) {
+func preCheckPeers(address string) {
 	defer clusterInitWG.Done()
-	tcpServer, err := net.ResolveTCPAddr("tcp", address)
+	conn, err := util.PreapareSocketClient(address)
+	defer conn.Close()
 	if err != nil {
-		println("ResolveTCPAddr failed:", err.Error())
-	}
-	conn, err := net.DialTCP("tcp", nil, tcpServer)
-	if err != nil {
-		//fmt.Println(err)
-		clusterInitResults[address] = CLUSTER_INIT_NETWORK_ISSUE
+		clusterInitResults[address] = RES_CLUSTER_INIT_NETWORK_ISSUE
 		return
 	}
-	defer conn.Close()
 
-	line := "CLUSTER __CONFIRM__"
+	line := "CLUSTER " + CLUSTER_INIT_PRE_CHECK
 
 	// Enocde
 	data, err := proto.Encode(line)
 	if err != nil {
-		clusterInitResults[address] = CLUSTER_INIT_NETWORK_ISSUE
+		clusterInitResults[address] = RES_CLUSTER_INIT_NETWORK_ISSUE
 		fmt.Println(err)
 		return
 	}
@@ -88,7 +86,7 @@ func initPeers(address string) {
 	// Send
 	_, err = conn.Write(data)
 	if err != nil {
-		clusterInitResults[address] = CLUSTER_INIT_NETWORK_ISSUE
+		clusterInitResults[address] = RES_CLUSTER_INIT_NETWORK_ISSUE
 		fmt.Println(err)
 		return
 	}
@@ -96,10 +94,39 @@ func initPeers(address string) {
 	buf := make([]byte, 512)
 	n, err := conn.Read(buf)
 	if err != nil {
-		clusterInitResults[address] = CLUSTER_INIT_NETWORK_ISSUE
+		clusterInitResults[address] = RES_CLUSTER_INIT_NETWORK_ISSUE
 		return
 	} else {
 		//fmt.Println(string(buf))
 		clusterInitResults[address] = string(buf[:n])
 	}
 }
+
+/*
+func initPeers(addresses []string) error {
+	for _, addr := range addresses {
+
+		conn, err := util.PreapareSocketClient(addr)
+		defer conn.Close()
+		if err != nil {
+			return err
+		}
+		line := "CLUSTER " + CLUSTER_INIT_CONFIRM
+		data, _ := proto.Encode(line)
+		_, err = conn.Write(data)
+
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
+		buf := make([]byte, 128)
+		n, err := conn.Read(buf)
+		if err != nil {
+			return err
+		} else {
+			//fmt.Println(string(buf))
+		}
+	}
+
+}*/

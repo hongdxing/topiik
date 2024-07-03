@@ -45,7 +45,6 @@ func clusterInit(pieces []string, serverConfig *config.ServerConfig) (err error)
 		return errors.New(RES_SYNTAX_ERROR)
 	}
 
-
 	if len(nodes) == 2 { // not include current node
 		err = cluster.ClusterInit(nodes, serverConfig)
 		if err != nil {
@@ -58,4 +57,15 @@ func clusterInit(pieces []string, serverConfig *config.ServerConfig) (err error)
 		fmt.Println("TODO: 6 nodes")
 	}
 	return errors.New(RES_SYNTAX_ERROR)
+}
+
+func clusterInitPrecheck() (err error) {
+	if cluster.IsNodeEmpty() {
+		return nil
+	}
+	return errors.New(cluster.RES_CLUSTER_INIT_FAILED)
+}
+
+func clusterInitConfirm() (err error) {
+	return nil
 }
