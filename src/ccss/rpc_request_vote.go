@@ -40,6 +40,11 @@ func RequestVote() {
 
 		heartbeat = time.Duration(99) + time.Duration(requestVoteInterval) //[0,99) + 200(interval), this must less than RaftHeartbeat(300)
 		time.Sleep(heartbeat * time.Millisecond)
+
+		if len(*salorAddress) == 0 { // if no Salor, then no RequestVote
+			continue
+		}
+
 		if time.Now().UTC().UnixMilli() < nodeStatus.HeartbeatAt+int64(nodeStatus.Heartbeat) {
 			if nodeStatus.Role != CCSS_ROLE_CO {
 				nodeStatus.Role = CCSS_ROLE_CO

@@ -14,7 +14,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"topiik/cluster"
 	"topiik/internal/command"
 	"topiik/internal/config"
 	"topiik/internal/consts"
@@ -161,30 +160,44 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 		if len(pieces) < 1 {
 			return errorResponse(errors.New(RES_SYNTAX_ERROR))
 		}
-		if strings.ToUpper(pieces[0]) == "INIT" {
-			err := clusterInit(pieces[1:], serverConfig) // exclude INIT
+		if strings.ToUpper(pieces[0]) == "JOIN" {
+			result, err := clusterJoin(pieces, serverConfig)
 			if err != nil {
 				return errorResponse(err)
 			}
-			return successResponse("", CMD, msg)
-		} else if strings.ToLower(pieces[0]) == "INFO" {
-			clusterInfo()
-			return successResponse("", CMD, msg)
-		} else if pieces[0] == cluster.CLUSTER_INIT_PRE_CHECK {
-			err := clusterInitPrecheck()
+			return successResponse(result, CMD, msg)
+		} else if strings.ToUpper(pieces[0]) == command.CLUSTER_JOIN_ACK {
+			result, err := clusterJoinACK(pieces)
 			if err != nil {
-				//return errorResponse(err)
-				return []byte(err.Error())
+				return errorResponse(err)
 			}
-			//return successResponse(cluster.CLUSTER_INIT_OK, CMD, msg)
-			return []byte(cluster.RES_CLUSTER_INIT_OK)
-		} else if pieces[0] == cluster.CLUSTER_INIT_CONFIRM {
-			err := clusterInitConfirm()
-			if err != nil {
-				return []byte(err.Error())
-			}
-			return []byte(cluster.RES_CLUSTER_INIT_OK)
+			return successResponse(result, CMD, msg)
 		}
+		/*
+			if strings.ToUpper(pieces[0]) == "INIT" {
+				err := clusterInit(pieces[1:], serverConfig) // exclude INIT
+				if err != nil {
+					return errorResponse(err)
+				}
+				return successResponse("", CMD, msg)
+			} else if strings.ToLower(pieces[0]) == "INFO" {
+				clusterInfo()
+				return successResponse("", CMD, msg)
+			} else if pieces[0] == cluster.CLUSTER_INIT_PRE_CHECK {
+				err := clusterInitPrecheck()
+				if err != nil {
+					//return errorResponse(err)
+					return []byte(err.Error())
+				}
+				//return successResponse(cluster.CLUSTER_INIT_OK, CMD, msg)
+				return []byte(cluster.RES_CLUSTER_INIT_OK)
+			} else if pieces[0] == cluster.CLUSTER_INIT_CONFIRM {
+				err := clusterInitConfirm()
+				if err != nil {
+					return []byte(err.Error())
+				}
+				return []byte(cluster.RES_CLUSTER_INIT_OK)
+			}*/
 		return errorResponse(errors.New(RES_SYNTAX_ERROR))
 	} else if CMD == command.VOTE { //obsoleted
 		if len(strs) != 2 {
@@ -224,7 +237,8 @@ func needKEY(cmdKeyParams []string) (pieces []string, err error) {
 /***
 ** Split command parameters if any
 **
-**
+** Return:
+**	The command pieces except the CMD itself
 **/
 func splitParams(strs []string) (pieces []string) {
 	if len(strs) == 2 {

@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"topiik/ccss"
 	"topiik/executer"
 	"topiik/internal/config"
 	"topiik/internal/proto"
@@ -23,10 +24,10 @@ var serverConfig *config.ServerConfig
 
 func main() {
 	printBanner()
-	serverConfig = readConfig()
-	err := validateConfig()
+	var err error
+	serverConfig, err = readConfig()
 	if err != nil {
-		fmt.Printf("")
+		fmt.Println(err)
 		return
 	}
 	// self check
@@ -45,6 +46,11 @@ func main() {
 
 	// Start routines
 	//go raft.RequestVote(&serverConfig.JoinList, 200, nodeStatus)
+
+	// start CCSS Capital server
+	if serverConfig.Role == ccss.CONFIG_ROLE_CAPITAL {
+		go ccss.StartServer(serverConfig.Host + ":" + serverConfig.CA_PORT)
+	}
 	go persistent.Persist(*serverConfig)
 
 	// Accept incoming connections and handle them
@@ -78,7 +84,12 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 		//fmt.Printf("%s: %s\n", time.Now().Format(consts.DATA_FMT_MICRO_SECONDS), cmd)
-		result := executer.Execute(msg, serverConfig, nodeStatus)
+		var result []byte
+		if serverConfig.Role == ccss.CONFIG_ROLE_CAPITAL {
+			result = ccss.Forward(msg)
+		} else {
+			result = executer.Execute(msg, serverConfig, nodeStatus)
+		}
 		conn.Write(result)
 	}
 }
@@ -93,7 +104,7 @@ func printBanner() {
 /***
 ** Read config values from server.env
 **/
-func readConfig() *config.ServerConfig {
+func readConfig() (*config.ServerConfig, error) {
 	configFile := ""
 	if len(os.Args) > 1 {
 		if os.Args[1] != CONFIG {
@@ -109,12 +120,4 @@ func readConfig() *config.ServerConfig {
 
 	// Get config
 	return config.ParseServerConfig(configFile)
-}
-
-/***
-**
-**
-**/
-func validateConfig() (err error) {
-	return nil
 }

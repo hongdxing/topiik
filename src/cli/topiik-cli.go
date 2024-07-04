@@ -18,7 +18,7 @@ func main() {
 	// Connect to the server
 	//conn, err := net.Dial("tcp", "localhost:8302")
 	host := "localhost"
-	port := "8302"
+	port := "8301"
 	tcpServer, err := net.ResolveTCPAddr("tcp", host+":"+port)
 	if err != nil {
 		println("ResolveTCPAddr failed:", err.Error())

@@ -1,4 +1,4 @@
-# Capital-Chief-Salors (CCSS) Model #
+# Capital-Chief-Salors (CCSS) cluster model #
 
 ## Capital(CA) ##
 

@@ -26,9 +26,10 @@ const (
 	KEYS   = "KEYS"
 
 	/*** CLUSTER ***/
-	VOTE         = "VOTE"
-	APPEND_ENTRY = "APPENDENTRY"
-	CLUSTER      = "CLUSTER"
+	VOTE             = "VOTE"
+	APPEND_ENTRY     = "APPENDENTRY"
+	CLUSTER          = "CLUSTER"
+	CLUSTER_JOIN_ACK = "__toPIIK_CLUSTER_JOIN_ACK"
 
 	/*** OTHERS ***/
 	EXPIRE = "EXPIRE"

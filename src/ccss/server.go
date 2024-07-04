@@ -17,6 +17,8 @@ import (
 
 var nodeStatus *NodeStatus
 var salorAddress *[]string
+var salors []Salor
+var partitions []Partition
 
 func StartServer(address string) {
 	// Listen for incoming connections
@@ -26,10 +28,12 @@ func StartServer(address string) {
 		return
 	}
 
+	nodeStatus = &NodeStatus{Role: CCSS_ROLE_CO, Term: 0}
+	salorAddress = &[]string{}
+	salors = []Salor{}
+	partitions = []Partition{}
 	// start RequestVote routine
-	if nodeStatus.Role == CCSS_ROLE_CO {
-		go RequestVote()
-	}
+	go RequestVote()
 
 	// Accept incoming connections and handle them
 	fmt.Printf("Listen to address %s\n", address)

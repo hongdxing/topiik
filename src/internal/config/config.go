@@ -8,15 +8,16 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"regexp"
+	"strconv"
 
 	"github.com/spf13/viper"
 )
 
 type ServerConfig struct {
-	//Host       string
-	//Port       string
 	Listen string
 	Role   string // controller, broker
 	//Join       string // comma seprated host list
@@ -27,21 +28,25 @@ type ServerConfig struct {
 	RaftHeartbeatMax uint16 // Raft random heartbeat Max
 	//JoinList         []string // Internal use
 	//NodeRole uint8 // Internal use
+
+	Host    string
+	Port    string
+	CA_PORT string
 }
 
-func ParseServerConfig(configPath string) *ServerConfig {
+func ParseServerConfig(configPath string) (*ServerConfig, error) {
 	serverConfig := ServerConfig{
-		//Host:   "localhost",
-		//Port:   "8301",
-		Listen: "localhost:8301",
-		//Join:   "",
+		Host:    "localhost",
+		Port:    "8301",
+		Listen:  "localhost:8301",
+		CA_PORT: "18301",
 	}
 	theConfigPath := "server.env"
 	if configPath != "" {
 		_, error := os.Stat(configPath)
 		if error != nil {
 			fmt.Printf("config file %s not exists\n", configPath)
-			return &ServerConfig{}
+			return nil, errors.New("config file not exist: " + configPath)
 		}
 		theConfigPath = configPath
 	}
@@ -64,7 +69,21 @@ func ParseServerConfig(configPath string) *ServerConfig {
 		}*/
 
 	fmt.Printf("Using config file: %s\n", theConfigPath)
-	printConfig(serverConfig)
+
+	// set CA_PORT
+	reg := regexp.MustCompile(`(.*)((?::))((?:[0-9]+))$`)
+	pieces := reg.FindStringSubmatch(serverConfig.Listen)
+	if len(pieces) != 4 {
+		return nil, errors.New("Invalid Listen format: " + serverConfig.Listen)
+	}
+	iPort, err := strconv.Atoi(pieces[3])
+	if err != nil {
+		return nil, errors.New("Invalid Listen format: " + serverConfig.Listen)
+	}
+	serverConfig.CA_PORT = strconv.Itoa(10000 + iPort)
+	serverConfig.Host = pieces[1]
+	serverConfig.Port = pieces[3] // pieces[1] is ":"
+
 	// when server start, default to FOLLOWER
 	//serverConfig.NodeRole = raft.ROLE_LEADER
 
@@ -76,8 +95,8 @@ func ParseServerConfig(configPath string) *ServerConfig {
 	if serverConfig.SaveMillis == 0 {
 		serverConfig.SaveMillis = 1000
 	}
-
-	return &serverConfig
+	printConfig(serverConfig)
+	return &serverConfig, nil
 }
 
 func printConfig(serverConfig ServerConfig) {
