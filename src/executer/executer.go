@@ -14,6 +14,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"topiik/ccss"
 	"topiik/internal/command"
 	"topiik/internal/config"
 	"topiik/internal/consts"
@@ -50,10 +51,18 @@ var needPersistCMD = []string{
 
 func Execute(msg []byte, serverConfig *config.ServerConfig, nodestatus *raft.NodeStatus) []byte {
 	strMsg := msg[4:]
-	// split msg into [CMD, rest]
+	// split msg into [CMD, params]
 	strs := strings.SplitN(strings.TrimLeft(string(strMsg), consts.SPACE), consts.SPACE, 2)
 	CMD := strings.ToUpper(strings.TrimSpace(strs[0]))
-	//result := RES_OK
+
+	// if is Capital, let Capital process the command
+	if serverConfig.Role == ccss.CONFIG_ROLE_CAPITAL {
+		result, err := ccss.Execute(msg)
+		if err != nil {
+			return errorResponse(err)
+		}
+		return successResponse(result, CMD, msg)
+	}
 
 	if CMD == command.GET { // STRING COMMANDS
 		/***String SET***/
@@ -155,49 +164,29 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 			return errorResponse(err)
 		}
 		return successResponse(result, CMD, msg)
-	} else if CMD == command.CLUSTER { // CLUSTER INIT/INFO/__CONFIRM__
+	} else if CMD == command.CLUSTER {
 		pieces := splitParams(strs)
 		if len(pieces) < 1 {
 			return errorResponse(errors.New(RES_SYNTAX_ERROR))
 		}
-		if strings.ToUpper(pieces[0]) == "JOIN" {
-			result, err := clusterJoin(pieces, serverConfig)
+		fmt.Println(pieces)
+		if strings.ToUpper(pieces[0]) == "JOIN" { // CLUSTER JOIN host:port
+			if len(pieces) < 2 {
+				return errorResponse(errors.New(RES_SYNTAX_ERROR))
+			}
+			result, err := clusterJoin(pieces[1])
 			if err != nil {
 				return errorResponse(err)
 			}
 			return successResponse(result, CMD, msg)
-		} else if strings.ToUpper(pieces[0]) == command.CLUSTER_JOIN_ACK {
+		} /*else if strings.ToUpper(pieces[0]) == command.CLUSTER_JOIN_ACK {
+			fmt.Println("---Join ack---")
 			result, err := clusterJoinACK(pieces)
 			if err != nil {
-				return errorResponse(err)
+				return nil, err
 			}
-			return successResponse(result, CMD, msg)
-		}
-		/*
-			if strings.ToUpper(pieces[0]) == "INIT" {
-				err := clusterInit(pieces[1:], serverConfig) // exclude INIT
-				if err != nil {
-					return errorResponse(err)
-				}
-				return successResponse("", CMD, msg)
-			} else if strings.ToLower(pieces[0]) == "INFO" {
-				clusterInfo()
-				return successResponse("", CMD, msg)
-			} else if pieces[0] == cluster.CLUSTER_INIT_PRE_CHECK {
-				err := clusterInitPrecheck()
-				if err != nil {
-					//return errorResponse(err)
-					return []byte(err.Error())
-				}
-				//return successResponse(cluster.CLUSTER_INIT_OK, CMD, msg)
-				return []byte(cluster.RES_CLUSTER_INIT_OK)
-			} else if pieces[0] == cluster.CLUSTER_INIT_CONFIRM {
-				err := clusterInitConfirm()
-				if err != nil {
-					return []byte(err.Error())
-				}
-				return []byte(cluster.RES_CLUSTER_INIT_OK)
-			}*/
+			return []byte(result), nil
+		}*/
 		return errorResponse(errors.New(RES_SYNTAX_ERROR))
 	} else if CMD == command.VOTE { //obsoleted
 		if len(strs) != 2 {

@@ -2,6 +2,7 @@ package util
 
 import (
 	"errors"
+	"math/rand"
 	"strings"
 )
 
@@ -56,4 +57,14 @@ func ValidateCommandLinePieces(pieces *[]string) bool {
 		}
 	}
 	return true
+}
+
+var letterRunes = []rune("ab0cd1ef2gh3ij4kl5mn6op7qr8st9uvwxyz")
+
+func RandStringRunes(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
 }

@@ -19,15 +19,22 @@ import (
 var tcpMap = make(map[string]*net.TCPConn)
 
 func Forward(msg []byte) []byte {
-	if len(*salorAddress) == 0 {
+	if len(salorMap) == 0 {
 		return []byte{}
 	}
 	var err error
 	// TODO: find salor base on key partition, and get LeaderSalorId
 	// and then get Address of Salor
-	conn, ok := tcpMap[(*salorAddress)[0]]
+
+	var targetSalor Salor
+	for _, salor := range salorMap {
+		targetSalor = salor
+		break
+	}
+
+	conn, ok := tcpMap[targetSalor.Id]
 	if !ok {
-		conn, err = util.PreapareSocketClient((*salorAddress)[0])
+		conn, err = util.PreapareSocketClient(targetSalor.Address)
 		if err != nil {
 			return []byte{} // TODO: should retry
 		}

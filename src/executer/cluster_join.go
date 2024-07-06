@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"topiik/internal/command"
-	"topiik/internal/config"
 	"topiik/internal/proto"
 	"topiik/internal/util"
 )
@@ -23,31 +22,37 @@ import (
 ** Syntax:
 **	CLUSTER JOIN host:port
 **/
-func clusterJoin(pieces []string, serverConfig *config.ServerConfig) (result string, err error) {
+func clusterJoin(addr string) (result string, err error) {
 
-	conn, err := util.PreapareSocketClient(pieces[0])
+	fmt.Printf("clusterJoin:: %s\n", addr)
+	conn, err := util.PreapareSocketClient(addr)
 	if err != nil {
-		return "", errors.New("Join to cluster failed, please check whether captial node still alive and try again")
+		return "", errors.New("join to cluster failed, please check whether captial node still alive and try again")
 	}
-	line := "CLUSTER " + command.CLUSTER_JOIN_ACK + " aaaaa " + pieces[0]
+	defer conn.Close()
+
+	line := "CLUSTER " + command.CLUSTER_JOIN_ACK + " aaaaa " + addr
 
 	data, err := proto.Encode(line)
 	if err != nil {
 		fmt.Println(err)
 	}
-
+	fmt.Println("11111111")
 	// Send
 	_, err = conn.Write(data)
 	if err != nil {
 		fmt.Println(err)
 	}
-
+	fmt.Println("22222222")
 	buf := make([]byte, 256)
 	n, err := conn.Read(buf)
+	fmt.Println("33333333")
 	if err != nil {
-		return "", errors.New("Join to cluster failed, please check whether captial node still alive and try again")
+		fmt.Println("44444444")
+		return "", errors.New("join to cluster failed, please check whether captial node still alive and try again")
 	} else {
+		fmt.Println("555555555")
 		fmt.Println(string(buf[0:n]))
-		return RES_OK, nil
+		return "OK", nil
 	}
 }

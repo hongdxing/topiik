@@ -41,7 +41,7 @@ func RequestVote() {
 		heartbeat = time.Duration(99) + time.Duration(requestVoteInterval) //[0,99) + 200(interval), this must less than RaftHeartbeat(300)
 		time.Sleep(heartbeat * time.Millisecond)
 
-		if len(*salorAddress) == 0 { // if no Salor, then no RequestVote
+		if len(salorMap) == 0 { // if no Salor, then no RequestVote
 			continue
 		}
 
@@ -53,9 +53,9 @@ func RequestVote() {
 		}
 
 		nodeStatus.Term += 1
-		for _, addr := range *salorAddress {
+		for _, salor := range salorMap {
 			wgRequestVote.Add(1)
-			go voteMe(addr, int(nodeStatus.Term))
+			go voteMe(salor.Address, int(nodeStatus.Term))
 		}
 		//fmt.Println(voteMeResults)
 		for _, s := range voteMeResults {
@@ -74,9 +74,9 @@ func RequestVote() {
 			}
 		}
 
-		canPromote := quorum >= ((len(*salorAddress)+1)/2 + 1)
+		canPromote := quorum >= ((len(salorMap)+1)/2 + 1)
 		if counter%10 == 0 || canPromote {
-			fmt.Printf("Total nodes %v, quota: %v\n", len(*salorAddress)+1, quorum)
+			fmt.Printf("Total nodes %v, quota: %v\n", len(salorMap)+1, quorum)
 			// in case overflow
 			if counter > 10000 {
 				counter = 0
@@ -86,7 +86,7 @@ func RequestVote() {
 			// promote to Capital
 			nodeStatus.Role = CCSS_ROLE_CA
 			// Leader start to AppendEntries
-			go AppendEntries(*salorAddress)
+			//go AppendEntries(salorMap)
 			// Print Selected Leader
 			fmt.Printf(">>>selected as new Leader<<<\n")
 			// Leader no RequestVote, quite RequestVote
