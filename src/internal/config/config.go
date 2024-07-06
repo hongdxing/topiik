@@ -19,14 +19,14 @@ import (
 
 type envConfig struct {
 	Listen     string
-	Role       string // capital, salor
+	Role       string // capital, sailor
 	Capitals   string // capital addresses separated by comma
 	SaveMillis uint   // Persistent Job interval
 }
 
 type ServerConfig struct {
 	Listen     string
-	Role       string // capital, salor
+	Role       string // capital, sailor
 	Capitals   string // capital addresses separated by comma
 	SaveMillis uint   // Persistent Job interval
 

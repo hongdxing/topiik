@@ -218,7 +218,7 @@ func initCaptialNode() (err error) {
 	slash := string(os.PathSeparator) // path separator
 
 	var captialMap = make(map[string]ccss.Capital)
-	var salorMap = make(map[string]ccss.Salor)
+	var sailorMap = make(map[string]ccss.Sailor)
 	var partitionMap = make(map[string]ccss.Partition)
 
 	// the capital file
@@ -257,31 +257,31 @@ func initCaptialNode() (err error) {
 		fmt.Println(captialMap)
 	}
 
-	// the salor file
-	salorPath := path.Join(mainPath, slash, DATA_DIR, slash, "ccss_salor")
-	exist, err = util.PathExists(salorPath)
+	// the sailor file
+	sailorPath := path.Join(mainPath, slash, DATA_DIR, slash, "ccss_sailor")
+	exist, err = util.PathExists(sailorPath)
 	if err != nil {
 		return err
 	}
 	if !exist {
-		fmt.Println("creating salor file...")
+		fmt.Println("creating sailor file...")
 		var file *os.File
-		file, err = os.Create(salorPath)
+		file, err = os.Create(sailorPath)
 		if err != nil {
 			return errors.New(res_init_node_failed)
 		}
 		defer file.Close()
 	} else {
-		fmt.Println("loading salor metadata...")
+		fmt.Println("loading sailor metadata...")
 		var file *os.File
-		file, err = os.Open(salorPath)
+		file, err = os.Open(sailorPath)
 		if err != nil {
 			return errors.New(res_init_node_failed)
 		}
 		defer file.Close()
 
-		salorMap = readMetadata[map[string]ccss.Salor](*file)
-		fmt.Println(salorMap)
+		sailorMap = readMetadata[map[string]ccss.Sailor](*file)
+		fmt.Println(sailorMap)
 	}
 
 	// the partition file

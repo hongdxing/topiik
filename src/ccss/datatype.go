@@ -12,13 +12,13 @@ type Capital struct {
 	Address string
 }
 
-type Salor struct {
+type Sailor struct {
 	Id      string
 	Address string
 }
 
 type Partition struct {
 	Id            string   // Id of the partition, random 16 alphnum
-	LeaderSalorId string   // The Salor Id where the Leader Partition  located
-	SalorIds      []string // The Salors where the Partition located
+	LeaderSailorId string   // The Sailor Id where the Leader Partition  located
+	SailorIds      []string // The Sailors where the Partition located
 }

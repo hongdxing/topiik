@@ -18,22 +18,22 @@ import (
 **	- pieces: JON_ACK id host:port
 **
 ** Syntax: CLUSTER JOIN_ACK id host:port
-**	id: the salor id
-**	host:port: the salor listen host:port
+**	id: the sailor id
+**	host:port: the sailor listen host:port
 **
 **/
 func clusterJoin(pieces []string) (result string, err error) {
 	if len(pieces) != 3 {
 		return "", errors.New(RES_SYNTAX_ERROR)
 	}
-	salor := Salor{
+	sailor := Sailor{
 		Id:      pieces[1],
 		Address: pieces[2],
 	}
-	if _, ok := salorMap[salor.Id]; ok {
-		return "", errors.New("SALOR_ALREADY_IN_CLUSTER:" + salor.Id)
+	if _, ok := sailorMap[sailor.Id]; ok {
+		return "", errors.New("SAILOR_ALREADY_IN_CLUSTER:" + sailor.Id)
 	}
-	salorMap[salor.Id] = salor
-	fmt.Println(salorMap)
+	sailorMap[sailor.Id] = sailor
+	fmt.Println(sailorMap)
 	return "OK", nil
 }

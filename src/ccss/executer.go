@@ -40,7 +40,7 @@ func Execute(msg []byte) (result []byte, err error) {
 			return []byte(result), nil
 		}
 	} else {
-		// forward msg to Salors
+		// forward msg to Sailors
 		Forward(msg)
 	}
 	return nil, errors.New(RES_SYNTAX_ERROR)

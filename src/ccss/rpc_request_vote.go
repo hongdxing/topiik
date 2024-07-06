@@ -24,8 +24,8 @@ const requestVoteInterval = 200
 
 /**
 ** Parameters
-**	- addresses: salors' addresses
-** Chief issues RequestVote RPCs to Salors to request for votes.
+**	- addresses: sailors' addresses
+** Chief issues RequestVote RPCs to Sailors to request for votes.
 **/
 func RequestVote() {
 
@@ -41,7 +41,7 @@ func RequestVote() {
 		heartbeat = time.Duration(99) + time.Duration(requestVoteInterval) //[0,99) + 200(interval), this must less than RaftHeartbeat(300)
 		time.Sleep(heartbeat * time.Millisecond)
 
-		if len(salorMap) == 0 { // if no Salor, then no RequestVote
+		if len(sailorMap) == 0 { // if no Sailor, then no RequestVote
 			continue
 		}
 
@@ -53,9 +53,9 @@ func RequestVote() {
 		}
 
 		nodeStatus.Term += 1
-		for _, salor := range salorMap {
+		for _, sailor := range sailorMap {
 			wgRequestVote.Add(1)
-			go voteMe(salor.Address, int(nodeStatus.Term))
+			go voteMe(sailor.Address, int(nodeStatus.Term))
 		}
 		//fmt.Println(voteMeResults)
 		for _, s := range voteMeResults {
@@ -74,9 +74,9 @@ func RequestVote() {
 			}
 		}
 
-		canPromote := quorum >= ((len(salorMap)+1)/2 + 1)
+		canPromote := quorum >= ((len(sailorMap)+1)/2 + 1)
 		if counter%10 == 0 || canPromote {
-			fmt.Printf("Total nodes %v, quorum: %v\n", len(salorMap)+1, quorum)
+			fmt.Printf("Total nodes %v, quorum: %v\n", len(sailorMap)+1, quorum)
 			// in case overflow
 			if counter > 10000 {
 				counter = 0
@@ -86,7 +86,7 @@ func RequestVote() {
 			// promote to Capital
 			nodeStatus.Role = CCSS_ROLE_CA
 			// Leader start to AppendEntries
-			//go AppendEntries(salorMap)
+			//go AppendEntries(sailorMap)
 			// Print Selected Leader
 			fmt.Printf(">>>selected as new Leader<<<\n")
 			// Leader no RequestVote, quite RequestVote
