@@ -9,12 +9,12 @@ package ccss
 
 import (
 	"fmt"
-	"net"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 	"topiik/internal/proto"
+	"topiik/internal/util"
 )
 
 var voteMeResults []string // Return values from other Nodes, "R": Rejected or "A": Accepted
@@ -76,7 +76,7 @@ func RequestVote() {
 
 		canPromote := quorum >= ((len(salorMap)+1)/2 + 1)
 		if counter%10 == 0 || canPromote {
-			fmt.Printf("Total nodes %v, quota: %v\n", len(salorMap)+1, quorum)
+			fmt.Printf("Total nodes %v, quorum: %v\n", len(salorMap)+1, quorum)
 			// in case overflow
 			if counter > 10000 {
 				counter = 0
@@ -100,13 +100,8 @@ func RequestVote() {
 
 func voteMe(address string, term int) {
 	defer wgRequestVote.Done()
-	tcpServer, err := net.ResolveTCPAddr("tcp", address)
+	conn, err := util.PreapareSocketClient(address)
 	if err != nil {
-		println("ResolveTCPAddr failed:", err.Error())
-	}
-	conn, err := net.DialTCP("tcp", nil, tcpServer)
-	if err != nil {
-		//fmt.Println(err)
 		return
 	}
 	defer conn.Close()

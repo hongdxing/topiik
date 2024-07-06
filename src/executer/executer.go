@@ -49,7 +49,7 @@ var needPersistCMD = []string{
 	command.LPUSH, command.LPUSHR, command.LPUSHB, command.LPUSHRB, command.LPOP, command.LPOPR, command.LPOPB, command.LPOPRB,
 }
 
-func Execute(msg []byte, serverConfig *config.ServerConfig, nodestatus *raft.NodeStatus) []byte {
+func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string, nodestatus *raft.NodeStatus) []byte {
 	strMsg := msg[4:]
 	// split msg into [CMD, params]
 	strs := strings.SplitN(strings.TrimLeft(string(strMsg), consts.SPACE), consts.SPACE, 2)
@@ -174,7 +174,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodestatus *raft.Nod
 			if len(pieces) < 2 {
 				return errorResponse(errors.New(RES_SYNTAX_ERROR))
 			}
-			result, err := clusterJoin(pieces[1])
+			result, err := clusterJoin(nodeId, serverConfig.Listen, pieces[1])
 			if err != nil {
 				return errorResponse(err)
 			}

@@ -59,7 +59,7 @@ func main() {
 
 	// start CCSS Capital server
 	if serverConfig.Role == ccss.CONFIG_ROLE_CAPITAL {
-		go ccss.StartServer(serverConfig.Host + ":" + serverConfig.CA_PORT)
+		go ccss.StartServer(serverConfig.Host + ":" + serverConfig.PORT2)
 	}
 	go persistent.Persist(*serverConfig)
 
@@ -100,7 +100,7 @@ func handleConnection(conn net.Conn) {
 		} else {
 			result = executer.Execute(msg, serverConfig, nodeStatus)
 		}*/
-		result := executer.Execute(msg, serverConfig, nodeStatus)
+		result := executer.Execute(msg, serverConfig, nodeId, nodeStatus)
 		conn.Write(result)
 	}
 }
@@ -149,7 +149,7 @@ func initNode() (err error) {
 	}
 
 	if !exist {
-		fmt.Println("Creating data dir...")
+		fmt.Println("creating data dir...")
 		err = os.Mkdir(dataDir, os.ModeDir)
 		if err != nil {
 			fmt.Println(err)
@@ -162,7 +162,7 @@ func initNode() (err error) {
 		return err
 	}
 	if !exist {
-		fmt.Println("Creating node file...")
+		fmt.Println("creating node file...")
 		var file *os.File
 		file, err = os.Create(nodeFile)
 		if err != nil {
@@ -181,7 +181,20 @@ func initNode() (err error) {
 			return errors.New("init node failed")
 		}
 	} else {
-		//
+		fmt.Println("loading node...")
+		var file *os.File
+		file, err = os.Open(nodeFile)
+		if err != nil {
+			return errors.New(res_init_node_failed)
+		}
+		defer file.Close()
+		bytes := make([]byte, 128)
+		n, err := file.Read(bytes)
+		if n == 0 || err == io.EOF {
+			panic("loading node failed")
+		}
+		nodeId = string(bytes[:n])
+		fmt.Printf("load node %s\n", nodeId)
 	}
 
 	// capital

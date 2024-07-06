@@ -17,11 +17,18 @@ import (
 	"github.com/spf13/viper"
 )
 
+type envConfig struct {
+	Listen     string
+	Role       string // capital, salor
+	Capitals   string // capital addresses separated by comma
+	SaveMillis uint   // Persistent Job interval
+}
+
 type ServerConfig struct {
-	Listen string
-	Role   string // controller, broker
-	//Join       string // comma seprated host list
-	SaveMillis uint // Persistent Job interval
+	Listen     string
+	Role       string // capital, salor
+	Capitals   string // capital addresses separated by comma
+	SaveMillis uint   // Persistent Job interval
 
 	/*** Internal Use Only***/
 	RaftHeartbeatMin uint16 // Raft random heartbeat Min
@@ -29,18 +36,16 @@ type ServerConfig struct {
 	//JoinList         []string // Internal use
 	//NodeRole uint8 // Internal use
 
-	Host    string
-	Port    string
-	CA_PORT string
+	Host  string
+	Port  string
+	PORT2 string // for Cluster use
 }
 
 func ParseServerConfig(configPath string) (*ServerConfig, error) {
-	serverConfig := ServerConfig{
-		Host:    "localhost",
-		Port:    "8301",
-		Listen:  "localhost:8301",
-		CA_PORT: "18301",
+	config := envConfig{
+		Listen: "localhost:8301",
 	}
+	serverConfig := ServerConfig{}
 	theConfigPath := "server.env"
 	if configPath != "" {
 		_, error := os.Stat(configPath)
@@ -55,22 +60,19 @@ func ParseServerConfig(configPath string) (*ServerConfig, error) {
 		fmt.Printf("Error reading config file %s, %s\n", theConfigPath, err)
 	}
 
-	err := viper.Unmarshal(&serverConfig)
+	err := viper.Unmarshal(&config)
 	if err != nil {
 		fmt.Println(err)
 	}
-	/*
-		serverConfig.Join = strings.Trim(serverConfig.Join, consts.SPACE)
-		if serverConfig.Join != "" {
-			serverConfig.JoinList = strings.Split(serverConfig.Join, ",")
-			for i, s := range serverConfig.JoinList {
-				serverConfig.JoinList[i] = strings.Trim(s, consts.SPACE)
-			}
-		}*/
 
 	fmt.Printf("Using config file: %s\n", theConfigPath)
 
-	// set CA_PORT
+	serverConfig.Listen = config.Listen
+	serverConfig.Role = config.Role
+	serverConfig.Capitals = config.Capitals
+	serverConfig.SaveMillis = config.SaveMillis
+
+	// set PORT2 to PORT + 10000
 	reg := regexp.MustCompile(`(.*)((?::))((?:[0-9]+))$`)
 	pieces := reg.FindStringSubmatch(serverConfig.Listen)
 	if len(pieces) != 4 {
@@ -80,7 +82,7 @@ func ParseServerConfig(configPath string) (*ServerConfig, error) {
 	if err != nil {
 		return nil, errors.New("Invalid Listen format: " + serverConfig.Listen)
 	}
-	serverConfig.CA_PORT = strconv.Itoa(10000 + iPort)
+	serverConfig.PORT2 = strconv.Itoa(10000 + iPort)
 	serverConfig.Host = pieces[1]
 	serverConfig.Port = pieces[3] // pieces[1] is ":"
 
