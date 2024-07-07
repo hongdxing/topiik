@@ -5,7 +5,7 @@
 **
 **/
 
-package ccss
+package cluster
 
 type NodeStatus struct {
 	Role        uint8  // Captial, Chief, Worker

@@ -2,7 +2,7 @@
 **
 **/
 
-package ccss
+package cluster
 
 const (
 	RAFT_LEADER     = 1
@@ -23,4 +23,3 @@ const (
 	VOTE_ACCEPTED = "A"
 	VOTE_REJECTED = "R"
 )
-

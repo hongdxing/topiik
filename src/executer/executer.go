@@ -14,7 +14,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"topiik/ccss"
+	"topiik/cluster"
 	"topiik/internal/command"
 	"topiik/internal/config"
 	"topiik/internal/consts"
@@ -56,8 +56,8 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string, nodes
 	CMD := strings.ToUpper(strings.TrimSpace(strs[0]))
 
 	// if is Controller, let Controller process the command
-	if ccss.IsNodeController() {
-		result, err := ccss.Execute(msg)
+	if cluster.IsNodeController() {
+		result, err := cluster.Execute(msg)
 		if err != nil {
 			return errorResponseB(err)
 		}
@@ -171,7 +171,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string, nodes
 		}
 		fmt.Println(pieces)
 		if strings.ToUpper(pieces[0]) == "INIT" {
-			err := ccss.ClusterInit(serverConfig)
+			err := cluster.ClusterInit(serverConfig)
 			if err != nil {
 				return errorResponse(err)
 			}

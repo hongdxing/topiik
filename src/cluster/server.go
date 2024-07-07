@@ -5,7 +5,7 @@
 **
 **/
 
-package ccss
+package cluster
 
 import (
 	"bufio"

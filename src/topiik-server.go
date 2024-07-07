@@ -7,7 +7,7 @@ import (
 	"io"
 	"net"
 	"os"
-	"topiik/ccss"
+	"topiik/cluster"
 	"topiik/executer"
 	"topiik/internal/config"
 	"topiik/internal/proto"
@@ -54,7 +54,7 @@ func main() {
 	// Start routines
 	//go raft.RequestVote(&serverConfig.JoinList, 200, nodeStatus)
 	go persistent.Persist(*serverConfig)
-	go ccss.StartServer(serverConfig.Host + ":" + serverConfig.PORT2)
+	go cluster.StartServer(serverConfig.Host + ":" + serverConfig.PORT2)
 
 	// Accept incoming connections and handle them
 	fmt.Printf("Listen to address %s\n", serverConfig.Listen)
@@ -125,7 +125,7 @@ func initNode() (err error) {
 
 	var exist bool
 	dataDir := "data"
-	nodeFile := ccss.GetNodeFilePath()
+	nodeFile := cluster.GetNodeFilePath()
 
 	// data dir
 	exist, err = util.PathExists(dataDir)
@@ -148,7 +148,7 @@ func initNode() (err error) {
 	}
 
 	var buf []byte
-	var node ccss.Node
+	var node cluster.Node
 	if !exist {
 		fmt.Println("creating node file...")
 
@@ -173,7 +173,7 @@ func initNode() (err error) {
 	}
 
 	// load controller metadata
-	err = ccss.LoadControllerMetadata(&node)
+	err = cluster.LoadControllerMetadata(&node)
 	if err != nil {
 		panic(err)
 	}

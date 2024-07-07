@@ -4,7 +4,7 @@
 ** desc:
 **
 **/
-package ccss
+package cluster
 
 import (
 	"math/rand/v2"

@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"topiik/ccss"
+	"topiik/cluster"
 	"topiik/internal/command"
 	"topiik/internal/consts"
 	"topiik/internal/proto"
@@ -32,10 +32,10 @@ func clusterJoin(myAddr string, controllerAddr string, role string) (result stri
 		println("xxxx")
 		return "", errors.New(RES_SYNTAX_ERROR)
 	}
-	if strings.ToUpper(role) != ccss.ROLE_CONTROLLER && strings.ToUpper(role) != ccss.ROLE_WORKER {
+	if strings.ToUpper(role) != cluster.ROLE_CONTROLLER && strings.ToUpper(role) != cluster.ROLE_WORKER {
 		return "", errors.New(RES_SYNTAX_ERROR)
 	}
-	nodeId := ccss.GetNodeMetadata().Id
+	nodeId := cluster.GetNodeMetadata().Id
 
 	fmt.Printf("clusterJoin:: %s\n", controllerAddr)
 	conn, err := util.PreapareSocketClient(controllerAddr)
@@ -65,14 +65,14 @@ func clusterJoin(myAddr string, controllerAddr string, role string) (result stri
 		return "", errors.New("join to cluster failed, please check whether captial node still alive and try again")
 	} else {
 		fmt.Println(string(buf[:n]))
-		err = ccss.UpdateNodeClusterId(string(buf[1:n])) // the first byte is flag
+		err = cluster.UpdateNodeClusterId(string(buf[1:n])) // the first byte is flag
 		if err != nil {
 			fmt.Println(err)
 			return "", errors.New("join cluster failed")
 		}
 		// if join controller succeed, will start to RequestVote
-		if strings.ToUpper(role) == ccss.ROLE_CONTROLLER {
-			go ccss.RequestVote()
+		if strings.ToUpper(role) == cluster.ROLE_CONTROLLER {
+			go cluster.RequestVote()
 		}
 		return RES_OK, nil
 	}
