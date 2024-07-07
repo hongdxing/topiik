@@ -18,17 +18,17 @@ import (
 )
 
 type envConfig struct {
-	Listen     string
-	Role       string // capital, sailor
-	Capitals   string // capital addresses separated by comma
-	SaveMillis uint   // Persistent Job interval
+	Listen      string
+	Role        string // controller, worker
+	Controllers string // controller addresses separated by comma
+	SaveMillis  uint   // Persistent Job interval
 }
 
 type ServerConfig struct {
-	Listen     string
-	Role       string // capital, sailor
-	Capitals   string // capital addresses separated by comma
-	SaveMillis uint   // Persistent Job interval
+	Listen      string
+	Role        string // controller, worker
+	Controllers string // controller addresses separated by comma
+	SaveMillis  uint   // Persistent Job interval
 
 	/*** Internal Use Only***/
 	RaftHeartbeatMin uint16 // Raft random heartbeat Min
@@ -69,7 +69,7 @@ func ParseServerConfig(configPath string) (*ServerConfig, error) {
 
 	serverConfig.Listen = config.Listen
 	serverConfig.Role = config.Role
-	serverConfig.Capitals = config.Capitals
+	serverConfig.Controllers = config.Controllers
 	serverConfig.SaveMillis = config.SaveMillis
 
 	// set PORT2 to PORT + 10000

@@ -7,7 +7,10 @@
 
 package util
 
-import "os"
+import (
+	"os"
+	"path/filepath"
+)
 
 func PathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
@@ -18,4 +21,13 @@ func PathExists(path string) (bool, error) {
 		return false, nil
 	}
 	return false, err
+}
+
+func GetMainPath() string {
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	mainPath := filepath.Dir(ex)
+	return mainPath
 }

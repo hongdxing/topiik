@@ -15,26 +15,26 @@ import (
 	"topiik/internal/util"
 )
 
-// cache Tcp Conn from Capital to Sailors
+// cache Tcp Conn from Controller to Workers
 var tcpMap = make(map[string]*net.TCPConn)
 
 func Forward(msg []byte) []byte {
-	if len(sailorMap) == 0 {
+	if len(workerMap) == 0 {
 		return []byte{}
 	}
 	var err error
-	// TODO: find sailor base on key partition, and get LeaderSailorId
-	// and then get Address of Sailor
+	// TODO: find worker base on key partition, and get LeaderWorkerId
+	// and then get Address of Worker
 
-	var targetSailor Sailor
-	for _, sailor := range sailorMap {
-		targetSailor = sailor
+	var targetWorker Worker
+	for _, worker := range workerMap {
+		targetWorker = worker
 		break
 	}
 
-	conn, ok := tcpMap[targetSailor.Id]
+	conn, ok := tcpMap[targetWorker.Id]
 	if !ok {
-		conn, err = util.PreapareSocketClient(targetSailor.Address)
+		conn, err = util.PreapareSocketClient(targetWorker.Address)
 		if err != nil {
 			return []byte{} // TODO: should retry
 		}

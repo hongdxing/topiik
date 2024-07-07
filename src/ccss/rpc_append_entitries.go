@@ -20,7 +20,7 @@ var quit chan struct{}
 var wgAppend sync.WaitGroup
 
 /***
-** Capital issues AppendEntries RPCs to replicate metadata to deputy,
+** Controller issues AppendEntries RPCs to replicate metadata to deputy,
 ** or send heartbeats (AppendEntries RPCs that carry no data)
 **
 **	Parameters:

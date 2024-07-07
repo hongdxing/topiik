@@ -8,8 +8,6 @@ import (
 	"io"
 	"net"
 	"os"
-	"path"
-	"path/filepath"
 	"topiik/ccss"
 	"topiik/executer"
 	"topiik/internal/config"
@@ -56,11 +54,6 @@ func main() {
 
 	// Start routines
 	//go raft.RequestVote(&serverConfig.JoinList, 200, nodeStatus)
-
-	// start CCSS Capital server
-	if serverConfig.Role == ccss.CONFIG_ROLE_CAPITAL {
-		go ccss.StartServer(serverConfig.Host + ":" + serverConfig.PORT2)
-	}
 	go persistent.Persist(*serverConfig)
 
 	// Accept incoming connections and handle them
@@ -94,12 +87,6 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 		//fmt.Printf("%s: %s\n", time.Now().Format(consts.DATA_FMT_MICRO_SECONDS), cmd)
-		/*var result []byte
-		if serverConfig.Role == ccss.CONFIG_ROLE_CAPITAL {
-			result = ccss.Execute(msg)
-		} else {
-			result = executer.Execute(msg, serverConfig, nodeStatus)
-		}*/
 		result := executer.Execute(msg, serverConfig, nodeId, nodeStatus)
 		conn.Write(result)
 	}
@@ -137,10 +124,11 @@ func initNode() (err error) {
 	fmt.Printf("Self check start\n")
 
 	var exist bool
-	mainPath := getMainPath()
+	//mainPath := getMainPath()
 	dataDir := "data"
-	slash := string(os.PathSeparator)
-	nodeFile := path.Join(mainPath, slash, dataDir, slash, "ccss_node")
+	//slash := string(os.PathSeparator)
+	//nodeFile := path.Join(mainPath, slash, dataDir, slash, "ccss_node")
+	nodeFile := ccss.GetNodeFilePath()
 
 	// data dir
 	exist, err = util.PathExists(dataDir)
@@ -171,12 +159,11 @@ func initNode() (err error) {
 		}
 		defer file.Close()
 
-		nodeId = util.RandStringRunes(16)
-		if err != nil {
-			return errors.New("init node failed")
+		node := ccss.Node{
+			Id: util.RandStringRunes(16),
 		}
-		fmt.Println(nodeId)
-		_, err = file.WriteString(nodeId)
+		buf, _ := json.Marshal(node)
+		_, err = file.Write(buf)
 		if err != nil {
 			return errors.New("init node failed")
 		}
@@ -197,150 +184,9 @@ func initNode() (err error) {
 		fmt.Printf("load node %s\n", nodeId)
 	}
 
-	// capital
-	if serverConfig.Role == ccss.CONFIG_ROLE_CAPITAL {
-		err = initCaptialNode()
-		if err != nil {
-			return err
-		}
-	}
-
 	if err != nil {
 		return err
 	}
 	fmt.Printf("Self check done\n")
 	return nil
-}
-
-func initCaptialNode() (err error) {
-	exist := false                    // whether the file exist
-	mainPath := getMainPath()         // path of the server running
-	slash := string(os.PathSeparator) // path separator
-
-	var captialMap = make(map[string]ccss.Capital)
-	var sailorMap = make(map[string]ccss.Sailor)
-	var partitionMap = make(map[string]ccss.Partition)
-
-	// the capital file
-	capitalPath := path.Join(mainPath, slash, DATA_DIR, slash, "ccss_capital")
-	exist, err = util.PathExists(capitalPath)
-	if err != nil {
-		return err
-	}
-	if !exist {
-		fmt.Println("creating capital file...")
-		var file *os.File
-		file, err = os.Create(capitalPath)
-		if err != nil {
-			return errors.New(res_init_node_failed)
-		}
-		defer file.Close()
-
-		capital := ccss.Capital{
-			Id:      nodeId,
-			Address: serverConfig.Listen,
-		}
-		captialMap[nodeId] = capital
-		var jsonBytes []byte
-		jsonBytes, err = json.Marshal(captialMap)
-		file.WriteString(string(jsonBytes))
-	} else {
-		fmt.Println("loading capital metadata...")
-		var file *os.File
-		file, err = os.Open(capitalPath)
-		if err != nil {
-			return errors.New(res_init_node_failed)
-		}
-		defer file.Close()
-
-		captialMap = readMetadata[map[string]ccss.Capital](*file)
-		fmt.Println(captialMap)
-	}
-
-	// the sailor file
-	sailorPath := path.Join(mainPath, slash, DATA_DIR, slash, "ccss_sailor")
-	exist, err = util.PathExists(sailorPath)
-	if err != nil {
-		return err
-	}
-	if !exist {
-		fmt.Println("creating sailor file...")
-		var file *os.File
-		file, err = os.Create(sailorPath)
-		if err != nil {
-			return errors.New(res_init_node_failed)
-		}
-		defer file.Close()
-	} else {
-		fmt.Println("loading sailor metadata...")
-		var file *os.File
-		file, err = os.Open(sailorPath)
-		if err != nil {
-			return errors.New(res_init_node_failed)
-		}
-		defer file.Close()
-
-		sailorMap = readMetadata[map[string]ccss.Sailor](*file)
-		fmt.Println(sailorMap)
-	}
-
-	// the partition file
-	patitionPath := path.Join(mainPath, slash, DATA_DIR, slash, "ccss_partition")
-	exist, err = util.PathExists(patitionPath)
-	if err != nil {
-		return err
-	}
-	if !exist {
-		fmt.Println("creating partition file...")
-		var file *os.File
-		file, err = os.Create(patitionPath)
-		if err != nil {
-			return errors.New(res_init_node_failed)
-		}
-		defer file.Close()
-	} else {
-		fmt.Println("loading partition metadata...")
-		var file *os.File
-		file, err = os.Open(patitionPath)
-		if err != nil {
-			return errors.New(res_init_node_failed)
-		}
-		defer file.Close()
-
-		partitionMap = readMetadata[map[string]ccss.Partition](*file)
-		fmt.Println(partitionMap)
-	}
-
-	return nil
-}
-
-func readMetadata[T any](file os.File) (t T) {
-	var jsonBytes = make([]byte, 512)
-	var jsonStr string
-	for {
-		n, err := file.Read(jsonBytes)
-		if n == 0 || err == io.EOF {
-			break
-		}
-		if err != nil {
-			panic(err)
-		}
-		jsonStr += string(jsonBytes[:n])
-	}
-	if len(jsonStr) > 0 {
-		err := json.Unmarshal([]byte(jsonStr), &t)
-		if err != nil {
-			panic(err)
-		}
-	}
-	return t
-}
-
-func getMainPath() string {
-	ex, err := os.Executable()
-	if err != nil {
-		panic(err)
-	}
-	mainPath := filepath.Dir(ex)
-	return mainPath
 }

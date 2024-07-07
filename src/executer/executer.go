@@ -55,14 +55,14 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string, nodes
 	strs := strings.SplitN(strings.TrimLeft(string(strMsg), consts.SPACE), consts.SPACE, 2)
 	CMD := strings.ToUpper(strings.TrimSpace(strs[0]))
 
-	// if is Capital, let Capital process the command
-	if serverConfig.Role == ccss.CONFIG_ROLE_CAPITAL {
+	// if is Controller, let Controller process the command
+	/*if serverConfig.Role == ccss.CONFIG_ROLE_CONTROLLER {
 		result, err := ccss.Execute(msg)
 		if err != nil {
 			return errorResponse(err)
 		}
 		return successResponse(result, CMD, msg)
-	}
+	}*/
 
 	if CMD == command.GET { // STRING COMMANDS
 		/***String SET***/
@@ -170,7 +170,15 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string, nodes
 			return errorResponse(errors.New(RES_SYNTAX_ERROR))
 		}
 		fmt.Println(pieces)
-		if strings.ToUpper(pieces[0]) == "JOIN" { // CLUSTER JOIN host:port
+		if strings.ToUpper(pieces[0]) == "INIT" {
+			fmt.Println("11111")
+			err := ccss.ClusterInit(serverConfig.Host + ":" + serverConfig.PORT2)
+			if err != nil {
+				fmt.Println("22222")
+				return errorResponse(err)
+			}
+			return successResponse(RES_OK, CMD, msg)
+		} else if strings.ToUpper(pieces[0]) == "JOIN" { // CLUSTER JOIN host:port
 			if len(pieces) < 2 {
 				return errorResponse(errors.New(RES_SYNTAX_ERROR))
 			}

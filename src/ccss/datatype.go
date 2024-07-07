@@ -7,18 +7,23 @@
 
 package ccss
 
-type Capital struct {
+type Node struct {
+	Id        string
+	ClusterId string
+}
+
+type Controller struct {
 	Id      string
 	Address string
 }
 
-type Sailor struct {
+type Worker struct {
 	Id      string
 	Address string
 }
 
 type Partition struct {
-	Id            string   // Id of the partition, random 16 alphnum
-	LeaderSailorId string   // The Sailor Id where the Leader Partition  located
-	SailorIds      []string // The Sailors where the Partition located
+	Id             string   // Id of the partition, random 16 alphnum
+	LeaderWorkerId string   // The Worker Id where the Leader Partition  located
+	WorkerIds      []string // The Workers where the Partition located
 }

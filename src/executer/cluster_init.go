@@ -18,6 +18,17 @@ import (
 )
 
 /***
+**
+**
+**
+** Syntax: CLUSTER INIT
+**
+**/
+func clusterInit(pieces []string, serverConfig *config.ServerConfig) {
+	
+}
+
+/***
 ** Init a cluster
 ** Parameters:
 **	- pieces: command line that CMD(CLUSTER INIT) stripped
@@ -27,7 +38,7 @@ import (
 **
 ** Syntax: CLUSTER INIT --nodes node2:port2 node3:port3
 **/
-func clusterInit(pieces []string, serverConfig *config.ServerConfig) (err error) {
+func clusterInit2(pieces []string, serverConfig *config.ServerConfig) (err error) {
 	if len(pieces) < 3 { //at least --nodes node2:port2 node3:port3
 		return errors.New(RES_SYNTAX_ERROR)
 	}
