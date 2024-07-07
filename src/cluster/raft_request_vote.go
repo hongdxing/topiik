@@ -36,7 +36,7 @@ func RequestVote() {
 	// Vote retry counter
 	counter := 0
 	for {
-		quorum = 1 // Initial value 1, means vote current node(I vote myself)
+		quorum = 0 //
 		voteMeResults = voteMeResults[:0]
 
 		heartbeat = time.Duration(rand.IntN(99)) + time.Duration(requestVoteInterval) //[0,99) + 200(interval), this must less than RaftHeartbeat(300)
@@ -48,16 +48,20 @@ func RequestVote() {
 			}
 			continue
 		}
+		fmt.Println("request vote")
+		// need workers to Vote
+		if len(workerMap) == 0 {
+			continue
+		}
 
 		nodeStatus.Role = RAFT_CANDIDATOR
 		nodeStatus.Term += 1
-		for _, controller := range controllerMap {
+		for _, worker := range workerMap {
 			wgRequestVote.Add(1)
-			go voteMe(controller.Address, int(nodeStatus.Term))
+			go voteMe(worker.Address2, int(nodeStatus.Term)) // use address2 for Voting
 		}
 		//fmt.Println(voteMeResults)
 		for _, s := range voteMeResults {
-			//fmt.Printf("----------%q---------\n", s)
 			strs := strings.Split(s, ":")
 			if len(strs) != 2 {
 				break
@@ -72,9 +76,9 @@ func RequestVote() {
 			}
 		}
 
-		canPromote := quorum >= ((len(controllerMap)+1)/2 + 1)
+		canPromote := quorum >= ((len(workerMap))/2 + 1)
 		if counter%10 == 0 || canPromote {
-			fmt.Printf("Total nodes %v, quorum: %v\n", len(controllerMap)+1, quorum)
+			fmt.Printf("Total nodes %v, quorum: %v\n", len(workerMap)+1, quorum)
 			// in case overflow
 			if counter > 10000 {
 				counter = 0

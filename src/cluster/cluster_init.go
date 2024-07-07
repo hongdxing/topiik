@@ -56,7 +56,8 @@ func ClusterInit(serverConfig *config.ServerConfig) (err error) {
 	if err != nil {
 		return err
 	}
-	go RequestVote()
+	// after init, the node default is LEADER, and start to AppendEntries()
+	go AppendEntries()
 	fmt.Println("ClusterInit end")
 	return nil
 }
@@ -65,8 +66,8 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 	exist := false // whether the file exist
 
 	//var captialMap = make(map[string]Controller)
-	var workerMap = make(map[string]Worker)
-	var partitionMap = make(map[string]Partition)
+	//var workerMap = make(map[string]Worker)
+	//var partitionMap = make(map[string]Partition)
 
 	// the controller file
 	controllerPath := GetControllerFilePath()
@@ -83,9 +84,14 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 		}
 		defer file.Close()
 
+		addrSplit, err := util.SplitAddress(serverConfig.Listen)
+		if err != nil {
+			panic(err)
+		}
 		controller := Controller{
-			Id:      nodeId,
-			Address: serverConfig.Listen,
+			Id:       nodeId,
+			Address:  serverConfig.Listen,
+			Address2: addrSplit[0] + ":" + addrSplit[2],
 		}
 		controllerMap[nodeId] = controller
 		var jsonBytes []byte
@@ -100,7 +106,8 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 		}
 		defer file.Close()
 
-		controllerMap = readMetadata[map[string]Controller](controllerPath)
+		//controllerMap = readMetadata[map[string]Controller](controllerPath)
+		readMetadata[map[string]Controller](controllerPath, &controllerMap)
 		fmt.Println(controllerMap)
 	}
 
@@ -127,7 +134,8 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 		}
 		defer file.Close()
 
-		workerMap = readMetadata[map[string]Worker](workerPath)
+		//workerMap = readMetadata[map[string]Worker](workerPath)
+		readMetadata[map[string]Worker](workerPath, &workerMap)
 		fmt.Println(workerMap)
 	}
 
@@ -154,7 +162,8 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 		}
 		defer file.Close()
 
-		partitionMap = readMetadata[map[string]Partition](partitionPath)
+		//partitionMap = readMetadata[map[string]Partition](partitionPath)
+		readMetadata[map[string]Partition](partitionPath, &partitionMap)
 		fmt.Println(partitionMap)
 	}
 

@@ -3,6 +3,8 @@ package util
 import (
 	"errors"
 	"math/rand"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -67,4 +69,21 @@ func RandStringRunes(n int) string {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
 	return string(b)
+}
+
+/***
+**
+** Return: [host, port, port2], err
+**/
+func SplitAddress(address string) ([]string, error) {
+	reg := regexp.MustCompile(`(.*)((?::))((?:[0-9]+))$`)
+	pieces := reg.FindStringSubmatch(address)
+	if len(pieces) != 4 {
+		return nil, errors.New("Invalid Listen format: " + address)
+	}
+	iPort, err := strconv.Atoi(pieces[3])
+	if err != nil {
+		return nil, errors.New("Invalid Listen format: " + address)
+	}
+	return []string{pieces[1], pieces[3], strconv.Itoa(iPort)}, nil
 }

@@ -23,6 +23,11 @@ const (
 	CONSUMER_OFFSET_PREFIX = "__toPIIK_consumer_"
 )
 
+// relate to Response
+const (
+	RES_INVALID_ADDR = "INVALID_ADDR"
+)
+
 const (
 	EMAIL_PATTERN = `^.+:\d{4,5}`
 )

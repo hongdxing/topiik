@@ -37,7 +37,10 @@ func AppendEntries() {
 		case <-ticker.C:
 			clear(controllerAddrs)
 			for _, v := range controllerMap {
-				controllerAddrs = append(controllerAddrs, v.Address2)
+				fmt.Println(v)
+				if v.Id != meatadata.Node.Id { // if not self
+					controllerAddrs = append(controllerAddrs, v.Address2)
+				}
 			}
 			for _, address := range controllerAddrs {
 				wgAppend.Add(1)

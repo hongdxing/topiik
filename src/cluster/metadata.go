@@ -21,18 +21,6 @@ var controllerMap = make(map[string]Controller)
 var workerMap = make(map[string]Worker)
 var partitionMap = make(map[string]Partition)
 
-func InitMetadata(controllers map[string]Controller, solars map[string]Worker, partitions map[string]Partition) {
-	controllerMap = controllers
-	fmt.Println("controllers")
-	fmt.Println(controllerMap)
-	workerMap = solars
-	fmt.Println("workers")
-	fmt.Println(workerMap)
-	partitionMap = partitions
-	fmt.Println("partitions")
-	fmt.Println(partitionMap)
-}
-
 func Map2Array[T any](theMap map[string]T) (arr []T) {
 	for _, v := range theMap {
 		arr = append(arr, v)
@@ -51,10 +39,6 @@ func LoadControllerMetadata(node *Node) (err error) {
 
 	exist := false // whether the file exist
 
-	//var captialMap = make(map[string]Controller)
-	var workerMap = make(map[string]Worker)
-	var partitionMap = make(map[string]Partition)
-
 	// the controller file
 	controllerPath := GetControllerFilePath()
 	exist, err = util.PathExists(controllerPath)
@@ -70,7 +54,8 @@ func LoadControllerMetadata(node *Node) (err error) {
 		}
 		defer file.Close()
 
-		controllerMap = readMetadata[map[string]Controller](controllerPath)
+		//controllerMap = readMetadata[map[string]Controller](controllerPath)
+		readMetadata[map[string]Controller](controllerPath, &controllerMap)
 		fmt.Println(controllerMap)
 	}
 
@@ -89,7 +74,8 @@ func LoadControllerMetadata(node *Node) (err error) {
 		}
 		defer file.Close()
 
-		workerMap = readMetadata[map[string]Worker](workerPath)
+		//workerMap = readMetadata[map[string]Worker](workerPath)
+		readMetadata[map[string]Worker](workerPath, &workerMap)
 		fmt.Println(workerMap)
 	}
 
@@ -108,20 +94,29 @@ func LoadControllerMetadata(node *Node) (err error) {
 		}
 		defer file.Close()
 
-		partitionMap = readMetadata[map[string]Partition](partitionPath)
+		//partitionMap = readMetadata[map[string]Partition](partitionPath)
+		readMetadata[map[string]Partition](partitionPath, &partitionMap)
 		fmt.Println(partitionMap)
+	}
+
+	// if current node is Controller Node(stop and restarted), start to RequestVote()
+	if len(controllerMap) > 1 {
+		go RequestVote()
+	} else if len(controllerMap) == 1 {
+		nodeStatus.Role = RAFT_LEADER
+		go AppendEntries()
 	}
 
 	return nil
 }
 
-func readMetadata[T any](metadataPath string) (t T) {
+func readMetadata[T any](metadataPath string, t *T) {
 	var jsonStr string
 	buf, err := os.ReadFile(metadataPath)
-
 	if err != nil {
 		panic(err)
 	}
+
 	jsonStr = string(buf)
 	if len(jsonStr) > 0 {
 		err := json.Unmarshal([]byte(jsonStr), &t)
@@ -129,7 +124,7 @@ func readMetadata[T any](metadataPath string) (t T) {
 			panic(err)
 		}
 	}
-	return t
+	//return t
 }
 
 func UpdateNodeClusterId(clusterId string) (err error) {
