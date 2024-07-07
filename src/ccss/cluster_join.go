@@ -10,30 +10,47 @@ package ccss
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 /***
 **
 ** Parameter:
-**	- pieces: JON_ACK id host:port
+**	- pieces: JOIN_ACK id host:port ROLE
 **
-** Syntax: CLUSTER JOIN_ACK id host:port
-**	id: the worker id
+** Syntax: CLUSTER JOIN_ACK id host:port ROLE
+**	id: the node id asking to join
 **	host:port: the worker listen host:port
 **
 **/
 func clusterJoin(pieces []string) (result string, err error) {
-	if len(pieces) != 3 {
+	if len(pieces) != 4 {
 		return "", errors.New(RES_SYNTAX_ERROR)
 	}
-	worker := Worker{
-		Id:      pieces[1],
-		Address: pieces[2],
+	fmt.Printf(" %s\n", pieces)
+	if strings.ToUpper(pieces[3]) == ROLE_CONTROLLER {
+		controller := Controller{
+			Id:      pieces[1],
+			Address: pieces[2],
+		}
+		if _, ok := controllerMap[controller.Id]; ok {
+			return "", errors.New("WORKER_ALREADY_IN_CLUSTER:" + controller.Id)
+		}
+		controllerMap[controller.Id] = controller
+		fmt.Println(controllerMap)
+	} else if strings.ToUpper(pieces[3]) == ROLE_WORKER {
+		worker := Worker{
+			Id:      pieces[1],
+			Address: pieces[2],
+		}
+		if _, ok := workerMap[worker.Id]; ok {
+			return "", errors.New("WORKER_ALREADY_IN_CLUSTER:" + worker.Id)
+		}
+		workerMap[worker.Id] = worker
+		fmt.Println(workerMap)
+	} else {
+		fmt.Printf("err: %s\n", pieces)
+		return "", errors.New(RES_SYNTAX_ERROR)
 	}
-	if _, ok := workerMap[worker.Id]; ok {
-		return "", errors.New("WORKER_ALREADY_IN_CLUSTER:" + worker.Id)
-	}
-	workerMap[worker.Id] = worker
-	fmt.Println(workerMap)
-	return "OK", nil
+	return meatadata.Node.ClusterId, nil
 }

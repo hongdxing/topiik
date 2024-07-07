@@ -11,43 +11,24 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
+	"topiik/internal/config"
 	"topiik/internal/util"
 )
 
 const cluster_init_failed = "cluster init failed"
 
-func ClusterInit(addr string) (err error) {
+func ClusterInit(serverConfig *config.ServerConfig) (err error) {
 	fmt.Println("ClusterInit start...")
 	// 1. open node file
 	nodePath := GetNodeFilePath()
-	/*var f *os.File
-	f, err = os.OpenFile(nodePath, os.O_RDWR, 0644)
-	if err != nil {
-		fmt.Println(err)
-		return errors.New(cluster_init_failed)
-	}
-	defer f.Close()*/
 
 	// 2. read from node file
 	var jsonStr string
 	var buf []byte
-	/*buf := make([]byte, 128)
-	var n int
-	for {
-		n, err = f.Read(buf)
-		if n == 0 || err == io.EOF {
-			break
-		}
-		jsonStr += string(buf[:n])
-	}
-	if len(jsonStr) == 0 {
-		return errors.New(cluster_init_failed)
-	}*/
 
 	buf, err = os.ReadFile(nodePath)
-	if err != nil{
+	if err != nil {
 		return errors.New(cluster_init_failed)
 	}
 	jsonStr = string(buf)
@@ -58,30 +39,29 @@ func ClusterInit(addr string) (err error) {
 	if err != nil {
 		return errors.New(cluster_init_failed)
 	}
+	if len(node.ClusterId) > 0 { // check if current node already in cluster or not
+		return errors.New("current node already in a cluster:" + node.ClusterId)
+	}
 	node.ClusterId = util.RandStringRunes(16)
 
 	// 4. marshal
 	buf2, _ := json.Marshal(node)
 
 	// 5. write back to file
-	/*_, err = f.Write(buf2)
-	if err != nil {
-		return errors.New(cluster_init_failed)
-	}*/
 	os.Truncate(nodePath, 0)
 	os.WriteFile(nodePath, buf2, 0644)
 
-	nodeStatus.Role = CCSS_ROLE_CA
-	err = initControllerNode()
+	nodeStatus.Role = RAFT_LEADER
+	err = initControllerNode(node.Id, serverConfig)
 	if err != nil {
 		return err
 	}
-	go StartServer(addr)
+	go RequestVote()
 	fmt.Println("ClusterInit end")
 	return nil
 }
 
-func initControllerNode() (err error) {
+func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err error) {
 	exist := false // whether the file exist
 
 	//var captialMap = make(map[string]Controller)
@@ -89,7 +69,7 @@ func initControllerNode() (err error) {
 	var partitionMap = make(map[string]Partition)
 
 	// the controller file
-	/*controllerPath := GetControllerFilePath()
+	controllerPath := GetControllerFilePath()
 	exist, err = util.PathExists(controllerPath)
 	if err != nil {
 		return err
@@ -103,13 +83,13 @@ func initControllerNode() (err error) {
 		}
 		defer file.Close()
 
-		controller := ccss.Controller{
+		controller := Controller{
 			Id:      nodeId,
 			Address: serverConfig.Listen,
 		}
-		captialMap[nodeId] = controller
+		controllerMap[nodeId] = controller
 		var jsonBytes []byte
-		jsonBytes, err = json.Marshal(captialMap)
+		jsonBytes, err = json.Marshal(controllerMap)
 		file.WriteString(string(jsonBytes))
 	} else {
 		fmt.Println("loading controller metadata...")
@@ -120,9 +100,9 @@ func initControllerNode() (err error) {
 		}
 		defer file.Close()
 
-		captialMap = readMetadata[map[string]Controller](*file)
-		fmt.Println(captialMap)
-	}*/
+		controllerMap = readMetadata[map[string]Controller](controllerPath)
+		fmt.Println(controllerMap)
+	}
 
 	// the worker file
 	workerPath := GetWorkerFilePath()
@@ -147,20 +127,20 @@ func initControllerNode() (err error) {
 		}
 		defer file.Close()
 
-		workerMap = readMetadata[map[string]Worker](*file)
+		workerMap = readMetadata[map[string]Worker](workerPath)
 		fmt.Println(workerMap)
 	}
 
 	// the partition file
-	patitionPath := GetPartitionFilePath()
-	exist, err = util.PathExists(patitionPath)
+	partitionPath := GetPartitionFilePath()
+	exist, err = util.PathExists(partitionPath)
 	if err != nil {
 		return err
 	}
 	if !exist {
 		fmt.Println("creating partition file...")
 		var file *os.File
-		file, err = os.Create(patitionPath)
+		file, err = os.Create(partitionPath)
 		if err != nil {
 			return errors.New(cluster_init_failed)
 		}
@@ -168,37 +148,15 @@ func initControllerNode() (err error) {
 	} else {
 		fmt.Println("loading partition metadata...")
 		var file *os.File
-		file, err = os.Open(patitionPath)
+		file, err = os.Open(partitionPath)
 		if err != nil {
 			return errors.New(cluster_init_failed)
 		}
 		defer file.Close()
 
-		partitionMap = readMetadata[map[string]Partition](*file)
+		partitionMap = readMetadata[map[string]Partition](partitionPath)
 		fmt.Println(partitionMap)
 	}
 
 	return nil
-}
-
-func readMetadata[T any](file os.File) (t T) {
-	var jsonBytes = make([]byte, 512)
-	var jsonStr string
-	for {
-		n, err := file.Read(jsonBytes)
-		if n == 0 || err == io.EOF {
-			break
-		}
-		if err != nil {
-			panic(err)
-		}
-		jsonStr += string(jsonBytes[:n])
-	}
-	if len(jsonStr) > 0 {
-		err := json.Unmarshal([]byte(jsonStr), &t)
-		if err != nil {
-			panic(err)
-		}
-	}
-	return t
 }

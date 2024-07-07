@@ -22,3 +22,7 @@ const (
 const (
 	CONSUMER_OFFSET_PREFIX = "__toPIIK_consumer_"
 )
+
+const (
+	EMAIL_PATTERN = `^.+:\d{4,5}`
+)

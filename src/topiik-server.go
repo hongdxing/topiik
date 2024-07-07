@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -55,6 +54,7 @@ func main() {
 	// Start routines
 	//go raft.RequestVote(&serverConfig.JoinList, 200, nodeStatus)
 	go persistent.Persist(*serverConfig)
+	go ccss.StartServer(serverConfig.Host + ":" + serverConfig.PORT2)
 
 	// Accept incoming connections and handle them
 	fmt.Printf("Listen to address %s\n", serverConfig.Listen)
@@ -121,13 +121,10 @@ func readConfig() (*config.ServerConfig, error) {
 }
 
 func initNode() (err error) {
-	fmt.Printf("Self check start\n")
+	fmt.Printf("self check start\n")
 
 	var exist bool
-	//mainPath := getMainPath()
 	dataDir := "data"
-	//slash := string(os.PathSeparator)
-	//nodeFile := path.Join(mainPath, slash, dataDir, slash, "ccss_node")
 	nodeFile := ccss.GetNodeFilePath()
 
 	// data dir
@@ -149,44 +146,41 @@ func initNode() (err error) {
 	if err != nil {
 		return err
 	}
+
+	var buf []byte
+	var node ccss.Node
 	if !exist {
 		fmt.Println("creating node file...")
-		var file *os.File
-		file, err = os.Create(nodeFile)
-		if err != nil {
-			//
-			return errors.New(res_init_node_failed)
-		}
-		defer file.Close()
 
-		node := ccss.Node{
-			Id: util.RandStringRunes(16),
-		}
-		buf, _ := json.Marshal(node)
-		_, err = file.Write(buf)
+		node.Id = util.RandStringRunes(16)
+		buf, _ = json.Marshal(node)
+		err = os.WriteFile(nodeFile, buf, 0644)
 		if err != nil {
-			return errors.New("init node failed")
+			panic("loading node failed")
 		}
 	} else {
 		fmt.Println("loading node...")
-		var file *os.File
-		file, err = os.Open(nodeFile)
+
+		buf, err = os.ReadFile(nodeFile)
 		if err != nil {
-			return errors.New(res_init_node_failed)
-		}
-		defer file.Close()
-		bytes := make([]byte, 128)
-		n, err := file.Read(bytes)
-		if n == 0 || err == io.EOF {
 			panic("loading node failed")
 		}
-		nodeId = string(bytes[:n])
-		fmt.Printf("load node %s\n", nodeId)
+		err = json.Unmarshal(buf, &node)
+		if err != nil {
+			panic("loading node failed")
+		}
+		fmt.Printf("load node %s\n", node)
+	}
+
+	// load controller metadata
+	err = ccss.LoadControllerMetadata(&node)
+	if err != nil {
+		panic(err)
 	}
 
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Self check done\n")
+	fmt.Printf("self check done\n")
 	return nil
 }

@@ -9,6 +9,7 @@ package ccss
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"strconv"
 	"strings"
 	"sync"
@@ -38,24 +39,21 @@ func RequestVote() {
 		quorum = 1 // Initial value 1, means vote current node(I vote myself)
 		voteMeResults = voteMeResults[:0]
 
-		heartbeat = time.Duration(99) + time.Duration(requestVoteInterval) //[0,99) + 200(interval), this must less than RaftHeartbeat(300)
+		heartbeat = time.Duration(rand.IntN(99)) + time.Duration(requestVoteInterval) //[0,99) + 200(interval), this must less than RaftHeartbeat(300)
 		time.Sleep(heartbeat * time.Millisecond)
 
-		if len(workerMap) == 0 { // if no Worker, then no RequestVote
-			continue
-		}
-
 		if time.Now().UTC().UnixMilli() < nodeStatus.HeartbeatAt+int64(nodeStatus.Heartbeat) {
-			if nodeStatus.Role != CCSS_ROLE_CO {
-				nodeStatus.Role = CCSS_ROLE_CO
+			if nodeStatus.Role != RAFT_FOLLOWER {
+				nodeStatus.Role = RAFT_FOLLOWER
 			}
 			continue
 		}
 
+		nodeStatus.Role = RAFT_CANDIDATOR
 		nodeStatus.Term += 1
-		for _, worker := range workerMap {
+		for _, controller := range controllerMap {
 			wgRequestVote.Add(1)
-			go voteMe(worker.Address, int(nodeStatus.Term))
+			go voteMe(controller.Address, int(nodeStatus.Term))
 		}
 		//fmt.Println(voteMeResults)
 		for _, s := range voteMeResults {
@@ -74,9 +72,9 @@ func RequestVote() {
 			}
 		}
 
-		canPromote := quorum >= ((len(workerMap)+1)/2 + 1)
+		canPromote := quorum >= ((len(controllerMap)+1)/2 + 1)
 		if counter%10 == 0 || canPromote {
-			fmt.Printf("Total nodes %v, quorum: %v\n", len(workerMap)+1, quorum)
+			fmt.Printf("Total nodes %v, quorum: %v\n", len(controllerMap)+1, quorum)
 			// in case overflow
 			if counter > 10000 {
 				counter = 0
@@ -84,9 +82,9 @@ func RequestVote() {
 		}
 		if canPromote {
 			// promote to Controller
-			nodeStatus.Role = CCSS_ROLE_CA
+			nodeStatus.Role = RAFT_LEADER
 			// Leader start to AppendEntries
-			//go AppendEntries(workerMap)
+			go AppendEntries()
 			// Print Selected Leader
 			fmt.Printf(">>>selected as new Leader<<<\n")
 			// Leader no RequestVote, quite RequestVote

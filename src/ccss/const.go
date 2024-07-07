@@ -5,13 +5,14 @@
 package ccss
 
 const (
-	CCSS_ROLE_CA = 1 // CAptial
-	CCSS_ROLE_CO = 2 // Chief Office
+	RAFT_LEADER     = 1
+	RAFT_CANDIDATOR = 2
+	RAFT_FOLLOWER   = 3
 )
 
 const (
-	CONFIG_ROLE_CONTROLLER = "controller"
-	CONFIG_ROLE_WORKER     = "worker"
+	ROLE_CONTROLLER = "CONTROLLER"
+	ROLE_WORKER     = "WORKER"
 )
 
 const (
@@ -22,3 +23,4 @@ const (
 	VOTE_ACCEPTED = "A"
 	VOTE_REJECTED = "R"
 )
+

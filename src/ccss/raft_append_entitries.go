@@ -26,18 +26,20 @@ var wgAppend sync.WaitGroup
 **	Parameters:
 **	- addresses: actually only one address of Chief Officer
 **/
-func AppendEntries(addresses []string) {
+func AppendEntries() {
 	ticker = time.NewTicker(200 * time.Millisecond)
 	quit = make(chan struct{})
-	go doAppendEntries(addresses)
-}
 
-func doAppendEntries(addresses []string) {
+	var controllerAddrs []string
 	dialErrorCounter := 0
 	for {
 		select {
 		case <-ticker.C:
-			for _, address := range addresses {
+			clear(controllerAddrs)
+			for _, v := range controllerMap {
+				controllerAddrs = append(controllerAddrs, v.Address2)
+			}
+			for _, address := range controllerAddrs {
 				wgAppend.Add(1)
 				go send(address, &dialErrorCounter)
 			}

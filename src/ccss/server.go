@@ -15,7 +15,6 @@ import (
 	"topiik/internal/proto"
 )
 
-
 func StartServer(address string) {
 	// Listen for incoming connections
 	ln, err := net.Listen("tcp", address)
@@ -27,7 +26,7 @@ func StartServer(address string) {
 	//captialMap[]
 
 	// start RequestVote routine
-	go RequestVote()
+	// go RequestVote()
 
 	// Accept incoming connections and handle them
 	fmt.Printf("Listen to address %s\n", address)

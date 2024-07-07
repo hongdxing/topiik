@@ -7,19 +7,25 @@
 
 package ccss
 
+type Metadata struct {
+	Node Node
+}
+
 type Node struct {
 	Id        string
 	ClusterId string
 }
 
 type Controller struct {
-	Id      string
-	Address string
+	Id       string
+	Address  string
+	Address2 string
 }
 
 type Worker struct {
-	Id      string
-	Address string
+	Id       string
+	Address  string
+	Address2 string
 }
 
 type Partition struct {

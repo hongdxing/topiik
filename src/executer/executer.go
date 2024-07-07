@@ -56,13 +56,13 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string, nodes
 	CMD := strings.ToUpper(strings.TrimSpace(strs[0]))
 
 	// if is Controller, let Controller process the command
-	/*if serverConfig.Role == ccss.CONFIG_ROLE_CONTROLLER {
+	if ccss.IsNodeController() {
 		result, err := ccss.Execute(msg)
 		if err != nil {
-			return errorResponse(err)
+			return errorResponseB(err)
 		}
-		return successResponse(result, CMD, msg)
-	}*/
+		return successResponseB(result)
+	}
 
 	if CMD == command.GET { // STRING COMMANDS
 		/***String SET***/
@@ -171,30 +171,21 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string, nodes
 		}
 		fmt.Println(pieces)
 		if strings.ToUpper(pieces[0]) == "INIT" {
-			fmt.Println("11111")
-			err := ccss.ClusterInit(serverConfig.Host + ":" + serverConfig.PORT2)
+			err := ccss.ClusterInit(serverConfig)
 			if err != nil {
-				fmt.Println("22222")
 				return errorResponse(err)
 			}
 			return successResponse(RES_OK, CMD, msg)
-		} else if strings.ToUpper(pieces[0]) == "JOIN" { // CLUSTER JOIN host:port
-			if len(pieces) < 2 {
+		} else if strings.ToUpper(pieces[0]) == "JOIN" { // CLUSTER JOIN host:port CONTROLLER|WORKER
+			if len(pieces) < 3 {
 				return errorResponse(errors.New(RES_SYNTAX_ERROR))
 			}
-			result, err := clusterJoin(nodeId, serverConfig.Listen, pieces[1])
+			result, err := clusterJoin(serverConfig.Listen, pieces[1], pieces[2])
 			if err != nil {
 				return errorResponse(err)
 			}
 			return successResponse(result, CMD, msg)
-		} /*else if strings.ToUpper(pieces[0]) == command.CLUSTER_JOIN_ACK {
-			fmt.Println("---Join ack---")
-			result, err := clusterJoinACK(pieces)
-			if err != nil {
-				return nil, err
-			}
-			return []byte(result), nil
-		}*/
+		}
 		return errorResponse(errors.New(RES_SYNTAX_ERROR))
 	} else if CMD == command.VOTE { //obsoleted
 		if len(strs) != 2 {
@@ -259,7 +250,7 @@ func enqueuePersistentMsg(msg []byte) {
 	shared.MemMap[consts.PERSISTENT_BUF_QUEUE].Lst.PushFront(msg)
 }
 
-/*** Response ***/
+/*** Response json ***/
 func errorResponse(err error) []byte {
 	return response[string](false, err.Error())
 }
@@ -274,4 +265,19 @@ func successResponse[T any](result T, CMD string, msg []byte) []byte {
 func response[T any](success bool, response T) []byte {
 	b, _ := json.Marshal(&datatype.Response[T]{R: success, M: response})
 	return b
+}
+
+/*** Response Byte ***/
+func errorResponseB(err error) []byte {
+	return responseB(0, []byte(err.Error()))
+}
+
+func successResponseB(res []byte) []byte {
+	return responseB(1, res)
+}
+
+func responseB(flag uint8, res []byte) (result []byte) {
+	result = append(result, flag)
+	result = append(result, res...)
+	return result
 }

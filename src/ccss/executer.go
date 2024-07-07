@@ -10,6 +10,7 @@ package ccss
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"topiik/internal/command"
 	"topiik/internal/consts"
@@ -32,12 +33,24 @@ func Execute(msg []byte) (result []byte, err error) {
 		if strings.ToUpper(pieces[0]) == "INFO" {
 			//TODO
 		} else if strings.ToUpper(pieces[0]) == command.CLUSTER_JOIN_ACK {
-			fmt.Println("---Join ack---")
+			fmt.Println("---join ack---")
 			result, err := clusterJoin(pieces)
 			if err != nil {
 				return nil, err
 			}
 			return []byte(result), nil
+		}
+	} else if CMD == "VOTE" {
+		if len(strs) != 2 {
+			fmt.Printf("%s %s", RES_SYNTAX_ERROR, msg)
+			return nil, errors.New(RES_SYNTAX_ERROR)
+		} else {
+			cTerm, err := strconv.Atoi(strs[1])
+			if err != nil {
+				return nil, errors.New(RES_SYNTAX_ERROR)
+			} else {
+				return []byte(vote(cTerm, nodeStatus)), nil
+			}
 		}
 	} else {
 		// forward msg to Workers

@@ -10,6 +10,9 @@ package executer
 import (
 	"errors"
 	"fmt"
+	"regexp"
+	"strings"
+	"topiik/ccss"
 	"topiik/internal/command"
 	"topiik/internal/consts"
 	"topiik/internal/proto"
@@ -21,18 +24,29 @@ import (
 **
 **
 ** Syntax:
-**	CLUSTER JOIN host:port
+**	CLUSTER JOIN host:port CONTROLLER|WORKER
 **/
-func clusterJoin(nodeId string, myAddr string, captialAddr string) (result string, err error) {
+func clusterJoin(myAddr string, controllerAddr string, role string) (result string, err error) {
+	reg, _ := regexp.Compile(consts.EMAIL_PATTERN)
+	if !reg.MatchString(myAddr) || !reg.MatchString(controllerAddr) {
+		println("xxxx")
+		return "", errors.New(RES_SYNTAX_ERROR)
+	}
+	if strings.ToUpper(role) != ccss.ROLE_CONTROLLER && strings.ToUpper(role) != ccss.ROLE_WORKER {
+		return "", errors.New(RES_SYNTAX_ERROR)
+	}
+	nodeId := ccss.GetNodeMetadata().Id
 
-	fmt.Printf("clusterJoin:: %s\n", captialAddr)
-	conn, err := util.PreapareSocketClient(captialAddr)
+	fmt.Printf("clusterJoin:: %s\n", controllerAddr)
+	conn, err := util.PreapareSocketClient(controllerAddr)
 	if err != nil {
 		return "", errors.New("join to cluster failed, please check whether captial node still alive and try again")
 	}
 	defer conn.Close()
 
-	line := "CLUSTER " + command.CLUSTER_JOIN_ACK + consts.SPACE + nodeId + consts.SPACE + myAddr
+	// CLUSTER JOIN_ACK nodeId addr role
+	line := "CLUSTER " + command.CLUSTER_JOIN_ACK + consts.SPACE + nodeId + consts.SPACE + myAddr + consts.SPACE + role
+	fmt.Println(line)
 
 	data, err := proto.Encode(line)
 	if err != nil {
@@ -50,7 +64,16 @@ func clusterJoin(nodeId string, myAddr string, captialAddr string) (result strin
 	if err != nil {
 		return "", errors.New("join to cluster failed, please check whether captial node still alive and try again")
 	} else {
-		fmt.Println(string(buf[0:n]))
-		return "OK", nil
+		fmt.Println(string(buf[:n]))
+		err = ccss.UpdateNodeClusterId(string(buf[1:n])) // the first byte is flag
+		if err != nil {
+			fmt.Println(err)
+			return "", errors.New("join cluster failed")
+		}
+		// if join controller succeed, will start to RequestVote
+		if strings.ToUpper(role) == ccss.ROLE_CONTROLLER {
+			go ccss.RequestVote()
+		}
+		return RES_OK, nil
 	}
 }
