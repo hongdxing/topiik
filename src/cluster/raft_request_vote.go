@@ -48,7 +48,6 @@ func RequestVote() {
 			}
 			continue
 		}
-		fmt.Println("request vote")
 		// need workers to Vote
 		if len(workerMap) == 0 {
 			continue

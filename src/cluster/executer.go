@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"topiik/internal/command"
+	"topiik/internal/config"
 	"topiik/internal/consts"
 )
 
@@ -20,7 +21,7 @@ const (
 	RES_SYNTAX_ERROR = "SYNTAX_ERR"
 )
 
-func Execute(msg []byte) (result []byte, err error) {
+func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte, err error) {
 	strs := strings.SplitN(strings.TrimLeft(string(msg[4:]), consts.SPACE), consts.SPACE, 2)
 	CMD := strings.ToUpper(strings.TrimSpace(strs[0]))
 
@@ -33,7 +34,6 @@ func Execute(msg []byte) (result []byte, err error) {
 		if strings.ToUpper(pieces[0]) == "INFO" {
 			//TODO
 		} else if strings.ToUpper(pieces[0]) == command.CLUSTER_JOIN_ACK {
-			fmt.Println("---join ack---")
 			result, err := clusterJoin(pieces)
 			if err != nil {
 				return nil, err
@@ -52,6 +52,8 @@ func Execute(msg []byte) (result []byte, err error) {
 				return []byte(vote(cTerm, nodeStatus)), nil
 			}
 		}
+	} else if CMD == "" {
+		appendEntry(serverConfig)
 	} else {
 		// forward msg to Workers
 		Forward(msg)

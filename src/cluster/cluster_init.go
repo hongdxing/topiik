@@ -34,25 +34,24 @@ func ClusterInit(serverConfig *config.ServerConfig) (err error) {
 	jsonStr = string(buf)
 
 	// 3. unmarshal
-	var node Node
-	err = json.Unmarshal([]byte(jsonStr), &node)
+	err = json.Unmarshal([]byte(jsonStr), &nodeInfo)
 	if err != nil {
 		return errors.New(cluster_init_failed)
 	}
-	if len(node.ClusterId) > 0 { // check if current node already in cluster or not
-		return errors.New("current node already in a cluster:" + node.ClusterId)
+	if len(nodeInfo.ClusterId) > 0 { // check if current node already in cluster or not
+		return errors.New("current node already in a cluster:" + nodeInfo.ClusterId)
 	}
-	node.ClusterId = util.RandStringRunes(16)
+	nodeInfo.ClusterId = util.RandStringRunes(16)
 
 	// 4. marshal
-	buf2, _ := json.Marshal(node)
+	buf2, _ := json.Marshal(nodeInfo)
 
 	// 5. write back to file
 	os.Truncate(nodePath, 0)
 	os.WriteFile(nodePath, buf2, 0644)
 
 	nodeStatus.Role = RAFT_LEADER
-	err = initControllerNode(node.Id, serverConfig)
+	err = initControllerNode(nodeInfo.Id, serverConfig)
 	if err != nil {
 		return err
 	}

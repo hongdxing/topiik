@@ -57,7 +57,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string, nodes
 
 	// if is Controller, let Controller process the command
 	if cluster.IsNodeController() {
-		result, err := cluster.Execute(msg)
+		result, err := cluster.Execute(msg, serverConfig)
 		if err != nil {
 			return errorResponseB(err)
 		}
@@ -187,7 +187,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string, nodes
 			return successResponse(result, CMD, msg)
 		}
 		return errorResponse(errors.New(RES_SYNTAX_ERROR))
-	} else if CMD == command.VOTE { //obsoleted
+	} else if CMD == command.VOTE {
 		if len(strs) != 2 {
 			fmt.Printf("%s %s", RES_SYNTAX_ERROR, msg)
 			return []byte(RES_SYNTAX_ERROR)
@@ -269,15 +269,22 @@ func response[T any](success bool, response T) []byte {
 
 /*** Response Byte ***/
 func errorResponseB(err error) []byte {
-	return responseB(0, []byte(err.Error()))
+	return responseB(-1, []byte(err.Error()))
 }
 
 func successResponseB(res []byte) []byte {
 	return responseB(1, res)
 }
 
-func responseB(flag uint8, res []byte) (result []byte) {
-	result = append(result, flag)
+func responseB(flag int8, res []byte) (result []byte) {
+	/*var pkg = new(bytes.Buffer)
+	err := binary.Write(pkg, binary.LittleEndian, byte(flag))
+	if err != nil {
+		fmt.Printf("responseB:%s\n", err.Error())
+	}
+	result = append(result, pkg.Bytes()...)
+	*/
+	result = append(result, byte(flag))
 	result = append(result, res...)
 	return result
 }

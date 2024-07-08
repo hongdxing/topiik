@@ -30,21 +30,16 @@ func AppendEntries() {
 	ticker = time.NewTicker(200 * time.Millisecond)
 	quit = make(chan struct{})
 
-	var controllerAddrs []string
 	dialErrorCounter := 0
 	for {
 		select {
 		case <-ticker.C:
-			clear(controllerAddrs)
-			for _, v := range controllerMap {
-				fmt.Println(v)
-				if v.Id != meatadata.Node.Id { // if not self
-					controllerAddrs = append(controllerAddrs, v.Address2)
+			for _, controller := range controllerMap {
+				if controller.Id == nodeInfo.Id {
+					continue
 				}
-			}
-			for _, address := range controllerAddrs {
 				wgAppend.Add(1)
-				go send(address, &dialErrorCounter)
+				go send(controller.Address2, &dialErrorCounter)
 			}
 		case <-quit:
 			ticker.Stop()

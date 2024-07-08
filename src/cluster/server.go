@@ -12,10 +12,11 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"topiik/internal/config"
 	"topiik/internal/proto"
 )
 
-func StartServer(address string) {
+func StartServer(address string, serverConfig *config.ServerConfig) {
 	// Listen for incoming connections
 	ln, err := net.Listen("tcp", address)
 	if err != nil {
@@ -38,12 +39,12 @@ func StartServer(address string) {
 		}
 
 		// Handle the connection in a new goroutine
-		go handleConnection(conn)
+		go handleConnection(conn, serverConfig)
 	}
 
 }
 
-func handleConnection(conn net.Conn) {
+func handleConnection(conn net.Conn, serverConfig *config.ServerConfig) {
 	// Close the connection when we're done
 	defer conn.Close()
 	reader := bufio.NewReader(conn)
@@ -57,7 +58,7 @@ func handleConnection(conn net.Conn) {
 			fmt.Println(err)
 			return
 		}
-		result, err := Execute(msg)
+		result, err := Execute(msg, serverConfig)
 		if err != nil {
 			fmt.Println(err.Error())
 			conn.Write([]byte(err.Error()))

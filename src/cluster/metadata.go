@@ -15,11 +15,12 @@ import (
 	"topiik/internal/util"
 )
 
-var meatadata = Metadata{}
-var nodeStatus = &NodeStatus{Role: RAFT_FOLLOWER, Term: 0}
+// var metadata = Metadata{}
+var nodeInfo = &Node{}
 var controllerMap = make(map[string]Controller)
 var workerMap = make(map[string]Worker)
 var partitionMap = make(map[string]Partition)
+var nodeStatus = &NodeStatus{Role: RAFT_FOLLOWER, Term: 0}
 
 func Map2Array[T any](theMap map[string]T) (arr []T) {
 	for _, v := range theMap {
@@ -35,7 +36,7 @@ const (
 
 func LoadControllerMetadata(node *Node) (err error) {
 
-	meatadata.Node = *node
+	nodeInfo = node
 
 	exist := false // whether the file exist
 
@@ -107,6 +108,8 @@ func LoadControllerMetadata(node *Node) (err error) {
 		go AppendEntries()
 	}
 
+	fmt.Printf("current node role: %d\n", nodeStatus.Role)
+
 	return nil
 }
 
@@ -128,14 +131,13 @@ func readMetadata[T any](metadataPath string, t *T) {
 }
 
 func UpdateNodeClusterId(clusterId string) (err error) {
-	fmt.Println(meatadata)
-	node := meatadata.Node
-	node.ClusterId = clusterId
+	fmt.Println(nodeInfo)
+	nodeInfo.ClusterId = clusterId
 	err = os.Truncate(GetNodeFilePath(), 0)
 	if err != nil {
 		return err
 	}
-	buf, err := json.Marshal(node)
+	buf, err := json.Marshal(nodeInfo)
 	if err != nil {
 		return err
 	}
@@ -155,7 +157,7 @@ func IsNodeController() bool {
 }
 
 func GetNodeMetadata() Node {
-	return meatadata.Node
+	return *nodeInfo
 }
 
 // metadata file path

@@ -54,7 +54,7 @@ func main() {
 	// Start routines
 	//go raft.RequestVote(&serverConfig.JoinList, 200, nodeStatus)
 	go persistent.Persist(*serverConfig)
-	go cluster.StartServer(serverConfig.Host + ":" + serverConfig.PORT2)
+	go cluster.StartServer(serverConfig.Host+":"+serverConfig.PORT2, serverConfig)
 
 	// Accept incoming connections and handle them
 	fmt.Printf("Listen to address %s\n", serverConfig.Listen)

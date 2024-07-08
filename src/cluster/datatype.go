@@ -14,6 +14,8 @@ type Metadata struct {
 type Node struct {
 	Id        string
 	ClusterId string
+	Address   string
+	Address2  string
 }
 
 type Controller struct {
@@ -29,7 +31,7 @@ type Worker struct {
 }
 
 type Partition struct {
-	Id             string   // Id of the partition, random 16 alphnum
-	LeaderWorkerId string   // The Worker Id where the Leader Partition  located
-	WorkerIds      []string // The Workers where the Partition located
+	Id           string   // Id of the partition, random 16 alphnum
+	LeaderNodeId string   // The Node Id where the Leader Partition located
+	NodeIds      []string // The Nodes where the Partition located
 }
