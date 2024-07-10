@@ -52,7 +52,7 @@ func clusterJoin(pieces []string) (result string, err error) {
 				exist.Address = addr // update adddress
 			}
 		} else {
-			controller := Controller{
+			controller := NodeSlim{
 				Id:       id,
 				Address:  addr,
 				Address2: addrSplit[0] + ":" + addrSplit[2],
@@ -86,7 +86,7 @@ func clusterJoin(pieces []string) (result string, err error) {
 		if err != nil {
 			return "", errors.New(consts.RES_INVALID_ADDR)
 		}
-		worker := Worker{
+		worker := NodeSlim{
 			Id:       id,
 			Address:  addr,
 			Address2: addrSplit[0] + ":" + addrSplit[2],

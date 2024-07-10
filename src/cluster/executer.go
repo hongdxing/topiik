@@ -44,7 +44,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte, err 
 			if err != nil {
 				return nil, errors.New(RES_SYNTAX_ERROR)
 			} else {
-				return []byte(vote(cTerm, nodeStatus)), nil
+				return []byte(vote(cTerm)), nil
 			}
 		}
 	} else if CMD == RPC_APPENDENTRY {

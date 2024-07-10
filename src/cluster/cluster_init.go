@@ -42,6 +42,7 @@ func ClusterInit(serverConfig *config.ServerConfig) (err error) {
 		return errors.New("current node already in a cluster:" + nodeInfo.ClusterId)
 	}
 	nodeInfo.ClusterId = util.RandStringRunes(16)
+	nodeInfo.Role = ROLE_CONTROLLER
 
 	// 4. marshal
 	buf2, _ := json.Marshal(nodeInfo)
@@ -87,7 +88,7 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 		if err != nil {
 			panic(err)
 		}
-		controller := Controller{
+		controller := NodeSlim{
 			Id:       nodeId,
 			Address:  serverConfig.Listen,
 			Address2: addrSplit[0] + ":" + addrSplit[2],
@@ -95,6 +96,10 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 		controllerMap[nodeId] = controller
 		var jsonBytes []byte
 		jsonBytes, err = json.Marshal(controllerMap)
+		if err != nil {
+			fmt.Printf("cluster_init::initControllerNode() %s\n", err.Error())
+			panic(err)
+		}
 		file.WriteString(string(jsonBytes))
 	} else {
 		fmt.Println("loading controller metadata...")
@@ -106,7 +111,7 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 		defer file.Close()
 
 		//controllerMap = readMetadata[map[string]Controller](controllerPath)
-		readMetadata[map[string]Controller](controllerPath, &controllerMap)
+		readMetadata[map[string]NodeSlim](controllerPath, &controllerMap)
 		fmt.Println(controllerMap)
 	}
 
@@ -134,7 +139,7 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 		defer file.Close()
 
 		//workerMap = readMetadata[map[string]Worker](workerPath)
-		readMetadata[map[string]Worker](workerPath, &workerMap)
+		readMetadata[map[string]NodeSlim](workerPath, &workerMap)
 		fmt.Println(workerMap)
 	}
 

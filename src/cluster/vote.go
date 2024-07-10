@@ -19,7 +19,7 @@ package cluster
     ---- 2) F(ollower), mean current node is Follower, Follower not allow to vote
     ---- 3) T(erm), means Term of current node is bigger than request node
 */
-func vote(cTerm int, nodeStatus *NodeStatus) string {
+func vote(cTerm int) string {
 	//fmt.Printf("vote():: current node role: %v\n", nodeStatus.Role)
 	if nodeStatus.Role == RAFT_LEADER {
 		return VOTE_REJECTED + ":L"

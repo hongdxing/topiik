@@ -46,7 +46,6 @@ func AppendEntries() {
 				wgAppend.Add(1)
 				go send(controller.Address2, controller.Id, &dialErrorCounter)
 			}
-			wgAppend.Wait()
 		case <-quit:
 			ticker.Stop()
 			return

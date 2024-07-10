@@ -16,9 +16,9 @@ import (
 )
 
 // var metadata = Metadata{}
-var nodeInfo = &Node{}
-var controllerMap = make(map[string]Controller)
-var workerMap = make(map[string]Worker)
+var nodeInfo *Node
+var controllerMap = make(map[string]NodeSlim)
+var workerMap = make(map[string]NodeSlim)
 var partitionMap = make(map[string]Partition)
 var nodeStatus = &NodeStatus{Role: RAFT_FOLLOWER, Term: 0}
 
@@ -56,7 +56,7 @@ func LoadControllerMetadata(node *Node) (err error) {
 		defer file.Close()
 
 		//controllerMap = readMetadata[map[string]Controller](controllerPath)
-		readMetadata[map[string]Controller](controllerPath, &controllerMap)
+		readMetadata[map[string]NodeSlim](controllerPath, &controllerMap)
 		fmt.Println(controllerMap)
 	}
 
@@ -76,7 +76,7 @@ func LoadControllerMetadata(node *Node) (err error) {
 		defer file.Close()
 
 		//workerMap = readMetadata[map[string]Worker](workerPath)
-		readMetadata[map[string]Worker](workerPath, &workerMap)
+		readMetadata[map[string]NodeSlim](workerPath, &workerMap)
 		fmt.Println(workerMap)
 	}
 
@@ -101,11 +101,8 @@ func LoadControllerMetadata(node *Node) (err error) {
 	}
 
 	// if current node is Controller Node(stop and restarted), start to RequestVote()
-	if len(controllerMap) > 1 {
+	if len(controllerMap) >= 1 {
 		go RequestVote()
-	} else if len(controllerMap) == 1 {
-		nodeStatus.Role = RAFT_LEADER
-		go AppendEntries()
 	}
 
 	fmt.Printf("current node role: %d\n", nodeStatus.Role)

@@ -30,13 +30,20 @@ const requestVoteInterval = 200
 **/
 func RequestVote() {
 
+	// if this is the only Controller, then it alawys Leader
+	if len(controllerMap) == 1 {
+		nodeStatus.Role = RAFT_LEADER
+		go AppendEntries()
+		return
+	}
+
 	var quorum int
 	//heartbeat := time.Duration(interval)
 	var heartbeat time.Duration
 	// Vote retry counter
 	counter := 0
 	for {
-		quorum = 0 //
+		quorum = 1 // I vote myself
 		voteMeResults = voteMeResults[:0]
 
 		heartbeat = time.Duration(rand.IntN(99)) + time.Duration(requestVoteInterval) //[0,99) + 200(interval), this must less than RaftHeartbeat(300)
@@ -49,16 +56,25 @@ func RequestVote() {
 			continue
 		}
 		// need workers to Vote
-		if len(workerMap) == 0 {
+		/*if len(workerMap) == 0 {
 			continue
+		}*/
+		// merge controller and woker address2
+		var addr2List = []string{}
+		for _, v := range controllerMap {
+			addr2List = append(addr2List, v.Address2)
+		}
+		for _, v := range workerMap {
+			addr2List = append(addr2List, v.Address2)
 		}
 
 		nodeStatus.Role = RAFT_CANDIDATOR
 		nodeStatus.Term += 1
-		for _, worker := range workerMap {
+		for _, addr := range addr2List {
 			wgRequestVote.Add(1)
-			go voteMe(worker.Address2, int(nodeStatus.Term)) // use address2 for Voting
+			go voteMe(addr, int(nodeStatus.Term)) // use address2 for Voting
 		}
+		wgRequestVote.Wait()
 		//fmt.Println(voteMeResults)
 		for _, s := range voteMeResults {
 			strs := strings.Split(s, ":")
@@ -75,9 +91,9 @@ func RequestVote() {
 			}
 		}
 
-		canPromote := quorum >= ((len(workerMap))/2 + 1)
+		canPromote := quorum >= ((len(addr2List))/2 + 1)
 		if counter%10 == 0 || canPromote {
-			fmt.Printf("Total nodes %v, quorum: %v\n", len(workerMap)+1, quorum)
+			fmt.Printf("Total nodes %v, quorum: %v\n", len(addr2List), quorum)
 			// in case overflow
 			if counter > 10000 {
 				counter = 0

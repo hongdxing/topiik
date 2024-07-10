@@ -26,7 +26,7 @@ func Forward(msg []byte) []byte {
 	// TODO: find worker base on key partition, and get LeaderWorkerId
 	// and then get Address of Worker
 
-	var targetWorker Worker
+	var targetWorker NodeSlim
 	for _, worker := range workerMap {
 		targetWorker = worker
 		break

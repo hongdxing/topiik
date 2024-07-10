@@ -14,10 +14,18 @@ type Metadata struct {
 type Node struct {
 	Id        string
 	ClusterId string
+	Role      string // controller|worker
 	Address   string
 	Address2  string
 }
 
+type NodeSlim struct{
+	Id       string
+	Address  string
+	Address2 string
+}
+
+/*
 type Controller struct {
 	Id       string
 	Address  string
@@ -28,7 +36,7 @@ type Worker struct {
 	Id       string
 	Address  string
 	Address2 string
-}
+}*/
 
 type Partition struct {
 	Id           string   // Id of the partition, random 16 alphnum

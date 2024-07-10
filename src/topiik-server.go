@@ -121,7 +121,7 @@ func readConfig() (*config.ServerConfig, error) {
 }
 
 func initNode() (err error) {
-	fmt.Printf("self check start\n")
+	fmt.Printf("Topiik: self check start\n")
 
 	var exist bool
 	dataDir := "data"
@@ -153,6 +153,7 @@ func initNode() (err error) {
 		fmt.Println("creating node file...")
 
 		node.Id = util.RandStringRunes(16)
+		node.Role = cluster.ROLE_WORKER // new node start as worker by default
 		buf, _ = json.Marshal(node)
 		err = os.WriteFile(nodeFile, buf, 0644)
 		if err != nil {
@@ -181,6 +182,6 @@ func initNode() (err error) {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("self check done\n")
+	fmt.Printf("Topiik: self check done\n")
 	return nil
 }

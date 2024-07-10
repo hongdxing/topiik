@@ -16,11 +16,11 @@ import (
 )
 
 func appendEntry(pieces []string, serverConfig *config.ServerConfig) error {
-	fmt.Println(pieces)
+	//fmt.Println(pieces)
 	if len(pieces) == 2 {
 		if pieces[0] == "CONTROLLER" {
 			fmt.Println("append_entry::appendEntry() CONTROLLER")
-			var tmpMap map[string]Controller
+			var tmpMap map[string]NodeSlim
 			err := json.Unmarshal([]byte(pieces[1]), &tmpMap)
 			if err != nil {
 				return err
