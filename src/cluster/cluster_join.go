@@ -22,7 +22,7 @@ const node_alread_in_cluster = "node already in cluster:"
 /***
 **
 ** Parameter:
-**	- pieces: JOIN_ACK[0] id[1] host:port[2] ROLE[3]
+**	- pieces: id[0] host:port[1] ROLE[2]
 **
 ** Syntax: CLUSTER JOIN_ACK id host:port ROLE
 **	id: the node id asking to join
@@ -31,27 +31,30 @@ const node_alread_in_cluster = "node already in cluster:"
 **/
 func clusterJoin(pieces []string) (result string, err error) {
 	fmt.Printf("%s\n", pieces)
-	if len(pieces) != 4 {
+	if len(pieces) != 3 {
 		return "", errors.New(RES_SYNTAX_ERROR)
 	}
-	if strings.ToUpper(pieces[3]) == ROLE_CONTROLLER {
+	id := pieces[0]
+	addr := pieces[1]
+	role := pieces[2]
+	if strings.ToUpper(role) == ROLE_CONTROLLER {
 		var addrSplit []string
-		addrSplit, err = util.SplitAddress(pieces[2])
+		addrSplit, err = util.SplitAddress(addr)
 		if err != nil {
 			return "", errors.New("join cluster failed")
 		}
 
-		if exist, ok := (controllerMap)[pieces[1]]; ok {
+		if exist, ok := (controllerMap)[id]; ok {
 			//return "", errors.New(node_alread_in_cluster + nodeInfo.ClusterId)
-			if exist.Address == pieces[2] {
+			if exist.Address == addr {
 				return nodeInfo.ClusterId, nil
 			} else {
-				exist.Address = pieces[2] // update adddress
+				exist.Address = addr // update adddress
 			}
 		} else {
 			controller := Controller{
-				Id:       pieces[1],
-				Address:  pieces[2],
+				Id:       id,
+				Address:  addr,
 				Address2: addrSplit[0] + ":" + addrSplit[2],
 			}
 			controllerMap[controller.Id] = controller
@@ -70,15 +73,22 @@ func clusterJoin(pieces []string) (result string, err error) {
 		if err != nil {
 			return "", errors.New("save controller failed")
 		}
-	} else if strings.ToUpper(pieces[3]) == ROLE_WORKER {
+		// add conttoller id to pending append map
+		for _, v := range controllerMap {
+			if v.Id != nodeInfo.Id {
+				controllerPendingAppend[v.Id] = v.Id
+			}
+		}
 
-		addrSplit, err := util.SplitAddress(pieces[2])
+	} else if strings.ToUpper(role) == ROLE_WORKER {
+
+		addrSplit, err := util.SplitAddress(addr)
 		if err != nil {
 			return "", errors.New(consts.RES_INVALID_ADDR)
 		}
 		worker := Worker{
-			Id:       pieces[1],
-			Address:  pieces[2],
+			Id:       id,
+			Address:  addr,
 			Address2: addrSplit[0] + ":" + addrSplit[2],
 		}
 		if _, ok := workerMap[worker.Id]; ok {
@@ -86,6 +96,12 @@ func clusterJoin(pieces []string) (result string, err error) {
 		}
 		workerMap[worker.Id] = worker
 		fmt.Println(workerMap)
+		// add conttoller id to pending append map
+		for _, v := range workerMap {
+			if v.Id != nodeInfo.Id {
+				workerPendingAppend[v.Id] = v.Id
+			}
+		}
 	} else {
 		fmt.Printf("err: %s\n", pieces)
 		return "", errors.New(RES_SYNTAX_ERROR)

@@ -185,6 +185,8 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string, nodes
 				return errorResponse(err)
 			}
 			return successResponse(result, CMD, msg)
+		} else if strings.ToUpper(pieces[0]) == "INFO" {
+			//
 		}
 		return errorResponse(errors.New(RES_SYNTAX_ERROR))
 	} else if CMD == command.VOTE {

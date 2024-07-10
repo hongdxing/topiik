@@ -8,9 +8,11 @@
 package cluster
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
+	"topiik/internal/consts"
 	"topiik/internal/proto"
 	"topiik/internal/util"
 )
@@ -19,12 +21,15 @@ var ticker *time.Ticker
 var quit chan struct{}
 var wgAppend sync.WaitGroup
 
+// indicate metadata changed on controller Leader, need to sync to Follower(s)
+var controllerPendingAppend = make(map[string]string) // the node id of controller wating for append
+var workerPendingAppend = make(map[string]string)
+var partitionPendingAppend = make(map[string]string)
+
 /***
-** Controller issues AppendEntries RPCs to replicate metadata to deputy,
+** Controller issues AppendEntries RPCs to replicate metadata to follower,
 ** or send heartbeats (AppendEntries RPCs that carry no data)
 **
-**	Parameters:
-**	- addresses: actually only one address of Chief Officer
 **/
 func AppendEntries() {
 	ticker = time.NewTicker(200 * time.Millisecond)
@@ -39,8 +44,9 @@ func AppendEntries() {
 					continue
 				}
 				wgAppend.Add(1)
-				go send(controller.Address2, &dialErrorCounter)
+				go send(controller.Address2, controller.Id, &dialErrorCounter)
 			}
+			wgAppend.Wait()
 		case <-quit:
 			ticker.Stop()
 			return
@@ -48,7 +54,7 @@ func AppendEntries() {
 	}
 }
 
-func send(address string, dialErrorCounter *int) string {
+func send(address string, controllerId string, dialErrorCounter *int) string {
 	defer func() {
 		*dialErrorCounter++
 		wgAppend.Done()
@@ -63,7 +69,16 @@ func send(address string, dialErrorCounter *int) string {
 	}
 	defer conn.Close()
 
-	line := RPC_APPENDENTRY + " "
+	line := RPC_APPENDENTRY + consts.SPACE
+	if _, ok := controllerPendingAppend[controllerId]; ok {
+		line += "CONTROLLER "
+		buf, _ := json.Marshal(controllerMap)
+		line += string(buf)
+	} else if _, ok := workerPendingAppend[controllerId]; ok {
+		line += "WORKER "
+	} else if _, ok := partitionPendingAppend[controllerId]; ok {
+		line += "PARTITION "
+	}
 
 	// Enocde
 	data, err := proto.Encode(line)
@@ -78,12 +93,25 @@ func send(address string, dialErrorCounter *int) string {
 		return ""
 	}
 
+	/*
+		reader := bufio.NewReader(conn)
+		buf, err := proto.Decode(reader)
+		if err != nil {
+			if err == io.EOF {
+				fmt.Printf("rpc_append_entries::send %s\n", err)
+			}
+		}
+		fmt.Printf("rpc_append_entries::send %s\n", buf)
+		return string(buf[4:])*/
+
 	buf := make([]byte, 512)
 	n, err := conn.Read(buf)
 	if err != nil {
 		fmt.Printf("rpc_append_entries::send %s\n", err)
 	} else {
+		delete(controllerPendingAppend, controllerId)
 		//fmt.Println(string(buf[:n]))
 	}
 	return string(buf[:n])
+
 }

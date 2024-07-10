@@ -47,7 +47,7 @@ func clusterJoin(myAddr string, controllerAddr string, role string) (result stri
 	defer conn.Close()
 
 	// CLUSTER JOIN_ACK nodeId addr role
-	line := "CLUSTER " + command.CLUSTER_JOIN_ACK + consts.SPACE + nodeId + consts.SPACE + myAddr + consts.SPACE + role
+	line := command.CLUSTER_JOIN_ACK + consts.SPACE + nodeId + consts.SPACE + myAddr + consts.SPACE + role
 	fmt.Println(line)
 
 	data, err := proto.Encode(line)

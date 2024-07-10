@@ -25,21 +25,16 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte, err 
 	strs := strings.SplitN(strings.TrimLeft(string(msg[4:]), consts.SPACE), consts.SPACE, 2)
 	CMD := strings.ToUpper(strings.TrimSpace(strs[0]))
 
-	if CMD == "CLUSTER" {
+	if CMD == command.CLUSTER_JOIN_ACK {
 		pieces := splitParams(strs)
 		if len(pieces) < 1 {
 			return nil, errors.New(RES_SYNTAX_ERROR)
 		}
-		fmt.Println(pieces)
-		if strings.ToUpper(pieces[0]) == "INFO" {
-			//TODO
-		} else if strings.ToUpper(pieces[0]) == command.CLUSTER_JOIN_ACK {
-			result, err := clusterJoin(pieces)
-			if err != nil {
-				return nil, err
-			}
-			return []byte(result), nil
+		result, err := clusterJoin(pieces)
+		if err != nil {
+			return nil, err
 		}
+		return []byte(result), nil
 	} else if CMD == "VOTE" {
 		if len(strs) != 2 {
 			fmt.Printf("%s %s", RES_SYNTAX_ERROR, msg)
@@ -52,8 +47,13 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte, err 
 				return []byte(vote(cTerm, nodeStatus)), nil
 			}
 		}
-	} else if CMD == "" {
-		appendEntry(serverConfig)
+	} else if CMD == RPC_APPENDENTRY {
+		pieces := splitParams(strs)
+		err := appendEntry(pieces, serverConfig)
+		if err != nil {
+			return nil, err
+		}
+		return []byte{}, nil
 	} else {
 		// forward msg to Workers
 		Forward(msg)

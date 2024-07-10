@@ -66,10 +66,10 @@ func Decode(reader *bufio.Reader) ([]byte, error) {
 	}
 
 	// Read message
-	pack := make([]byte, int(4+length))
-	_, err = reader.Read(pack)
+	buf := make([]byte, int(4+length))
+	_, err = reader.Read(buf)
 	if err != nil {
 		return nil, err
 	}
-	return pack, nil
+	return buf, nil
 }
