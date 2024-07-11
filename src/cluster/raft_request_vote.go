@@ -8,7 +8,9 @@
 package cluster
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"math/rand/v2"
 	"strconv"
 	"strings"
@@ -21,7 +23,7 @@ import (
 var voteMeResults []string // Return values from other Nodes, "R": Rejected or "A": Accepted
 var wgRequestVote sync.WaitGroup
 
-const requestVoteInterval = 200
+const requestVoteInterval = 100
 
 /**
 ** Parameters
@@ -46,7 +48,7 @@ func RequestVote() {
 		quorum = 1 // I vote myself
 		voteMeResults = voteMeResults[:0]
 
-		heartbeat = time.Duration(rand.IntN(99)) + time.Duration(requestVoteInterval) //[0,99) + 200(interval), this must less than RaftHeartbeat(300)
+		heartbeat = time.Duration(rand.IntN(199)) + time.Duration(requestVoteInterval) //[0,99) + 200(interval), this must less than RaftHeartbeat(300)
 		time.Sleep(heartbeat * time.Millisecond)
 
 		if time.Now().UTC().UnixMilli() < nodeStatus.HeartbeatAt+int64(nodeStatus.Heartbeat) {
@@ -109,7 +111,7 @@ func RequestVote() {
 			// Leader no RequestVote, quite RequestVote
 			break
 		} else {
-			//nodeStatus.Role = ROLE_FOLLOWER
+			nodeStatus.Role = RAFT_FOLLOWER
 		}
 		counter++
 	}
@@ -137,12 +139,22 @@ func voteMe(address string, term int) {
 		fmt.Println(err)
 	}
 
-	buf := make([]byte, 512)
-	n, err := conn.Read(buf)
+	reader := bufio.NewReader(conn)
+	buf, err := proto.Decode(reader)
 	if err != nil {
-		return
-	} else {
-		//fmt.Println(string(buf))
-		voteMeResults = append(voteMeResults, string(buf[:n]))
+		if err == io.EOF {
+			fmt.Printf("raft_request_vote::voteMe %s\n", err)
+		}
 	}
+	voteMeResults = append(voteMeResults, string(buf[4:]))
+
+	/*
+		buf := make([]byte, 512)
+		n, err := conn.Read(buf)
+		if err != nil {
+			return
+		} else {
+			//fmt.Println(string(buf))
+			voteMeResults = append(voteMeResults, string(buf[:n]))
+		}*/
 }

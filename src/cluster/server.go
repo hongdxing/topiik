@@ -2,7 +2,8 @@
 ** author: duan hongxing
 ** data: 3 Jul 2024
 ** desc:
-**
+**	The interal server run on port: configured port + 10000,
+**	The server is for Raft rpc
 **/
 
 package cluster
@@ -63,7 +64,8 @@ func handleConnection(conn net.Conn, serverConfig *config.ServerConfig) {
 			fmt.Println(err.Error())
 			conn.Write([]byte(err.Error()))
 		} else {
-			conn.Write(result)
+			buf, _ := proto.Encode(string(result))
+			conn.Write(buf)
 		}
 	}
 }
