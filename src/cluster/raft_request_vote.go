@@ -28,7 +28,7 @@ const requestVoteInterval = 100
 /**
 ** Parameters
 **	- addresses: workers' addresses
-** Chief issues RequestVote RPCs to Workers to request for votes.
+** Follower issues RequestVote RPCs to Workers to request for votes.
 **/
 func RequestVote() {
 

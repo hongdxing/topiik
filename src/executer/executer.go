@@ -12,7 +12,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"strconv"
 	"strings"
 	"topiik/cluster"
 	"topiik/internal/command"
@@ -189,22 +188,6 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string, nodes
 			//
 		}
 		return errorResponse(errors.New(RES_SYNTAX_ERROR))
-	} else if CMD == command.VOTE {
-		if len(strs) != 2 {
-			fmt.Printf("%s %s", RES_SYNTAX_ERROR, msg)
-			return []byte(RES_SYNTAX_ERROR)
-		} else {
-			cTerm, err := strconv.Atoi(strs[1])
-			if err != nil {
-				return []byte(RES_SYNTAX_ERROR)
-			} else {
-				return []byte(vote(cTerm, nodestatus))
-			}
-		}
-
-	} else if CMD == command.APPEND_ENTRY {
-		appendEntry(serverConfig, nodestatus)
-		return successResponse(RES_OK, CMD, msg)
 	} else {
 		fmt.Printf("Invalid cmd: %s\n", CMD)
 		return errorResponse(errors.New(RES_INVALID_CMD))

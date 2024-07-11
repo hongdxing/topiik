@@ -79,7 +79,6 @@ func send(address string, controllerId string, dialErrorCounter *int) string {
 			fmt.Println(one)*/
 	}
 	if conn == nil {
-		fmt.Println("raft_append_entries::send new conn")
 		conn, err = util.PreapareSocketClient(address)
 		if err != nil {
 			if *dialErrorCounter%50 == 0 {

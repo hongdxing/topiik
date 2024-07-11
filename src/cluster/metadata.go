@@ -147,10 +147,7 @@ func UpdateNodeClusterId(clusterId string) (err error) {
 
 func IsNodeController() bool {
 	// if current node controllerMap has value
-	if len(controllerMap) > 0 {
-		return true
-	}
-	return false
+	return nodeInfo.Role == ROLE_CONTROLLER
 }
 
 func GetNodeMetadata() Node {
