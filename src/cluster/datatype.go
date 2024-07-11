@@ -14,12 +14,11 @@ type Metadata struct {
 type Node struct {
 	Id        string
 	ClusterId string
-	Role      string // controller|worker
 	Address   string
 	Address2  string
 }
 
-type NodeSlim struct{
+type NodeSlim struct {
 	Id       string
 	Address  string
 	Address2 string

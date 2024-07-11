@@ -97,6 +97,8 @@ func send(address string, controllerId string, dialErrorCounter *int) string {
 		line += string(buf)
 	} else if _, ok := workerPendingAppend[controllerId]; ok {
 		line += "WORKER "
+		buf, _ := json.Marshal(workerMap)
+		line += string(buf)
 	} else if _, ok := partitionPendingAppend[controllerId]; ok {
 		line += "PARTITION "
 	}

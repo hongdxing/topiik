@@ -128,7 +128,6 @@ func readMetadata[T any](metadataPath string, t *T) {
 }
 
 func UpdateNodeClusterId(clusterId string) (err error) {
-	fmt.Println(nodeInfo)
 	nodeInfo.ClusterId = clusterId
 	err = os.Truncate(GetNodeFilePath(), 0)
 	if err != nil {
@@ -147,7 +146,7 @@ func UpdateNodeClusterId(clusterId string) (err error) {
 
 func IsNodeController() bool {
 	// if current node controllerMap has value
-	return nodeInfo.Role == ROLE_CONTROLLER
+	return len(controllerMap) > 0
 }
 
 func GetNodeMetadata() Node {

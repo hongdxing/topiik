@@ -42,7 +42,6 @@ func ClusterInit(serverConfig *config.ServerConfig) (err error) {
 		return errors.New("current node already in a cluster:" + nodeInfo.ClusterId)
 	}
 	nodeInfo.ClusterId = util.RandStringRunes(16)
-	nodeInfo.Role = ROLE_CONTROLLER
 
 	// 4. marshal
 	buf2, _ := json.Marshal(nodeInfo)

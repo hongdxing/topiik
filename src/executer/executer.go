@@ -18,7 +18,6 @@ import (
 	"topiik/internal/config"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
-	"topiik/raft"
 	"topiik/shared"
 )
 
@@ -48,7 +47,7 @@ var needPersistCMD = []string{
 	command.LPUSH, command.LPUSHR, command.LPUSHB, command.LPUSHRB, command.LPOP, command.LPOPR, command.LPOPB, command.LPOPRB,
 }
 
-func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string, nodestatus *raft.NodeStatus) []byte {
+func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string) []byte {
 	strMsg := msg[4:]
 	// split msg into [CMD, params]
 	strs := strings.SplitN(strings.TrimLeft(string(strMsg), consts.SPACE), consts.SPACE, 2)

@@ -70,7 +70,7 @@ func clusterJoin(myAddr string, controllerAddr string, role string) (result stri
 		fmt.Println(err)
 		return "", errors.New("join to cluster failed")
 	}
-	fmt.Println(flag)
+
 	buf := make([]byte, 256)
 	n, err := reader.Read(buf)
 	resp := string(buf[1:n])
@@ -91,35 +91,4 @@ func clusterJoin(myAddr string, controllerAddr string, role string) (result stri
 	}
 
 	return RES_OK, nil
-	/*
-		buf := make([]byte, 256)
-		n, err := conn.Read(buf)
-		if err != nil {
-			return "", errors.New("join to cluster failed, please check whether captial node still alive and try again")
-		} else {
-			fmt.Println(string(buf[:n]))
-
-			flag := string(buf[:1])
-			iFlag, err := strconv.Atoi(flag)
-			if err != nil {
-				fmt.Println(err)
-				return "", errors.New("join to cluster failed")
-			}
-			int8Flag := int8(iFlag)
-			fmt.Println(int8Flag)
-			if int8Flag < 0 {
-				return "", errors.New(string(buf[1:n]))
-			}
-
-			err = cluster.UpdateNodeClusterId(string(buf[1:n])) // the first byte is flag
-			if err != nil {
-				fmt.Println(err)
-				return "", errors.New("join cluster failed")
-			}
-			// if join controller succeed, will start to RequestVote
-			if strings.ToUpper(role) == cluster.ROLE_CONTROLLER {
-				go cluster.RequestVote()
-			}
-			return RES_OK, nil
-		}*/
 }

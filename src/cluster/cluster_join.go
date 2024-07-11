@@ -81,22 +81,41 @@ func clusterJoin(pieces []string) (result string, err error) {
 		}
 
 	} else if strings.ToUpper(role) == ROLE_WORKER {
-
 		addrSplit, err := util.SplitAddress(addr)
 		if err != nil {
 			return "", errors.New(consts.RES_INVALID_ADDR)
 		}
-		worker := NodeSlim{
-			Id:       id,
-			Address:  addr,
-			Address2: addrSplit[0] + ":" + addrSplit[2],
-		}
-		if _, ok := workerMap[worker.Id]; ok {
+
+		if exist, ok := workerMap[id]; ok {
+			if exist.Address == addr {
+				return nodeInfo.ClusterId, nil
+			} else {
+				exist.Address = addr // update adddress
+			}
 			return "", errors.New(node_alread_in_cluster + nodeInfo.ClusterId)
+		} else {
+			worker := NodeSlim{
+				Id:       id,
+				Address:  addr,
+				Address2: addrSplit[0] + ":" + addrSplit[2],
+			}
+			workerMap[worker.Id] = worker
 		}
-		workerMap[worker.Id] = worker
 		fmt.Println(workerMap)
-		// add conttoller id to pending append map
+		workerPath := GetWorkerFilePath()
+		buf, err := json.Marshal(workerMap)
+		if err != nil {
+			return "", errors.New("save worker failed")
+		}
+		err = os.Truncate(workerPath, 0) // TODO: myabe need backup first
+		if err != nil {
+			return "", errors.New("save worker failed")
+		}
+		err = os.WriteFile(workerPath, buf, 0664) // save back worker file
+		if err != nil {
+			return "", errors.New("save worker failed")
+		}
+		// add woker id to pending append map
 		for _, v := range workerMap {
 			if v.Id != nodeInfo.Id {
 				workerPendingAppend[v.Id] = v.Id

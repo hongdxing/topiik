@@ -7,6 +7,11 @@
 
 package cluster
 
+import (
+	"fmt"
+	"time"
+)
+
 /*
 **
   - Return: [A|R]:[A|L|F|T]
@@ -21,12 +26,23 @@ package cluster
 */
 func vote(cTerm int) string {
 	//fmt.Printf("vote():: current node role: %v\n", nodeStatus.Role)
-	if nodeStatus.Role == RAFT_LEADER {
-		return VOTE_REJECTED + ":L"
+
+	if IsNodeController() {
+		if nodeStatus.Role == RAFT_LEADER {
+			return VOTE_REJECTED + ":L"
+		}
+		if nodeStatus.Role != RAFT_FOLLOWER {
+			return VOTE_REJECTED + ":F"
+		}
+	} else {
+		fmt.Println("worker vote")
+		// if the woker still can sense the controller Leader, then reject
+		if time.Now().UTC().UnixMilli() < nodeStatus.HeartbeatAt+int64(nodeStatus.Heartbeat) {
+			return VOTE_REJECTED + ":W"
+		}
+		return VOTE_ACCEPTED + ":W"
 	}
-	if nodeStatus.Role != RAFT_FOLLOWER {
-		return VOTE_REJECTED + ":F"
-	}
+
 	// (lastTermV > lastTermC) || ((lastTermV == lastTermC) && (lastIndexV > lastIndexC))
 	if nodeStatus.Term > uint(cTerm) {
 		return VOTE_REJECTED + ":T"

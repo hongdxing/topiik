@@ -13,18 +13,12 @@ import (
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/persistent"
-	"topiik/raft"
 )
 
 const (
-	BUF_SIZE = 5          // Buffer size that socket read each time
-	CONFIG   = "--config" // the config file path
-	DATA_DIR = "data"
-
-	res_init_node_failed = "init node failed"
+	CONFIG = "--config" // the config file path
 )
 
-var nodeStatus *raft.NodeStatus
 var serverConfig *config.ServerConfig
 var nodeId string
 
@@ -42,7 +36,6 @@ func main() {
 	if err != nil {
 		return
 	}
-	nodeStatus = &raft.NodeStatus{Role: raft.ROLE_FOLLOWER, Term: 0}
 
 	// Listen for incoming connections
 	ln, err := net.Listen("tcp", serverConfig.Listen)
@@ -87,7 +80,7 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 		//fmt.Printf("%s: %s\n", time.Now().Format(consts.DATA_FMT_MICRO_SECONDS), cmd)
-		result := executer.Execute(msg, serverConfig, nodeId, nodeStatus)
+		result := executer.Execute(msg, serverConfig, nodeId)
 		conn.Write(result)
 	}
 }
@@ -153,7 +146,6 @@ func initNode() (err error) {
 		fmt.Println("creating node file...")
 
 		node.Id = util.RandStringRunes(16)
-		node.Role = cluster.ROLE_WORKER // new node start as worker by default
 		buf, _ = json.Marshal(node)
 		err = os.WriteFile(nodeFile, buf, 0644)
 		if err != nil {

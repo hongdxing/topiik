@@ -25,11 +25,6 @@ func StartServer(address string, serverConfig *config.ServerConfig) {
 		return
 	}
 
-	//captialMap[]
-
-	// start RequestVote routine
-	// go RequestVote()
-
 	// Accept incoming connections and handle them
 	fmt.Printf("Listen to address %s\n", address)
 	for {
