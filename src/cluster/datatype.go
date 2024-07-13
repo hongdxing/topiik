@@ -11,6 +11,15 @@ type Metadata struct {
 	Node Node
 }
 
+type Cluster struct {
+	Id          string // auto generated when INIT a cluster
+	Partitions  uint16 // number of partitions, given parameter when INIT a cluster
+	Replicas    uint16 // number of replicas, recommend 3 relicas at most, given parameter when INIT a cluster
+	Ver         uint   // compare which is more lastest
+	Controllers map[string]NodeSlim
+	Workers     map[string]NodeSlim
+}
+
 type Node struct {
 	Id        string
 	ClusterId string
@@ -23,19 +32,6 @@ type NodeSlim struct {
 	Address  string
 	Address2 string
 }
-
-/*
-type Controller struct {
-	Id       string
-	Address  string
-	Address2 string
-}
-
-type Worker struct {
-	Id       string
-	Address  string
-	Address2 string
-}*/
 
 type Partition struct {
 	Id           string   // Id of the partition, random 16 alphnum

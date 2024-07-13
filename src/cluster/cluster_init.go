@@ -18,8 +18,12 @@ import (
 
 const cluster_init_failed = "cluster init failed"
 
-func ClusterInit(serverConfig *config.ServerConfig) (err error) {
+func ClusterInit(partitions uint16, replicas uint16, serverConfig *config.ServerConfig) (err error) {
 	fmt.Println("ClusterInit start...")
+
+	// 0. init cluster
+	initCluster(partitions, replicas, serverConfig)
+
 	// 1. open node file
 	nodePath := GetNodeFilePath()
 
@@ -41,7 +45,7 @@ func ClusterInit(serverConfig *config.ServerConfig) (err error) {
 	if len(nodeInfo.ClusterId) > 0 { // check if current node already in cluster or not
 		return errors.New("current node already in a cluster:" + nodeInfo.ClusterId)
 	}
-	nodeInfo.ClusterId = util.RandStringRunes(16)
+	nodeInfo.ClusterId = clusterInfo.Id
 
 	// 4. marshal
 	buf2, _ := json.Marshal(nodeInfo)
@@ -58,6 +62,35 @@ func ClusterInit(serverConfig *config.ServerConfig) (err error) {
 	// after init, the node default is LEADER, and start to AppendEntries()
 	go AppendEntries()
 	fmt.Println("ClusterInit end")
+	return nil
+}
+
+func initCluster(partitions uint16, replicas uint16, serverConfig *config.ServerConfig) error {
+	if len(clusterInfo.Id) > 0 {
+		return errors.New("current node already in cluster:" + clusterInfo.Id)
+	}
+	// set clusterInfo
+	clusterInfo.Id = util.RandStringRunes(16)
+	clusterInfo.Partitions = partitions
+	clusterInfo.Replicas = replicas
+
+	addrSplit, err := util.SplitAddress(serverConfig.Listen)
+	if err != nil {
+		panic(err) // if cannot resovle the Address, it's severe error
+	}
+	clusterInfo.Controllers[nodeInfo.Id] = NodeSlim{
+		Id:       nodeInfo.Id,
+		Address:  serverConfig.Listen,
+		Address2: addrSplit[0] + ":" + addrSplit[2]}
+
+	// persist cluster metadata
+	clusterPath := GetClusterFilePath()
+	_ = os.Remove(clusterPath) // just incase
+	data, err := json.Marshal(clusterInfo)
+	if err != nil {
+		return errors.New(cluster_init_failed)
+	}
+	os.WriteFile(clusterPath, data, 0644)
 	return nil
 }
 
@@ -100,7 +133,8 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 			panic(err)
 		}
 		file.WriteString(string(jsonBytes))
-	} else {
+	}
+	/*else {
 		fmt.Println("loading controller metadata...")
 		var file *os.File
 		file, err = os.Open(controllerPath)
@@ -112,7 +146,7 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 		//controllerMap = readMetadata[map[string]Controller](controllerPath)
 		readMetadata[map[string]NodeSlim](controllerPath, &controllerMap)
 		fmt.Println(controllerMap)
-	}
+	}*/
 
 	// the worker file
 	workerPath := GetWorkerFilePath()
@@ -128,7 +162,7 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 			return errors.New(cluster_init_failed)
 		}
 		defer file.Close()
-	} else {
+	} /* else {
 		fmt.Println("loading worker metadata...")
 		var file *os.File
 		file, err = os.Open(workerPath)
@@ -140,7 +174,7 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 		//workerMap = readMetadata[map[string]Worker](workerPath)
 		readMetadata[map[string]NodeSlim](workerPath, &workerMap)
 		fmt.Println(workerMap)
-	}
+	}*/
 
 	// the partition file
 	partitionPath := GetPartitionFilePath()
@@ -156,7 +190,7 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 			return errors.New(cluster_init_failed)
 		}
 		defer file.Close()
-	} else {
+	} /* else {
 		fmt.Println("loading partition metadata...")
 		var file *os.File
 		file, err = os.Open(partitionPath)
@@ -168,7 +202,7 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 		//partitionMap = readMetadata[map[string]Partition](partitionPath)
 		readMetadata[map[string]Partition](partitionPath, &partitionMap)
 		fmt.Println(partitionMap)
-	}
+	}*/
 
 	return nil
 }

@@ -17,6 +17,7 @@ import (
 
 // var metadata = Metadata{}
 var nodeInfo *Node
+var clusterInfo = &Cluster{Controllers: make(map[string]NodeSlim), Workers: make(map[string]NodeSlim)}
 var controllerMap = make(map[string]NodeSlim)
 var workerMap = make(map[string]NodeSlim)
 var partitionMap = make(map[string]Partition)
@@ -39,6 +40,25 @@ func LoadControllerMetadata(node *Node) (err error) {
 	nodeInfo = node
 
 	exist := false // whether the file exist
+
+	// the cluster file
+	clusterPath := GetClusterFilePath()
+	exist, err = util.PathExists(clusterPath)
+	if err != nil {
+		panic(err)
+	}
+	if exist {
+		fmt.Println("loading cluster metadata...")
+		jsonStr, err := os.ReadFile(clusterPath)
+		if err != nil {
+			panic(err)
+		}
+		err = json.Unmarshal([]byte(jsonStr), &clusterInfo)
+		fmt.Println(clusterInfo)
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	// the controller file
 	controllerPath := GetControllerFilePath()
@@ -154,6 +174,9 @@ func GetNodeMetadata() Node {
 }
 
 // metadata file path
+func GetClusterFilePath() string {
+	return util.GetMainPath() + slash + dataDIR + slash + "__cluster_metadata"
+}
 func GetNodeFilePath() string {
 	return util.GetMainPath() + slash + dataDIR + slash + "metadata_node"
 }

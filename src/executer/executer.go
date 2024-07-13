@@ -169,7 +169,8 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string) []byt
 		}
 		fmt.Println(pieces)
 		if strings.ToUpper(pieces[0]) == "INIT" {
-			err := cluster.ClusterInit(serverConfig)
+			//err := cluster.ClusterInit(serverConfig)
+			err := clusterInit(pieces, serverConfig)
 			if err != nil {
 				return errorResponse(err)
 			}
