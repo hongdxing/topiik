@@ -34,6 +34,9 @@ func vote(cTerm int) string {
 		if nodeStatus.Role != RAFT_FOLLOWER {
 			return VOTE_REJECTED + ":F"
 		}
+		if clusterInfo.Ver > uint(cTerm) {
+			return VOTE_REJECTED + ":L" // if current node version greater than candidate's version, reject as Leader reject
+		}
 	} else {
 		fmt.Println("worker vote")
 		// if the woker still can sense the controller Leader, then reject

@@ -74,7 +74,7 @@ func RequestVote() {
 		nodeStatus.Term += 1
 		for _, addr := range addr2List {
 			wgRequestVote.Add(1)
-			go voteMe(addr, int(nodeStatus.Term)) // use address2 for Voting
+			go voteMe(addr) // use address2 for Voting
 		}
 		wgRequestVote.Wait()
 		//fmt.Println(voteMeResults)
@@ -125,7 +125,7 @@ func RequestVote() {
 	}
 }
 
-func voteMe(address string, term int) {
+func voteMe(address string) {
 	defer wgRequestVote.Done()
 	conn, err := util.PreapareSocketClient(address)
 	if err != nil {
@@ -133,7 +133,7 @@ func voteMe(address string, term int) {
 	}
 	defer conn.Close()
 
-	line := "VOTE " + strconv.Itoa(term)
+	line := "VOTE " + strconv.Itoa(int(clusterInfo.Ver))
 
 	// Enocde
 	data, err := proto.Encode(line)

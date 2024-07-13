@@ -65,23 +65,6 @@ func LoadControllerMetadata(node *Node) (err error) {
 	return nil
 }
 
-func readMetadata[T any](metadataPath string, t *T) {
-	var jsonStr string
-	buf, err := os.ReadFile(metadataPath)
-	if err != nil {
-		panic(err)
-	}
-
-	jsonStr = string(buf)
-	if len(jsonStr) > 0 {
-		err := json.Unmarshal([]byte(jsonStr), &t)
-		if err != nil {
-			panic(err)
-		}
-	}
-	//return t
-}
-
 func UpdateNodeClusterId(clusterId string) (err error) {
 	nodeInfo.ClusterId = clusterId
 	err = os.Truncate(GetNodeFilePath(), 0)
@@ -114,16 +97,4 @@ func GetClusterFilePath() string {
 }
 func GetNodeFilePath() string {
 	return util.GetMainPath() + slash + dataDIR + slash + "__node_metadata"
-}
-
-func GetControllerFilePath() string {
-	return util.GetMainPath() + slash + dataDIR + slash + "metadata_controller"
-}
-
-func GetWorkerFilePath() string {
-	return util.GetMainPath() + slash + dataDIR + slash + "metadata_worker"
-}
-
-func GetPartitionFilePath() string {
-	return util.GetMainPath() + slash + dataDIR + slash + "metadata_partition"
 }
