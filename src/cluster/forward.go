@@ -19,7 +19,7 @@ import (
 var tcpMap = make(map[string]*net.TCPConn)
 
 func Forward(msg []byte) []byte {
-	if len(workerMap) == 0 {
+	if len(clusterInfo.Workers) == 0 {
 		return []byte{}
 	}
 	var err error
@@ -27,7 +27,7 @@ func Forward(msg []byte) []byte {
 	// and then get Address of Worker
 
 	var targetWorker NodeSlim
-	for _, worker := range workerMap {
+	for _, worker := range clusterInfo.Workers {
 		targetWorker = worker
 		break
 	}

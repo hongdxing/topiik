@@ -53,28 +53,6 @@ func appendEntry(pieces []string, serverConfig *config.ServerConfig) error {
 				return err
 			}
 		}
-
-		// persist metadata
-		/*if pieces[0] == "CONTROLLER" {
-			fmt.Println("append_entry::appendEntry() CONTROLLER")
-			controllerPath := GetControllerFilePath()
-			err = os.WriteFile(controllerPath, []byte(pieces[1]), 0644)
-			if err != nil {
-				return err
-			}
-
-			return nil
-		} else if pieces[0] == "WORKER" {
-			fmt.Println("append_entry::appendEntry() WORKER")
-			wokerPath := GetWorkerFilePath()
-			err = os.WriteFile(wokerPath, []byte(pieces[1]), 0644)
-			if err != nil {
-				return err
-			}
-			return nil
-		} else if pieces[0] == "PARTITION" {
-			fmt.Println("append_entry::appendEntry() PARTITION")
-		}*/
 	}
 	// update Raft Heartbeat
 	nodeStatus.Heartbeat = uint16(rand.IntN(int(serverConfig.RaftHeartbeatMax-serverConfig.RaftHeartbeatMin))) + serverConfig.RaftHeartbeatMin

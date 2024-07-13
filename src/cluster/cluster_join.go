@@ -16,8 +16,6 @@ import (
 	"topiik/internal/util"
 )
 
-const node_alread_in_cluster = "node already in cluster:"
-
 /***
 **
 ** Parameter:
@@ -57,42 +55,6 @@ func clusterJoin(pieces []string) (result string, err error) {
 			}
 		}
 
-		/*if exist, ok := (controllerMap)[id]; ok {
-			//return "", errors.New(node_alread_in_cluster + nodeInfo.ClusterId)
-			if exist.Address == addr {
-				return nodeInfo.ClusterId, nil
-			} else {
-				exist.Address = addr // update adddress
-			}
-		} else {
-			controller := NodeSlim{
-				Id:       id,
-				Address:  addr,
-				Address2: addrSplit[0] + ":" + addrSplit[2],
-			}
-			controllerMap[controller.Id] = controller
-		}
-		fmt.Println(controllerMap)
-		controllerPath := GetControllerFilePath()
-		buf, err := json.Marshal(controllerMap)
-		if err != nil {
-			return "", errors.New("save controller failed")
-		}
-		err = os.Truncate(controllerPath, 0) // TODO: myabe need backup first
-		if err != nil {
-			return "", errors.New("save controller failed")
-		}
-		err = os.WriteFile(controllerPath, buf, 0664) // save back controller file
-		if err != nil {
-			return "", errors.New("save controller failed")
-		}
-		// add conttoller id to pending append map
-		for _, v := range controllerMap {
-			if v.Id != nodeInfo.Id {
-				controllerPendingAppend[v.Id] = v.Id
-			}
-		}*/
-
 	} else if strings.ToUpper(role) == ROLE_WORKER {
 		var addrSplit []string
 		addrSplit, err = util.SplitAddress(addr)
@@ -113,48 +75,6 @@ func clusterJoin(pieces []string) (result string, err error) {
 				Address2: addrSplit[0] + ":" + addrSplit[2],
 			}
 		}
-
-		/*
-			addrSplit, err := util.SplitAddress(addr)
-			if err != nil {
-				return "", errors.New(consts.RES_INVALID_ADDR)
-			}
-
-			if exist, ok := workerMap[id]; ok {
-				if exist.Address == addr {
-					return nodeInfo.ClusterId, nil
-				} else {
-					exist.Address = addr // update adddress
-				}
-				return "", errors.New(node_alread_in_cluster + nodeInfo.ClusterId)
-			} else {
-				worker := NodeSlim{
-					Id:       id,
-					Address:  addr,
-					Address2: addrSplit[0] + ":" + addrSplit[2],
-				}
-				workerMap[worker.Id] = worker
-			}
-			fmt.Println(workerMap)
-			workerPath := GetWorkerFilePath()
-			buf, err := json.Marshal(workerMap)
-			if err != nil {
-				return "", errors.New("save worker failed")
-			}
-			err = os.Truncate(workerPath, 0) // TODO: myabe need backup first
-			if err != nil {
-				return "", errors.New("save worker failed")
-			}
-			err = os.WriteFile(workerPath, buf, 0664) // save back worker file
-			if err != nil {
-				return "", errors.New("save worker failed")
-			}
-			// add woker id to pending append map
-			for _, v := range workerMap {
-				if v.Id != nodeInfo.Id {
-					workerPendingAppend[v.Id] = v.Id
-				}
-			}*/
 	} else {
 		fmt.Printf("err: %s\n", pieces)
 		return "", errors.New(RES_SYNTAX_ERROR)

@@ -17,9 +17,6 @@ import (
 // var metadata = Metadata{}
 var nodeInfo *Node
 var clusterInfo = &Cluster{Controllers: make(map[string]NodeSlim), Workers: make(map[string]NodeSlim)}
-//var controllerMap = make(map[string]NodeSlim)
-var workerMap = make(map[string]NodeSlim)
-//var partitionMap = make(map[string]Partition)
 var nodeStatus = &NodeStatus{Role: RAFT_FOLLOWER, Term: 0}
 
 func Map2Array[T any](theMap map[string]T) (arr []T) {
@@ -58,71 +55,6 @@ func LoadControllerMetadata(node *Node) (err error) {
 			panic(err)
 		}
 	}
-
-	// the controller file
-	/*controllerPath := GetControllerFilePath()
-	exist, err = util.PathExists(controllerPath)
-	if err != nil {
-		return err
-	}
-	if exist {
-		fmt.Println("loading controller metadata...")
-		var file *os.File
-		file, err = os.Open(controllerPath)
-		if err != nil {
-			return errors.New(cluster_init_failed)
-		}
-		defer file.Close()
-
-		//controllerMap = readMetadata[map[string]Controller](controllerPath)
-		readMetadata[map[string]NodeSlim](controllerPath, &controllerMap)
-		fmt.Println(controllerMap)
-	}
-
-	// the worker file
-	workerPath := GetWorkerFilePath()
-	exist, err = util.PathExists(workerPath)
-	if err != nil {
-		return err
-	}
-	if exist {
-		fmt.Println("loading worker metadata...")
-		var file *os.File
-		file, err = os.Open(workerPath)
-		if err != nil {
-			return errors.New(cluster_init_failed)
-		}
-		defer file.Close()
-
-		//workerMap = readMetadata[map[string]Worker](workerPath)
-		readMetadata[map[string]NodeSlim](workerPath, &workerMap)
-		fmt.Println(workerMap)
-	}
-
-	// the partition file
-	partitionPath := GetPartitionFilePath()
-	exist, err = util.PathExists(partitionPath)
-	if err != nil {
-		return err
-	}
-	if exist {
-		fmt.Println("loading partition metadata...")
-		var file *os.File
-		file, err = os.Open(partitionPath)
-		if err != nil {
-			return errors.New(cluster_init_failed)
-		}
-		defer file.Close()
-
-		//partitionMap = readMetadata[map[string]Partition](partitionPath)
-		readMetadata[map[string]Partition](partitionPath, &partitionMap)
-		fmt.Println(partitionMap)
-	}
-
-	// if current node is Controller Node(stop and restarted), start to RequestVote()
-	if len(controllerMap) >= 1 {
-		go RequestVote()
-	}*/
 
 	if len(clusterInfo.Controllers) >= 1 {
 		go RequestVote()

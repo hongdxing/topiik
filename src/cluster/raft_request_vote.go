@@ -115,7 +115,7 @@ func RequestVote() {
 			// Leader start to AppendEntries
 			go AppendEntries()
 			// Print Selected Leader
-			fmt.Printf(">>>selected as new Leader<<<\n")
+			fmt.Printf("[TOPIIK] ~!~ selected as new leader\n")
 			// Leader no RequestVote, quite RequestVote
 			break
 		} else {
@@ -155,14 +155,4 @@ func voteMe(address string, term int) {
 		}
 	}
 	voteMeResults = append(voteMeResults, string(buf[4:]))
-
-	/*
-		buf := make([]byte, 512)
-		n, err := conn.Read(buf)
-		if err != nil {
-			return
-		} else {
-			//fmt.Println(string(buf))
-			voteMeResults = append(voteMeResults, string(buf[:n]))
-		}*/
 }
