@@ -97,12 +97,42 @@ func initCluster(partitions uint16, replicas uint16, serverConfig *config.Server
 func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err error) {
 	exist := false // whether the file exist
 
-	//var captialMap = make(map[string]Controller)
-	//var workerMap = make(map[string]Worker)
-	//var partitionMap = make(map[string]Partition)
+	// the cluster metata file
+	clusterPath := GetClusterFilePath()
+	exist, err = util.PathExists(clusterPath)
+	if err != nil {
+		return err
+	}
+	if !exist {
+		fmt.Println("creating cluster metadata file...")
+		var file *os.File
+		file, err = os.Create(clusterPath)
+		if err != nil {
+			return errors.New(cluster_init_failed)
+		}
+		defer file.Close()
+
+		addrSplit, err := util.SplitAddress(serverConfig.Listen)
+		if err != nil {
+			panic(err)
+		}
+
+		clusterInfo.Controllers[nodeId] = NodeSlim{
+			Id:       nodeId,
+			Address:  serverConfig.Listen,
+			Address2: addrSplit[0] + ":" + addrSplit[2],
+		}
+		var jsonBytes []byte
+		jsonBytes, err = json.Marshal(clusterInfo)
+		if err != nil {
+			fmt.Printf("cluster_init::initControllerNode() %s\n", err.Error())
+			panic(err)
+		}
+		file.WriteString(string(jsonBytes))
+	}
 
 	// the controller file
-	controllerPath := GetControllerFilePath()
+	/*controllerPath := GetControllerFilePath()
 	exist, err = util.PathExists(controllerPath)
 	if err != nil {
 		return err
@@ -134,7 +164,7 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 		}
 		file.WriteString(string(jsonBytes))
 	}
-	/*else {
+	else {
 		fmt.Println("loading controller metadata...")
 		var file *os.File
 		file, err = os.Open(controllerPath)
@@ -149,7 +179,7 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 	}*/
 
 	// the worker file
-	workerPath := GetWorkerFilePath()
+	/*workerPath := GetWorkerFilePath()
 	exist, err = util.PathExists(workerPath)
 	if err != nil {
 		return err
@@ -162,7 +192,7 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 			return errors.New(cluster_init_failed)
 		}
 		defer file.Close()
-	} /* else {
+	} else {
 		fmt.Println("loading worker metadata...")
 		var file *os.File
 		file, err = os.Open(workerPath)
@@ -177,7 +207,7 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 	}*/
 
 	// the partition file
-	partitionPath := GetPartitionFilePath()
+	/*partitionPath := GetPartitionFilePath()
 	exist, err = util.PathExists(partitionPath)
 	if err != nil {
 		return err
@@ -190,7 +220,7 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 			return errors.New(cluster_init_failed)
 		}
 		defer file.Close()
-	} /* else {
+	} else {
 		fmt.Println("loading partition metadata...")
 		var file *os.File
 		file, err = os.Open(partitionPath)

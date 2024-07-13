@@ -25,9 +25,10 @@ var quit chan struct{}
 //var wgAppend sync.WaitGroup
 
 // indicate metadata changed on controller Leader, need to sync to Follower(s)
-var controllerPendingAppend = make(map[string]string) // the node id of controller wating for append
-var workerPendingAppend = make(map[string]string)
-var partitionPendingAppend = make(map[string]string)
+var clusterMetadataPendingAppend = make(map[string]string) // the controller id, address
+//var controllerPendingAppend = make(map[string]string)      // the node id of controller wating for append
+//var workerPendingAppend = make(map[string]string)
+//var partitionPendingAppend = make(map[string]string)
 
 var connCache = make(map[string]*net.TCPConn)
 
@@ -44,7 +45,7 @@ func AppendEntries() {
 	for {
 		select {
 		case <-ticker.C:
-			for _, controller := range controllerMap {
+			for _, controller := range clusterInfo.Controllers {
 				if controller.Id == nodeInfo.Id {
 					continue
 				}
@@ -91,17 +92,24 @@ func send(address string, controllerId string, dialErrorCounter *int) string {
 	//defer conn.Close()
 
 	line := RPC_APPENDENTRY + consts.SPACE
-	if _, ok := controllerPendingAppend[controllerId]; ok {
-		line += "CONTROLLER "
-		buf, _ := json.Marshal(controllerMap)
+	if _, ok := clusterMetadataPendingAppend[controllerId]; ok {
+		line += "METADATA "
+		buf, _ := json.Marshal(clusterInfo)
 		line += string(buf)
-	} else if _, ok := workerPendingAppend[controllerId]; ok {
-		line += "WORKER "
-		buf, _ := json.Marshal(workerMap)
-		line += string(buf)
-	} else if _, ok := partitionPendingAppend[controllerId]; ok {
-		line += "PARTITION "
 	}
+
+	/*
+		if _, ok := controllerPendingAppend[controllerId]; ok {
+			line += "CONTROLLER "
+			buf, _ := json.Marshal(controllerMap)
+			line += string(buf)
+		} else if _, ok := workerPendingAppend[controllerId]; ok {
+			line += "WORKER "
+			buf, _ := json.Marshal(workerMap)
+			line += string(buf)
+		} else if _, ok := partitionPendingAppend[controllerId]; ok {
+			line += "PARTITION "
+		}*/
 
 	// Enocde
 	data, err := proto.Encode(line)
@@ -132,6 +140,8 @@ func send(address string, controllerId string, dialErrorCounter *int) string {
 			fmt.Printf("rpc_append_entries::send %s\n", err)
 		}
 	}
+	// remove the pending conroller id from Pending map
+	delete(clusterMetadataPendingAppend, controllerId)
 	return string(buf[4:])
 
 	/*buf := make([]byte, 512)

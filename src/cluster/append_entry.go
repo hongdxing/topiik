@@ -13,6 +13,7 @@ import (
 	"os"
 	"time"
 	"topiik/internal/config"
+	"topiik/internal/util"
 )
 
 /***
@@ -24,22 +25,44 @@ import (
 ***/
 func appendEntry(pieces []string, serverConfig *config.ServerConfig) error {
 	if len(pieces) == 2 {
-		var tmpMap map[string]NodeSlim
-		err := json.Unmarshal([]byte(pieces[1]), &tmpMap)
-		if err != nil {
-			return err
+		/*
+			var tmpMap map[string]NodeSlim
+			err := json.Unmarshal([]byte(pieces[1]), &tmpMap)
+			if err != nil {
+				return err
+			}
+			fmt.Println(tmpMap)
+		*/
+
+		if pieces[0] == "METADATA" {
+			fmt.Println("append_entry::appendEntry() cluster metadata")
+			err := json.Unmarshal([]byte(pieces[1]), clusterInfo) // verify
+			if err != nil {
+				return err
+			}
+			clusterPath := GetClusterFilePath()
+			exist, _ := util.PathExists(clusterPath)
+			if exist {
+				err = os.Truncate(clusterPath, 0) // TODO: backup first
+				if err != nil {
+					return err
+				}
+			}
+			err = os.WriteFile(clusterPath, []byte(pieces[1]), 0644)
+			if err != nil {
+				return err
+			}
 		}
-		fmt.Println(tmpMap)
 
 		// persist metadata
-		if pieces[0] == "CONTROLLER" {
+		/*if pieces[0] == "CONTROLLER" {
 			fmt.Println("append_entry::appendEntry() CONTROLLER")
 			controllerPath := GetControllerFilePath()
 			err = os.WriteFile(controllerPath, []byte(pieces[1]), 0644)
 			if err != nil {
 				return err
 			}
-			
+
 			return nil
 		} else if pieces[0] == "WORKER" {
 			fmt.Println("append_entry::appendEntry() WORKER")
@@ -51,7 +74,7 @@ func appendEntry(pieces []string, serverConfig *config.ServerConfig) error {
 			return nil
 		} else if pieces[0] == "PARTITION" {
 			fmt.Println("append_entry::appendEntry() PARTITION")
-		}
+		}*/
 	}
 	// update Raft Heartbeat
 	nodeStatus.Heartbeat = uint16(rand.IntN(int(serverConfig.RaftHeartbeatMax-serverConfig.RaftHeartbeatMin))) + serverConfig.RaftHeartbeatMin

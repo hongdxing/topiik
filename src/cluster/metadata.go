@@ -9,7 +9,6 @@ package cluster
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"topiik/internal/util"
@@ -18,9 +17,9 @@ import (
 // var metadata = Metadata{}
 var nodeInfo *Node
 var clusterInfo = &Cluster{Controllers: make(map[string]NodeSlim), Workers: make(map[string]NodeSlim)}
-var controllerMap = make(map[string]NodeSlim)
+//var controllerMap = make(map[string]NodeSlim)
 var workerMap = make(map[string]NodeSlim)
-var partitionMap = make(map[string]Partition)
+//var partitionMap = make(map[string]Partition)
 var nodeStatus = &NodeStatus{Role: RAFT_FOLLOWER, Term: 0}
 
 func Map2Array[T any](theMap map[string]T) (arr []T) {
@@ -61,7 +60,7 @@ func LoadControllerMetadata(node *Node) (err error) {
 	}
 
 	// the controller file
-	controllerPath := GetControllerFilePath()
+	/*controllerPath := GetControllerFilePath()
 	exist, err = util.PathExists(controllerPath)
 	if err != nil {
 		return err
@@ -123,6 +122,10 @@ func LoadControllerMetadata(node *Node) (err error) {
 	// if current node is Controller Node(stop and restarted), start to RequestVote()
 	if len(controllerMap) >= 1 {
 		go RequestVote()
+	}*/
+
+	if len(clusterInfo.Controllers) >= 1 {
+		go RequestVote()
 	}
 
 	fmt.Printf("current node role: %d\n", nodeStatus.Role)
@@ -166,7 +169,7 @@ func UpdateNodeClusterId(clusterId string) (err error) {
 
 func IsNodeController() bool {
 	// if current node controllerMap has value
-	return len(controllerMap) > 0
+	return len(clusterInfo.Controllers) > 0
 }
 
 func GetNodeMetadata() Node {
@@ -178,7 +181,7 @@ func GetClusterFilePath() string {
 	return util.GetMainPath() + slash + dataDIR + slash + "__cluster_metadata"
 }
 func GetNodeFilePath() string {
-	return util.GetMainPath() + slash + dataDIR + slash + "metadata_node"
+	return util.GetMainPath() + slash + dataDIR + slash + "__node_metadata"
 }
 
 func GetControllerFilePath() string {

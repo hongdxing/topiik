@@ -39,7 +39,6 @@ func clusterJoin(myAddr string, controllerAddr string, role string) (result stri
 	}
 	nodeId := cluster.GetNodeMetadata().Id
 
-	fmt.Printf("clusterJoin:: %s\n", controllerAddr)
 	conn, err := util.PreapareSocketClient(controllerAddr)
 	if err != nil {
 		return "", errors.New("join to cluster failed, please check whether captial node still alive and try again")
@@ -48,7 +47,7 @@ func clusterJoin(myAddr string, controllerAddr string, role string) (result stri
 
 	// CLUSTER JOIN_ACK nodeId addr role
 	line := command.CLUSTER_JOIN_ACK + consts.SPACE + nodeId + consts.SPACE + myAddr + consts.SPACE + role
-	fmt.Println(line)
+	//fmt.Println(line)
 
 	data, err := proto.Encode(line)
 	if err != nil {
@@ -74,9 +73,9 @@ func clusterJoin(myAddr string, controllerAddr string, role string) (result stri
 	buf := make([]byte, 256)
 	n, err := reader.Read(buf)
 	resp := string(buf[1:n])
-	fmt.Println(resp)
 
 	if flag == 1 {
+		fmt.Printf("join cluster:%s\n", resp)
 		err = cluster.UpdateNodeClusterId(resp)
 		if err != nil {
 			fmt.Println(err)
@@ -87,6 +86,7 @@ func clusterJoin(myAddr string, controllerAddr string, role string) (result stri
 			go cluster.RequestVote()
 		}
 	} else {
+		fmt.Println("join cluster failed")
 		return "", errors.New(resp)
 	}
 

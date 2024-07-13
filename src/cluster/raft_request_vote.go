@@ -33,7 +33,7 @@ const requestVoteInterval = 100
 func RequestVote() {
 
 	// if this is the only Controller, then it alawys Leader
-	if len(controllerMap) == 1 {
+	if len(clusterInfo.Controllers) == 1 {
 		nodeStatus.Role = RAFT_LEADER
 		go AppendEntries()
 		return
@@ -63,10 +63,10 @@ func RequestVote() {
 		}*/
 		// merge controller and woker address2
 		var addr2List = []string{}
-		for _, v := range controllerMap {
+		for _, v := range clusterInfo.Controllers {
 			addr2List = append(addr2List, v.Address2)
 		}
-		for _, v := range workerMap {
+		for _, v := range clusterInfo.Workers {
 			addr2List = append(addr2List, v.Address2)
 		}
 
@@ -104,6 +104,14 @@ func RequestVote() {
 		if canPromote {
 			// promote to Controller
 			nodeStatus.Role = RAFT_LEADER
+
+			// when new Leader selected, try to sync cluster meta data
+			for _, v := range clusterInfo.Controllers {
+				if v.Id != nodeInfo.Id {
+					clusterMetadataPendingAppend[v.Id] = v.Id
+				}
+			}
+
 			// Leader start to AppendEntries
 			go AppendEntries()
 			// Print Selected Leader
