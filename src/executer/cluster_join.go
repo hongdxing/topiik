@@ -19,6 +19,7 @@ import (
 	"topiik/internal/consts"
 	"topiik/internal/proto"
 	"topiik/internal/util"
+	"topiik/resp"
 )
 
 /***
@@ -65,20 +66,6 @@ func clusterJoin(myAddr string, controllerAddr string, role string) (result stri
 		fmt.Println(err)
 	}
 
-	/*
-		reader := bufio.NewReader(conn)
-		flagByte, _ := reader.Peek(1)
-		flagBuff := bytes.NewBuffer(flagByte)
-		var flag int8
-		err = binary.Read(flagBuff, binary.LittleEndian, &flag)
-		if err != nil {
-			fmt.Println(err)
-			return "", errors.New("join to cluster failed")
-		}
-
-		buf := make([]byte, 256)
-		n, err := reader.Read(buf)
-		resp := string(buf[1:n])*/
 	reader := bufio.NewReader(conn)
 	buf, err := proto.Decode(reader)
 	flagByte := buf[4:5]
@@ -89,10 +76,10 @@ func clusterJoin(myAddr string, controllerAddr string, role string) (result stri
 		fmt.Println(err)
 		return "", errors.New("join to cluster failed")
 	}
-	resp := string(buf[5:])
+	resp := string(buf[resp.RESPONSE_HEADER_SIZE:])
 
 	if flag == 1 {
-		
+
 		fmt.Printf("join cluster:%s\n", resp)
 		err = cluster.UpdateNodeClusterId(resp)
 		if err != nil {

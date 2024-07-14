@@ -32,5 +32,3 @@ const (
 const (
 	HOST_PATTERN = `^.+:\d{4,5}`
 )
-
-const RESPONSE_HEADER_SIZE = 5

@@ -16,9 +16,9 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"topiik/internal/consts"
 	"topiik/internal/proto"
 	"topiik/internal/util"
+	"topiik/resp"
 )
 
 var voteMeResults []string // Return values from other Nodes, "R": Rejected or "A": Accepted
@@ -150,7 +150,7 @@ func voteMe(address string) {
 
 	reader := bufio.NewReader(conn)
 	buf, err := proto.Decode(reader)
-	if len(buf) < consts.RESPONSE_HEADER_SIZE {
+	if len(buf) < resp.RESPONSE_HEADER_SIZE {
 		fmt.Printf("invalid len(buf):%v\n", len(buf))
 		return
 	}
@@ -159,5 +159,5 @@ func voteMe(address string) {
 			fmt.Printf("raft_request_vote::voteMe %s\n", err)
 		}
 	}
-	voteMeResults = append(voteMeResults, string(buf[consts.RESPONSE_HEADER_SIZE:]))
+	voteMeResults = append(voteMeResults, string(buf[resp.RESPONSE_HEADER_SIZE:]))
 }

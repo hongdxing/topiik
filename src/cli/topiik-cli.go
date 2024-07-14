@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"topiik/internal/command"
 	"topiik/internal/proto"
+	"topiik/resp"
 )
 
 const (
@@ -97,11 +99,11 @@ func main() {
 			return
 		}
 
-		response(conn, strs[0])
+		response(conn)
 	}
 }
 
-func response(conn net.Conn, CMD string) {
+func response(conn net.Conn) {
 	//buf := make([]byte, BUF_SIZE)
 	/*n, err := conn.Read(buf[0:])
 	fmt.Println(n)
@@ -131,19 +133,55 @@ func response(conn net.Conn, CMD string) {
 	}
 
 	if len(buf) > 4 {
-		flagByte := buf[4:5]
-		flagBuf := bytes.NewBuffer(flagByte)
+		bufSlice := buf[4:5]
+		byteBuf := bytes.NewBuffer(bufSlice)
 		var flag int8
-		err = binary.Read(flagBuf, binary.LittleEndian, &flag)
+		err = binary.Read(byteBuf, binary.LittleEndian, &flag)
 		if err != nil {
-			fmt.Println("error")
+			fmt.Println("(err):")
 		}
 
 		if flag == 1 {
-			res := buf[5:]
-			fmt.Printf("%s\n", string(res))
+			bufSlice = buf[5:6]
+			byteBuf = bytes.NewBuffer(bufSlice)
+			var datatype int8
+			err = binary.Read(byteBuf, binary.LittleEndian, &datatype)
+			if err != nil {
+				fmt.Println("(err):")
+			}
+			if datatype == 1 {
+				res := buf[resp.RESPONSE_HEADER_SIZE:]
+				fmt.Printf("%s\n", string(res))
+			} else if datatype == 2 {
+				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
+				byteBuf := bytes.NewBuffer(bufSlice)
+				var result int64
+				err = binary.Read(byteBuf, binary.LittleEndian, &result)
+				if err != nil {
+					fmt.Println("(err):")
+				}
+				fmt.Printf("%v\n", result)
+			} else if datatype == 3 {
+				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
+				//fmt.Println(bufSlice)
+				var result []string
+				/*byteBuf := bytes.NewBuffer(bufSlice)
+				err = binary.Read(byteBuf, binary.LittleEndian, &result)
+				if err != nil {
+					fmt.Println("(err):")
+				}*/
+
+				err = json.Unmarshal(bufSlice, &result)
+				if err != nil {
+					fmt.Printf("(err):%s\n", err.Error())
+				}
+				fmt.Printf("%v\n", result)
+			} else {
+				fmt.Println("(err): invalid response type")
+			}
+
 		} else {
-			res := buf[5:]
+			res := buf[resp.RESPONSE_HEADER_SIZE:]
 			fmt.Printf("(err):%s\n", res)
 		}
 	} else {

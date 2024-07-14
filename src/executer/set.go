@@ -76,6 +76,8 @@ func set(pieces []string) (result string, err error) {
 				if _, ok := shared.MemMap[key]; ok {
 					return "", errors.New(RES_KEY_EXIST_ALREADY)
 				}
+			} else {
+				return "", errors.New(RES_SYNTAX_ERROR)
 			}
 		}
 	}

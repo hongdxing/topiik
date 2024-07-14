@@ -17,6 +17,7 @@ import (
 
 func ErrorResponse(err error) (result []byte) {
 	result = append(result, byte(int8(0)))
+	result = append(result, byte(int8(1))) // string type
 	result = append(result, []byte(err.Error())...)
 	result, _ = proto.Encode(string(result))
 	return result
@@ -25,6 +26,7 @@ func ErrorResponse(err error) (result []byte) {
 func StringResponse(res string, CMD string, msg []byte) (result []byte) {
 	buf := []byte(res)
 	result = append(result, byte(int8(1)))
+	result = append(result, byte(int8(1))) // string type
 	result = append(result, buf...)
 	result, _ = proto.Encode(string(result))
 	return result
@@ -38,6 +40,12 @@ func IntegerResponse(res int64, CMD string, msg []byte) (result []byte) {
 		fmt.Printf("IntegerResponse() write flag:%s", err.Error())
 		return ErrorResponse(err)
 	}
+	err = binary.Write(buffer, binary.LittleEndian, int8(2)) // one byte of success flag
+	if err != nil {
+		fmt.Printf("IntegerResponse() write type:%s", err.Error())
+		return ErrorResponse(err)
+	}
+
 	err = binary.Write(buffer, binary.LittleEndian, res)
 	if err != nil {
 		fmt.Printf("IntegerResponse() write res:%s", err.Error())
@@ -53,11 +61,16 @@ func IntegerResponse(res int64, CMD string, msg []byte) (result []byte) {
 func StringArrayResponse(res []string, CMD string, msg []byte) (result []byte) {
 	buf, _ := json.Marshal(res)
 	result = append(result, byte(int8(1)))
+	result = append(result, byte(int8(3))) // string array type
 	result = append(result, buf...)
+	/*for _, str := range res {
+		result = append(result, []byte(str)...)
+	}*/
 	result, _ = proto.Encode(string(result))
 	return result
 }
 
+/*
 func Response[T any](flag int8, res T) (result []byte) {
 	buf, _ := json.Marshal(res)
 	result = append(result, byte(flag))
@@ -65,3 +78,4 @@ func Response[T any](flag int8, res T) (result []byte) {
 	result, _ = proto.Encode(string(result))
 	return result
 }
+*/
