@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"topiik/internal/consts"
 	"topiik/internal/proto"
 	"topiik/internal/util"
 )
@@ -133,7 +134,7 @@ func voteMe(address string) {
 	}
 	defer conn.Close()
 
-	line := "VOTE " + strconv.Itoa(int(clusterInfo.Ver))
+	line := RPC_VOTE + " " + strconv.Itoa(int(clusterInfo.Ver))
 
 	// Enocde
 	data, err := proto.Encode(line)
@@ -149,10 +150,14 @@ func voteMe(address string) {
 
 	reader := bufio.NewReader(conn)
 	buf, err := proto.Decode(reader)
+	if len(buf) < consts.RESPONSE_HEADER_SIZE {
+		fmt.Printf("invalid len(buf):%v\n", len(buf))
+		return
+	}
 	if err != nil {
 		if err == io.EOF {
 			fmt.Printf("raft_request_vote::voteMe %s\n", err)
 		}
 	}
-	voteMeResults = append(voteMeResults, string(buf[4:]))
+	voteMeResults = append(voteMeResults, string(buf[consts.RESPONSE_HEADER_SIZE:]))
 }

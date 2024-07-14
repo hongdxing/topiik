@@ -24,7 +24,7 @@ import (
 **
 ** Syntax: GETM KEY1 KEY2 [... KEYn]
 **/
-func getM(pieces []string) (result []any, err error) {
+func getM(pieces []string) (result []string, err error) {
 	if len(pieces) < 1 {
 		return nil, errors.New(RES_SYNTAX_ERROR)
 	}
@@ -36,7 +36,7 @@ func getM(pieces []string) (result []any, err error) {
 			}
 			result = append(result, string(val.Str))
 		} else {
-			result = append(result, nil)
+			result = append(result, "")
 		}
 	}
 	return result, nil

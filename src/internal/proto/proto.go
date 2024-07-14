@@ -52,10 +52,13 @@ func Decode(reader *bufio.Reader) (string, error) {
 
 func Decode(reader *bufio.Reader) ([]byte, error) {
 	// Read message HEADER(int32 4 bytes)
-	lengthByte, _ := reader.Peek(4)
+	lengthByte, err := reader.Peek(4)
+	if err != nil {
+		return nil, err
+	}
 	lengthBuff := bytes.NewBuffer(lengthByte)
 	var length int32
-	err := binary.Read(lengthBuff, binary.LittleEndian, &length)
+	err = binary.Read(lengthBuff, binary.LittleEndian, &length)
 	if err != nil {
 		return nil, err
 	}

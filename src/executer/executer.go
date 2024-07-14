@@ -7,7 +7,6 @@
 package executer
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -15,7 +14,7 @@ import (
 	"topiik/internal/command"
 	"topiik/internal/config"
 	"topiik/internal/consts"
-	"topiik/internal/proto"
+	"topiik/resp"
 )
 
 /***Command RESponse***/
@@ -53,28 +52,28 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string) []byt
 	if CMD == command.CLUSTER {
 		pieces := splitParams(strs)
 		if len(pieces) < 1 {
-			return errorResponse(errors.New(RES_SYNTAX_ERROR))
+			return resp.ErrorResponse(errors.New(RES_SYNTAX_ERROR))
 		}
 		fmt.Println(pieces)
 		if strings.ToUpper(pieces[0]) == "INIT" {
 			err := clusterInit(pieces, serverConfig)
 			if err != nil {
-				return errorResponse(err)
+				return resp.ErrorResponse(err)
 			}
-			return stringResponse(RES_OK, CMD, msg)
+			return resp.StringResponse(RES_OK, CMD, msg)
 		} else if strings.ToUpper(pieces[0]) == "JOIN" { // CLUSTER JOIN host:port CONTROLLER|WORKER
 			if len(pieces) < 3 {
-				return errorResponse(errors.New(RES_SYNTAX_ERROR))
+				return resp.ErrorResponse(errors.New(RES_SYNTAX_ERROR))
 			}
 			result, err := clusterJoin(serverConfig.Listen, pieces[1], pieces[2])
 			if err != nil {
-				return errorResponse(err)
+				return resp.ErrorResponse(err)
 			}
-			return stringResponse(result, CMD, msg)
+			return resp.StringResponse(result, CMD, msg)
 		} else if strings.ToUpper(pieces[0]) == "INFO" {
 			clusterInfo()
 		}
-		return errorResponse(errors.New(RES_SYNTAX_ERROR))
+		return resp.ErrorResponse(errors.New(RES_SYNTAX_ERROR))
 	}
 
 	// if is Controller, forward to worker(s)
@@ -84,7 +83,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string) []byt
 
 	// node must be in a cluster
 	if len(cluster.GetNodeInfo().ClusterId) == 0 {
-		return errorResponse(errors.New("current node not member of cluster"))
+		return resp.ErrorResponse(errors.New("current node not member of cluster"))
 	}
 	// TODO: to allow cmd only from controller
 
@@ -97,9 +96,9 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string) []byt
 		}
 		result, err := get(pieces)
 		if err != nil {
-			return errorResponse(err)
+			return resp.ErrorResponse(err)
 		}
-		return stringResponse(result, CMD, msg)
+		return resp.StringResponse(result, CMD, msg)
 	} else if CMD == command.SET {
 		/***String GET***/
 		pieces := []string{}
@@ -108,9 +107,9 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string) []byt
 		}
 		result, err := set(pieces)
 		if err != nil {
-			return errorResponse(err)
+			return resp.ErrorResponse(err)
 		}
-		return stringResponse(result, CMD, msg)
+		return resp.StringResponse(result, CMD, msg)
 	} else if CMD == command.GETM {
 		//pieces, err := needKEY(strs)
 		pieces := []string{}
@@ -119,9 +118,9 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string) []byt
 		}
 		result, err := getM(pieces)
 		if err != nil {
-			return errorResponse(err)
+			return resp.ErrorResponse(err)
 		}
-		return successResponse(result, CMD, msg)
+		return resp.StringArrayResponse(result, CMD, msg)
 	} else if CMD == command.SETM {
 		//pieces, err := needKEY(strs)
 		pieces := []string{}
@@ -130,67 +129,67 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string) []byt
 		}
 		result, err := setM(pieces)
 		if err != nil {
-			return errorResponse(err)
+			return resp.ErrorResponse(err)
 		}
-		return integerResponse(int64(result), CMD, msg)
+		return resp.IntegerResponse(int64(result), CMD, msg)
 	} else if CMD == command.INCR {
 		pieces, err := needKEY(strs)
 		if err != nil {
-			return errorResponse(err)
+			return resp.ErrorResponse(err)
 		}
 		result, err := incr(pieces)
 		if err != nil {
-			return errorResponse(err)
+			return resp.ErrorResponse(err)
 		}
-		return integerResponse(result, CMD, msg)
+		return resp.IntegerResponse(result, CMD, msg)
 	} else if CMD == command.LPUSH || CMD == command.LPUSHR { // LIST COMMANDS
 		/***List LPUSH***/
 		pieces, err := needKEY(strs)
 		if err != nil {
-			return errorResponse(err)
+			return resp.ErrorResponse(err)
 		}
 		result, err := pushList(pieces, CMD)
 		if err != nil {
-			return errorResponse(err)
+			return resp.ErrorResponse(err)
 		}
-		return integerResponse(int64(result), CMD, msg)
+		return resp.IntegerResponse(int64(result), CMD, msg)
 	} else if CMD == command.LPOP || CMD == command.LPOPR {
 		pieces, err := needKEY(strs)
 		if err != nil {
-			return errorResponse(err)
+			return resp.ErrorResponse(err)
 		}
 		result, err := popList(pieces, CMD)
 		if err != nil {
-			return errorResponse(err)
+			return resp.ErrorResponse(err)
 		}
-		return successResponse(result, CMD, msg)
+		return resp.StringArrayResponse(result, CMD, msg)
 	} else if CMD == command.LLEN {
 		pieces, err := needKEY(strs)
 		if err != nil {
-			return errorResponse(err)
+			return resp.ErrorResponse(err)
 		}
 		result, err := llen(pieces)
 		if err != nil {
-			return errorResponse(err)
+			return resp.ErrorResponse(err)
 		}
-		return integerResponse(int64(result), CMD, msg)
+		return resp.IntegerResponse(int64(result), CMD, msg)
 	} else if CMD == command.TTL { // KEY COMMANDS
 		pieces := splitParams(strs)
 		result, err := ttl(pieces)
 		if err != nil {
-			return errorResponse(err)
+			return resp.ErrorResponse(err)
 		}
-		return successResponse(result, CMD, msg)
+		return resp.IntegerResponse(result, CMD, msg)
 	} else if CMD == command.KEYS {
 		pieces := splitParams(strs)
 		result, err := keys(pieces)
 		if err != nil {
-			return errorResponse(err)
+			return resp.ErrorResponse(err)
 		}
-		return successResponse(result, CMD, msg)
+		return resp.StringArrayResponse(result, CMD, msg)
 	} else {
 		fmt.Printf("Invalid cmd: %s\n", CMD)
-		return errorResponse(errors.New(consts.RES_INVALID_CMD))
+		return resp.ErrorResponse(errors.New(consts.RES_INVALID_CMD))
 	}
 }
 
@@ -252,52 +251,3 @@ func response[T any](success bool, response T) []byte {
 	b, _ := json.Marshal(&datatype.Response[T]{R: success, M: response})
 	return b
 }*/
-
-/*** Response Byte ***/
-func errorResponse(err error) []byte {
-	return responseString(-1, err.Error())
-}
-
-func stringResponse(res string, CMD string, msg []byte) (result []byte) {
-	buf := []byte(res)
-	result = append(result, byte(int8(1)))
-	result = append(result, buf...)
-	result, _ = proto.Encode(string(result))
-	return result
-}
-
-func integerResponse(res int64, CMD string, msg []byte) (result []byte) {
-	buf := byte(res)
-	result = append(result, byte(int8(1)))
-	result = append(result, buf)
-	result, _ = proto.Encode(string(result))
-	return result
-}
-
-func successResponse[T any](res T, CMD string, msg []byte) []byte {
-	return response(1, res)
-}
-
-func responseString(flag int8, res string) (result []byte) {
-	//buf, _ := json.Marshal(res)
-	buf := []byte(res)
-	result = append(result, byte(flag))
-	result = append(result, buf...)
-	result, _ = proto.Encode(string(result))
-	return result
-}
-
-func response[T any](flag int8, res T) (result []byte) {
-	/*var pkg = new(bytes.Buffer)
-	err := binary.Write(pkg, binary.LittleEndian, byte(flag))
-	if err != nil {
-		fmt.Printf("responseB:%s\n", err.Error())
-	}
-	result = append(result, pkg.Bytes()...)
-	*/
-	buf, _ := json.Marshal(res)
-	result = append(result, byte(flag))
-	result = append(result, buf...)
-	result, _ = proto.Encode(string(result))
-	return result
-}
