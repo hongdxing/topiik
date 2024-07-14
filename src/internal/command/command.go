@@ -26,10 +26,7 @@ const (
 	KEYS   = "KEYS"
 
 	/*** CLUSTER ***/
-	VOTE             = "VOTE"
-	APPEND_ENTRY     = "APPENDENTRY"
-	CLUSTER          = "CLUSTER"
-	CLUSTER_JOIN_ACK = "__CLUSTER_JOIN_ACK"
+	CLUSTER = "CLUSTER"
 
 	/*** OTHERS ***/
 	EXPIRE = "EXPIRE"

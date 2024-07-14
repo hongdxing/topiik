@@ -20,7 +20,8 @@ var tcpMap = make(map[string]*net.TCPConn)
 
 func Forward(msg []byte) []byte {
 	if len(clusterInfo.Workers) == 0 {
-		return []byte{}
+		res, _ := proto.Encode("")
+		return res
 	}
 	var err error
 	// TODO: find worker base on key partition, and get LeaderWorkerId

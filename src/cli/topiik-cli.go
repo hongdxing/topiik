@@ -2,7 +2,10 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/binary"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"strings"
@@ -14,6 +17,9 @@ const (
 	BUF_SIZE = 512
 )
 
+var host string
+var pass string
+
 /***
 **
 **
@@ -22,8 +28,8 @@ const (
 func main() {
 	// Connect to the server
 	//conn, err := net.Dial("tcp", "localhost:8302")
-	host := "localhost:8301"
-	pass := ""
+	host = "localhost:8301"
+	pass = ""
 	const invalidArgs = "invalid args"
 	fmt.Println(os.Args)
 	if len(os.Args) > 1 {
@@ -51,7 +57,7 @@ func main() {
 
 	tcpServer, err := net.ResolveTCPAddr("tcp", host)
 	if err != nil {
-		println("ResolveTCPAddr failed:", err.Error())
+		println("server not available:", err.Error())
 		os.Exit(1)
 	}
 	conn, err := net.DialTCP("tcp", nil, tcpServer)
@@ -64,6 +70,7 @@ func main() {
 
 	// for loop keep cli alive
 	for {
+		fmt.Print(host + ">")
 		line, err := reader.ReadString('\n')
 		line = strings.TrimRight(line, " \t\r\n")
 		if err != nil {
@@ -78,22 +85,24 @@ func main() {
 		// Enocde
 		data, err := proto.Encode(line)
 		if err != nil {
+			fmt.Println()
 			fmt.Println(err)
 		}
 
 		// Send
 		_, err = conn.Write(data)
 		if err != nil {
+			fmt.Println()
 			fmt.Println(err)
 			return
 		}
 
-		go response(conn)
+		response(conn, strs[0])
 	}
 }
 
-func response(conn net.Conn) {
-	buf := make([]byte, BUF_SIZE)
+func response(conn net.Conn, CMD string) {
+	//buf := make([]byte, BUF_SIZE)
 	/*n, err := conn.Read(buf[0:])
 	fmt.Println(n)
 	if err != nil {
@@ -101,9 +110,10 @@ func response(conn net.Conn) {
 		return
 	}*/
 
-	for {
+	/*for {
 		n, err := conn.Read(buf[0:])
 		if err != nil {
+			fmt.Println()
 			fmt.Println(err)
 			return
 		}
@@ -111,6 +121,32 @@ func response(conn net.Conn) {
 		if n <= 0 || n < BUF_SIZE {
 			break
 		}
+	}*/
+	reader := bufio.NewReader(conn)
+	buf, err := proto.Decode(reader)
+	if err != nil {
+		if err == io.EOF {
+			fmt.Printf("rpc_append_entries::send %s\n", err)
+		}
 	}
-	fmt.Println()
+
+	if len(buf) > 4 {
+		flagByte := buf[4:5]
+		flagBuf := bytes.NewBuffer(flagByte)
+		var flag int8
+		err = binary.Read(flagBuf, binary.LittleEndian, &flag)
+		if err != nil {
+			fmt.Println("error")
+		}
+
+		if flag == 1 {
+			res := buf[5:]
+			fmt.Printf("%s\n", string(res))
+		} else {
+			res := buf[5:]
+			fmt.Printf("(err):%s\n", res)
+		}
+	} else {
+		fmt.Println("(err): unknow")
+	}
 }

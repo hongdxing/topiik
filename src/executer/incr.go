@@ -26,40 +26,40 @@ import (
 **
 ** Syntax: INCR KEY [num]
 **/
-func incr(pieces []string) (result string, err error) {
+func incr(pieces []string) (result int64, err error) {
 	if (len(pieces)) == 1 { // KEY
-		i := 0
+		var i int64 = 0
 		key := strings.TrimSpace(pieces[0])
 		i, err = preINCR(key)
 		if err != nil {
-			return "", err
+			return 0, err
 		}
 		i++
-		shared.MemMap[key].Str = []byte(strconv.Itoa(i))
-		return strconv.Itoa(i), nil
+		shared.MemMap[key].Str = []byte(string(i))
+		return i, nil
 	} else if len(pieces) == 2 { // KEY num
-		var i int
+		var i int64
 		var num int
 		num, err = strconv.Atoi(pieces[1])
 		if err != nil {
-			return RES_NIL, errors.New(RES_SYNTAX_ERROR)
+			return 0, errors.New(RES_SYNTAX_ERROR)
 		}
 		key := strings.TrimSpace(pieces[0])
 		i, err = preINCR(key)
 		if err != nil {
-			return "", err
+			return 0, err
 		}
-		i += num
-		shared.MemMap[key].Str = []byte(strconv.Itoa(i))
-		return strconv.Itoa(i), nil
+		i += int64(num)
+		shared.MemMap[key].Str = []byte(string(i))
+		return i, nil
 	} else {
-		return RES_NIL, errors.New(RES_WRONG_NUMBER_OF_ARGS)
+		return 0, errors.New(RES_WRONG_NUMBER_OF_ARGS)
 	}
 }
 
-func preINCR(key string) (i int, err error) {
+func preINCR(key string) (i int64, err error) {
 	if val, ok := shared.MemMap[key]; ok {
-		i, err = strconv.Atoi(string(val.Str))
+		i, err = strconv.ParseInt(string(val.Str), 10, 0)
 		if err != nil {
 			return i, errors.New(RES_DATA_TYPE_NOT_MATCH)
 		}

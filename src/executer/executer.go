@@ -7,18 +7,15 @@
 package executer
 
 import (
-	"container/list"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"slices"
 	"strings"
 	"topiik/cluster"
 	"topiik/internal/command"
 	"topiik/internal/config"
 	"topiik/internal/consts"
-	"topiik/internal/datatype"
-	"topiik/shared"
+	"topiik/internal/proto"
 )
 
 /***Command RESponse***/
@@ -32,8 +29,7 @@ const (
 	RES_KEY_NOT_EXIST        = "KEY_NOT_EXIST"
 	RES_KEY_EXIST_ALREADY    = "KEY_EXIST_ALREADY"
 
-	RES_INVALID_CMD = "INVALID_CMD"
-	RES_INVALID_OP  = "INVALID_OP"
+	RES_INVALID_OP = "INVALID_OP"
 
 	RES_INVALID_ADDR = "INVALID_ADDR"
 
@@ -53,14 +49,44 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string) []byt
 	strs := strings.SplitN(strings.TrimLeft(string(strMsg), consts.SPACE), consts.SPACE, 2)
 	CMD := strings.ToUpper(strings.TrimSpace(strs[0]))
 
-	// if is Controller, let Controller process the command
-	if cluster.IsNodeController() {
-		result, err := cluster.Execute(msg, serverConfig)
-		if err != nil {
-			return errorResponseB(err)
+	// cluster command
+	if CMD == command.CLUSTER {
+		pieces := splitParams(strs)
+		if len(pieces) < 1 {
+			return errorResponse(errors.New(RES_SYNTAX_ERROR))
 		}
-		return successResponseB(result)
+		fmt.Println(pieces)
+		if strings.ToUpper(pieces[0]) == "INIT" {
+			err := clusterInit(pieces, serverConfig)
+			if err != nil {
+				return errorResponse(err)
+			}
+			return stringResponse(RES_OK, CMD, msg)
+		} else if strings.ToUpper(pieces[0]) == "JOIN" { // CLUSTER JOIN host:port CONTROLLER|WORKER
+			if len(pieces) < 3 {
+				return errorResponse(errors.New(RES_SYNTAX_ERROR))
+			}
+			result, err := clusterJoin(serverConfig.Listen, pieces[1], pieces[2])
+			if err != nil {
+				return errorResponse(err)
+			}
+			return stringResponse(result, CMD, msg)
+		} else if strings.ToUpper(pieces[0]) == "INFO" {
+			clusterInfo()
+		}
+		return errorResponse(errors.New(RES_SYNTAX_ERROR))
 	}
+
+	// if is Controller, forward to worker(s)
+	if cluster.IsNodeController() {
+		return cluster.Forward(msg)
+	}
+
+	// node must be in a cluster
+	if len(cluster.GetNodeInfo().ClusterId) == 0 {
+		return errorResponse(errors.New("current node not member of cluster"))
+	}
+	// TODO: to allow cmd only from controller
 
 	if CMD == command.GET { // STRING COMMANDS
 		/***String SET***/
@@ -73,7 +99,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string) []byt
 		if err != nil {
 			return errorResponse(err)
 		}
-		return successResponse(result, CMD, msg)
+		return stringResponse(result, CMD, msg)
 	} else if CMD == command.SET {
 		/***String GET***/
 		pieces := []string{}
@@ -84,7 +110,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string) []byt
 		if err != nil {
 			return errorResponse(err)
 		}
-		return successResponse(result, CMD, msg)
+		return stringResponse(result, CMD, msg)
 	} else if CMD == command.GETM {
 		//pieces, err := needKEY(strs)
 		pieces := []string{}
@@ -106,7 +132,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string) []byt
 		if err != nil {
 			return errorResponse(err)
 		}
-		return successResponse(result, CMD, msg)
+		return integerResponse(int64(result), CMD, msg)
 	} else if CMD == command.INCR {
 		pieces, err := needKEY(strs)
 		if err != nil {
@@ -116,7 +142,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string) []byt
 		if err != nil {
 			return errorResponse(err)
 		}
-		return successResponse(result, CMD, msg)
+		return integerResponse(result, CMD, msg)
 	} else if CMD == command.LPUSH || CMD == command.LPUSHR { // LIST COMMANDS
 		/***List LPUSH***/
 		pieces, err := needKEY(strs)
@@ -127,7 +153,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string) []byt
 		if err != nil {
 			return errorResponse(err)
 		}
-		return successResponse(result, CMD, msg)
+		return integerResponse(int64(result), CMD, msg)
 	} else if CMD == command.LPOP || CMD == command.LPOPR {
 		pieces, err := needKEY(strs)
 		if err != nil {
@@ -147,7 +173,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string) []byt
 		if err != nil {
 			return errorResponse(err)
 		}
-		return successResponse(result, CMD, msg)
+		return integerResponse(int64(result), CMD, msg)
 	} else if CMD == command.TTL { // KEY COMMANDS
 		pieces := splitParams(strs)
 		result, err := ttl(pieces)
@@ -162,35 +188,9 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string) []byt
 			return errorResponse(err)
 		}
 		return successResponse(result, CMD, msg)
-	} else if CMD == command.CLUSTER {
-		pieces := splitParams(strs)
-		if len(pieces) < 1 {
-			return errorResponse(errors.New(RES_SYNTAX_ERROR))
-		}
-		fmt.Println(pieces)
-		if strings.ToUpper(pieces[0]) == "INIT" {
-			//err := cluster.ClusterInit(serverConfig)
-			err := clusterInit(pieces, serverConfig)
-			if err != nil {
-				return errorResponse(err)
-			}
-			return successResponse(RES_OK, CMD, msg)
-		} else if strings.ToUpper(pieces[0]) == "JOIN" { // CLUSTER JOIN host:port CONTROLLER|WORKER
-			if len(pieces) < 3 {
-				return errorResponse(errors.New(RES_SYNTAX_ERROR))
-			}
-			result, err := clusterJoin(serverConfig.Listen, pieces[1], pieces[2])
-			if err != nil {
-				return errorResponse(err)
-			}
-			return successResponse(result, CMD, msg)
-		} else if strings.ToUpper(pieces[0]) == "INFO" {
-			//
-		}
-		return errorResponse(errors.New(RES_SYNTAX_ERROR))
 	} else {
 		fmt.Printf("Invalid cmd: %s\n", CMD)
-		return errorResponse(errors.New(RES_INVALID_CMD))
+		return errorResponse(errors.New(consts.RES_INVALID_CMD))
 	}
 }
 
@@ -224,6 +224,7 @@ func splitParams(strs []string) (pieces []string) {
 ** Persist command
 **
 **/
+/*
 func enqueuePersistentMsg(msg []byte) {
 	if shared.MemMap[consts.PERSISTENT_BUF_QUEUE] == nil {
 		shared.MemMap[consts.PERSISTENT_BUF_QUEUE] = &datatype.TValue{
@@ -233,10 +234,10 @@ func enqueuePersistentMsg(msg []byte) {
 		}
 	}
 	shared.MemMap[consts.PERSISTENT_BUF_QUEUE].Lst.PushFront(msg)
-}
+}*/
 
 /*** Response json ***/
-func errorResponse(err error) []byte {
+/*func errorResponse(err error) []byte {
 	return response[string](false, err.Error())
 }
 
@@ -250,18 +251,43 @@ func successResponse[T any](result T, CMD string, msg []byte) []byte {
 func response[T any](success bool, response T) []byte {
 	b, _ := json.Marshal(&datatype.Response[T]{R: success, M: response})
 	return b
-}
+}*/
 
 /*** Response Byte ***/
-func errorResponseB(err error) []byte {
-	return responseB(-1, []byte(err.Error()))
+func errorResponse(err error) []byte {
+	return responseString(-1, err.Error())
 }
 
-func successResponseB(res []byte) []byte {
-	return responseB(1, res)
+func stringResponse(res string, CMD string, msg []byte) (result []byte) {
+	buf := []byte(res)
+	result = append(result, byte(int8(1)))
+	result = append(result, buf...)
+	result, _ = proto.Encode(string(result))
+	return result
 }
 
-func responseB(flag int8, res []byte) (result []byte) {
+func integerResponse(res int64, CMD string, msg []byte) (result []byte) {
+	buf := byte(res)
+	result = append(result, byte(int8(1)))
+	result = append(result, buf)
+	result, _ = proto.Encode(string(result))
+	return result
+}
+
+func successResponse[T any](res T, CMD string, msg []byte) []byte {
+	return response(1, res)
+}
+
+func responseString(flag int8, res string) (result []byte) {
+	//buf, _ := json.Marshal(res)
+	buf := []byte(res)
+	result = append(result, byte(flag))
+	result = append(result, buf...)
+	result, _ = proto.Encode(string(result))
+	return result
+}
+
+func response[T any](flag int8, res T) (result []byte) {
 	/*var pkg = new(bytes.Buffer)
 	err := binary.Write(pkg, binary.LittleEndian, byte(flag))
 	if err != nil {
@@ -269,7 +295,9 @@ func responseB(flag int8, res []byte) (result []byte) {
 	}
 	result = append(result, pkg.Bytes()...)
 	*/
+	buf, _ := json.Marshal(res)
 	result = append(result, byte(flag))
-	result = append(result, res...)
+	result = append(result, buf...)
+	result, _ = proto.Encode(string(result))
 	return result
 }

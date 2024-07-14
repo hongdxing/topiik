@@ -54,14 +54,7 @@ func handleConnection(conn net.Conn, serverConfig *config.ServerConfig) {
 			fmt.Println(err)
 			return
 		}
-		result, err := Execute(msg, serverConfig)
-		var buf []byte
-		if err != nil {
-			fmt.Println(err.Error())
-			buf, _ = proto.Encode(err.Error())
-		} else {
-			buf, _ = proto.Encode(string(result))
-		}
-		conn.Write(buf)
+		result := Execute(msg, serverConfig)
+		conn.Write(result)
 	}
 }

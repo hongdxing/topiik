@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"topiik/internal/command"
+	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/shared"
 )
@@ -62,7 +63,7 @@ func popList(args []string, cmd string) (result []string, err error) {
 				eleToBeRemoved = append(eleToBeRemoved, ele)
 			}
 		} else {
-			return result, errors.New(RES_INVALID_CMD) // This should never happen
+			return result, errors.New(consts.RES_INVALID_CMD) // This should never happen
 		}
 		// remove ele from list
 		for _, ele := range eleToBeRemoved {

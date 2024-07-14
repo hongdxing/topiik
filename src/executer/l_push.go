@@ -38,8 +38,8 @@ func pushList(args []string, CMD string) (result int, err error) {
 	key := args[0]
 	if shared.MemMap[key] == nil {
 		shared.MemMap[key] = &datatype.TValue{
-			Typ:   datatype.V_TYPE_LIST,
-			Lst:  list.New(),
+			Typ: datatype.V_TYPE_LIST,
+			Lst: list.New(),
 			Exp: consts.UINT32_MAX,
 		}
 	}
@@ -52,7 +52,7 @@ func pushList(args []string, CMD string) (result int, err error) {
 			shared.MemMap[key].Lst.PushBack(piece)
 		}
 	} else {
-		return 0, errors.New(RES_INVALID_CMD)
+		return 0, errors.New(consts.RES_INVALID_CMD)
 	}
 
 	return shared.MemMap[key].Lst.Len(), nil

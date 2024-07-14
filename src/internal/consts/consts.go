@@ -26,8 +26,9 @@ const (
 // relate to Response
 const (
 	RES_INVALID_ADDR = "INVALID_ADDR"
+	RES_INVALID_CMD  = "INVALID_CMD"
 )
 
 const (
-	EMAIL_PATTERN = `^.+:\d{4,5}`
+	HOST_PATTERN = `^.+:\d{4,5}`
 )

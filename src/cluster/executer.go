@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"topiik/internal/command"
+	"topiik/internal"
 	"topiik/internal/config"
 	"topiik/internal/consts"
 )
@@ -21,44 +21,43 @@ const (
 	RES_SYNTAX_ERROR = "SYNTAX_ERR"
 )
 
-func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte, err error) {
+func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 	strs := strings.SplitN(strings.TrimLeft(string(msg[4:]), consts.SPACE), consts.SPACE, 2)
 	CMD := strings.ToUpper(strings.TrimSpace(strs[0]))
 
-	if CMD == command.CLUSTER_JOIN_ACK {
+	if CMD == CLUSTER_JOIN_ACK {
 		pieces := splitParams(strs)
 		if len(pieces) < 1 {
-			return nil, errors.New(RES_SYNTAX_ERROR)
+			return internal.ErrorResponse(errors.New(RES_SYNTAX_ERROR))
+			//return nil, errors.New(RES_SYNTAX_ERROR)
 		}
 		result, err := clusterJoin(pieces)
 		if err != nil {
-			return nil, err
+			return internal.ErrorResponse(err)
 		}
-		return []byte(result), nil
-	} else if CMD == "VOTE" {
+		return internal.StringResponse(result, CMD, msg)
+	} else if CMD == RPC_VOTE {
 		if len(strs) != 2 {
 			fmt.Printf("%s %s", RES_SYNTAX_ERROR, msg)
-			return nil, errors.New(RES_SYNTAX_ERROR)
+			return internal.ErrorResponse(errors.New(RES_SYNTAX_ERROR))
 		} else {
 			cTerm, err := strconv.Atoi(strs[1])
 			if err != nil {
-				return nil, errors.New(RES_SYNTAX_ERROR)
+				return internal.ErrorResponse(errors.New(RES_SYNTAX_ERROR))
 			} else {
-				return []byte(vote(cTerm)), nil
+				result := vote(cTerm)
+				return internal.StringResponse(result, CMD, msg)
 			}
 		}
 	} else if CMD == RPC_APPENDENTRY {
 		pieces := splitParams(strs)
 		err := appendEntry(pieces, serverConfig)
 		if err != nil {
-			return nil, err
+			return internal.ErrorResponse(err)
 		}
-		return []byte{}, nil
-	} else {
-		// forward msg to Workers
-		Forward(msg)
+		return internal.StringResponse("", CMD, msg)
 	}
-	return nil, errors.New(RES_SYNTAX_ERROR)
+	return internal.ErrorResponse(errors.New(consts.RES_INVALID_CMD))
 }
 
 func splitParams(strs []string) (pieces []string) {

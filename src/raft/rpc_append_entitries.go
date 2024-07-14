@@ -11,7 +11,6 @@ import (
 	"net"
 	"sync"
 	"time"
-	"topiik/internal/command"
 	"topiik/internal/proto"
 )
 
@@ -66,7 +65,8 @@ func send(address string, dialErrorCounter *int) string {
 	}
 	defer conn.Close()
 
-	line := command.APPEND_ENTRY + " "
+	//line := command.APPEND_ENTRY + " "
+	line := "APPEND_ENTRY" + " "
 
 	// Enocde
 	data, err := proto.Encode(line)

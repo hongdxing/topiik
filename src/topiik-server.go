@@ -171,9 +171,6 @@ func initNode() (err error) {
 		panic(err)
 	}
 
-	if err != nil {
-		return err
-	}
 	fmt.Printf("Topiik: self check done\n")
 	return nil
 }

@@ -28,7 +28,7 @@ import (
 ** Syntax: SET KEY VALUE [GET] [TTL seconds] | [TTLAT unxix-time-seconds] | [EX|NX]
 **	- GET: Return old value of the key, or nil if key did not exist
 **/
-func set(pieces []string) (result any, err error) {
+func set(pieces []string) (result string, err error) {
 	if len(pieces) < 2 {
 		return "", errors.New(RES_SYNTAX_ERROR)
 	}
@@ -47,21 +47,21 @@ func set(pieces []string) (result any, err error) {
 				returnOld = true
 			} else if strings.ToUpper(pieces[i]) == "TTL" {
 				if len(pieces) <= i+1 {
-					return nil, errors.New(RES_SYNTAX_ERROR + " near TTL")
+					return "", errors.New(RES_SYNTAX_ERROR + " near TTL")
 				}
 				ttl, err = strconv.ParseInt(pieces[i+1], 10, 64)
 				if err != nil {
-					return nil, errors.New(RES_SYNTAX_ERROR + " near TTL")
+					return "", errors.New(RES_SYNTAX_ERROR + " near TTL")
 				}
 				i++
 				ttl += time.Now().UTC().Unix() // will overflow??? or should limit ttl user can type???
 			} else if piece == "TTLAT" {
 				if len(pieces) <= i+1 {
-					return nil, errors.New(RES_SYNTAX_ERROR + " near TTLAT")
+					return "", errors.New(RES_SYNTAX_ERROR + " near TTLAT")
 				}
 				ttl, err = strconv.ParseInt(pieces[i+1], 10, 64)
 				if err != nil {
-					return nil, errors.New(RES_SYNTAX_ERROR + " near TTLAT")
+					return "", errors.New(RES_SYNTAX_ERROR + " near TTLAT")
 				}
 				i++
 			} else if piece == "EX" {
@@ -69,12 +69,12 @@ func set(pieces []string) (result any, err error) {
 				if _, ok := shared.MemMap[key]; ok {
 					//
 				} else {
-					return nil, errors.New(RES_KEY_NOT_EXIST)
+					return "", errors.New(RES_KEY_NOT_EXIST)
 				}
 			} else if piece == "NX" {
 				fmt.Println("NX")
 				if _, ok := shared.MemMap[key]; ok {
-					return nil, errors.New(RES_KEY_EXIST_ALREADY)
+					return "", errors.New(RES_KEY_EXIST_ALREADY)
 				}
 			}
 		}
@@ -98,7 +98,7 @@ func set(pieces []string) (result any, err error) {
 			Str: []byte(pieces[1]),
 			Exp: ttl}
 		if returnOld {
-			return nil, nil
+			return "", nil
 		}
 		return RES_OK, nil
 	}

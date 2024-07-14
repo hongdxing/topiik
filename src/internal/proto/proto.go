@@ -10,18 +10,18 @@ import (
 func Encode(message string) ([]byte, error) {
 	// Lenght of message, int32(4 bytes)
 	var length = int32(len(message))
-	var pkg = new(bytes.Buffer)
+	var buffer = new(bytes.Buffer)
 	// Write message HEADER
-	err := binary.Write(pkg, binary.LittleEndian, length)
+	err := binary.Write(buffer, binary.LittleEndian, length)
 	if err != nil {
 		return nil, err
 	}
 	// Write message BODY
-	err = binary.Write(pkg, binary.LittleEndian, []byte(message))
+	err = binary.Write(buffer, binary.LittleEndian, []byte(message))
 	if err != nil {
 		return nil, err
 	}
-	return pkg.Bytes(), nil
+	return buffer.Bytes(), nil
 }
 
 // Decode

@@ -15,8 +15,21 @@ import (
 	"topiik/internal/config"
 )
 
+/***
+** Init a Topiik cluster with number of partitions and replicas
+** Parameters:
+**	- pieces:
+**	- serverConfig:
+** Syntax: CLUSTER INIT partitions replicas
+**/
 func clusterInit(pieces []string, serverConfig *config.ServerConfig) error {
 	// validate
+
+	// if node already in a cluster, return error
+	if len(cluster.GetNodeInfo().ClusterId) > 0 {
+		return errors.New("current node already in cluster:" + cluster.GetNodeInfo().ClusterId)
+	}
+
 	if len(pieces) != 3 {
 		return errors.New(RES_SYNTAX_ERROR)
 	}

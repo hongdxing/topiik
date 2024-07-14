@@ -87,7 +87,7 @@ func IsNodeController() bool {
 	return len(clusterInfo.Controllers) > 0
 }
 
-func GetNodeMetadata() Node {
+func GetNodeInfo() Node {
 	return *nodeInfo
 }
 
