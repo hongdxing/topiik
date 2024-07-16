@@ -38,3 +38,12 @@ type Partition struct {
 	LeaderNodeId string   // The Node Id where the Leader Partition located
 	NodeIds      []string // The Nodes where the Partition located
 }
+
+// store dynamic node status in runtime
+type NodeStatus struct {
+	Role                 uint8  // Raft role
+	Term                 uint   // Raft term
+	Heartbeat            uint16 // Raft heartbeat timeout
+	HeartbeatAt          int64  // The UTC milli seconds when heartbeat received from Leader
+	LeaderControllerAddr string // Leader Controller updated by append entry
+}

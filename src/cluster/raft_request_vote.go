@@ -27,8 +27,8 @@ var wgRequestVote sync.WaitGroup
 const requestVoteInterval = 100
 
 /**
-** Parameters
-**	- addresses: workers' addresses
+** Parameters:
+**	-
 ** Follower issues RequestVote RPCs to Workers to request for votes.
 **/
 func RequestVote() {

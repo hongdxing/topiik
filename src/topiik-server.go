@@ -20,7 +20,6 @@ const (
 )
 
 var serverConfig *config.ServerConfig
-var nodeId string
 
 func main() {
 	printBanner()
@@ -80,7 +79,7 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 		//fmt.Printf("%s: %s\n", time.Now().Format(consts.DATA_FMT_MICRO_SECONDS), cmd)
-		result := executer.Execute(msg, serverConfig, nodeId)
+		result := executer.Execute(msg, conn.RemoteAddr().String(), serverConfig)
 		conn.Write(result)
 	}
 }

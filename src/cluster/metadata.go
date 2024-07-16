@@ -19,13 +19,6 @@ var nodeInfo *Node
 var clusterInfo = &Cluster{Controllers: make(map[string]NodeSlim), Workers: make(map[string]NodeSlim)}
 var nodeStatus = &NodeStatus{Role: RAFT_FOLLOWER, Term: 0}
 
-func Map2Array[T any](theMap map[string]T) (arr []T) {
-	for _, v := range theMap {
-		arr = append(arr, v)
-	}
-	return arr
-}
-
 const (
 	slash   = string(os.PathSeparator)
 	dataDIR = "data"
@@ -89,6 +82,10 @@ func IsNodeController() bool {
 
 func GetNodeInfo() Node {
 	return *nodeInfo
+}
+
+func GetNodeStatus() NodeStatus {
+	return *nodeStatus
 }
 
 // metadata file path

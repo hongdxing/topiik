@@ -6,8 +6,8 @@ package cluster
 
 const (
 	RAFT_LEADER     = 1
-	RAFT_CANDIDATOR = 2
-	RAFT_FOLLOWER   = 3
+	RAFT_FOLLOWER   = 2
+	RAFT_CANDIDATOR = 3
 )
 
 const (
@@ -26,4 +26,4 @@ const (
 	VOTE_REJECTED = "R"
 )
 
-var CLUSTER_CMD_ARRAY = []string{RPC_VOTE, RPC_APPENDENTRY, CLUSTER_JOIN_ACK}
+const CONTROLLER_FORWORD_PORT = "9302"

@@ -14,6 +14,7 @@ import (
 	"topiik/internal/command"
 	"topiik/internal/config"
 	"topiik/internal/consts"
+	"topiik/internal/util"
 	"topiik/resp"
 )
 
@@ -37,12 +38,7 @@ const (
 	RES_REJECTED = "R"
 )
 
-var needPersistCMD = []string{
-	command.SET, command.SETM,
-	command.LPUSH, command.LPUSHR, command.LPUSHB, command.LPUSHRB, command.LPOP, command.LPOPR, command.LPOPB, command.LPOPRB,
-}
-
-func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string) []byte {
+func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []byte {
 	strMsg := msg[4:]
 	// split msg into [CMD, params]
 	strs := strings.SplitN(strings.TrimLeft(string(strMsg), consts.SPACE), consts.SPACE, 2)
@@ -85,7 +81,11 @@ func Execute(msg []byte, serverConfig *config.ServerConfig, nodeId string) []byt
 	if len(cluster.GetNodeInfo().ClusterId) == 0 {
 		return resp.ErrorResponse(errors.New("current node not member of cluster"))
 	}
-	// TODO: to allow cmd only from controller
+	// allow cmd only from Controller Leader, and TODO: allow from Partition Leader
+	err := srcFilter(srcAddr)
+	if err != nil {
+		return resp.ErrorResponse(err)
+	}
 
 	if CMD == command.GET { // STRING COMMANDS
 		/***String SET***/
@@ -251,3 +251,26 @@ func response[T any](success bool, response T) []byte {
 	b, _ := json.Marshal(&datatype.Response[T]{R: success, M: response})
 	return b
 }*/
+
+func srcFilter(srcAddr string) error {
+	// if node member of cluster
+	if len(cluster.GetNodeInfo().ClusterId) > 0 {
+		if !cluster.IsNodeController() {
+			//fmt.Printf("remote address: %s\n", srcAddr)
+			addrSplit, err := util.SplitAddress(srcAddr)
+			if err != nil {
+				return errors.New(consts.RES_INVLID_OP_ON_WORKER)
+			}
+			// TOTO: if source host is not Leader's host, also reject
+			// if source port is not forward port, also reject
+			if addrSplit[1] != cluster.CONTROLLER_FORWORD_PORT {
+				fmt.Println(addrSplit[1])
+				return errors.New(consts.RES_INVLID_OP_ON_WORKER)
+			}
+		}
+	}
+	return nil
+	/*if cluster.GetNodeStatus().Role == cluster.RAFT_FOLLOWER {
+
+	}*/
+}

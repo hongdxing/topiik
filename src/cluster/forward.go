@@ -35,10 +35,12 @@ func Forward(msg []byte) []byte {
 
 	conn, ok := tcpMap[targetWorker.Id]
 	if !ok {
-		conn, err = util.PreapareSocketClient(targetWorker.Address)
+		conn, err = util.PreapareSocketClientWithPort(targetWorker.Address, CONTROLLER_FORWORD_PORT)
+		//conn, err = util.PreapareSocketClient(targetWorker.Address)
 		if err != nil {
 			return []byte{} // TODO: should retry
 		}
+		tcpMap[targetWorker.Id] = conn
 	}
 	// Send
 	_, err = conn.Write(msg)

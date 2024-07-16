@@ -31,6 +31,9 @@ func getM(pieces []string) (result []string, err error) {
 	for _, key := range pieces {
 		key = strings.TrimSpace(key)
 		if val, ok := shared.MemMap[key]; ok {
+			if isKeyExpired(key, val.Exp) {
+				result = append(result, "")
+			}
 			if val.Typ != datatype.V_TYPE_STRING {
 				return nil, errors.New(RES_DATA_TYPE_NOT_MATCH)
 			}
