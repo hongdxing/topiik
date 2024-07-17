@@ -56,6 +56,10 @@ func main() {
 			fmt.Println(err)
 			continue
 		}
+		// if current node is Controller Follower, then return Leader addr to client for re-connect
+		if cluster.IsNodeController() && cluster.GetNodeStatus().Role == cluster.RAFT_FOLLOWER {
+
+		}
 
 		// Handle the connection in a new goroutine
 		go handleConnection(conn)
