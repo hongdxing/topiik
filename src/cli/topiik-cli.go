@@ -15,10 +15,6 @@ import (
 	"topiik/resp"
 )
 
-const (
-	BUF_SIZE = 512
-)
-
 var host string
 var pass string
 
@@ -104,32 +100,13 @@ func main() {
 }
 
 func response(conn net.Conn) {
-	//buf := make([]byte, BUF_SIZE)
-	/*n, err := conn.Read(buf[0:])
-	fmt.Println(n)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}*/
-
-	/*for {
-		n, err := conn.Read(buf[0:])
-		if err != nil {
-			fmt.Println()
-			fmt.Println(err)
-			return
-		}
-		fmt.Printf("%s", buf)
-		if n <= 0 || n < BUF_SIZE {
-			break
-		}
-	}*/
 	reader := bufio.NewReader(conn)
 	buf, err := proto.Decode(reader)
 	if err != nil {
 		if err == io.EOF {
-			fmt.Printf("rpc_append_entries::send %s\n", err)
+			fmt.Printf("(err): %s\n", err)
 		}
+		return
 	}
 
 	if len(buf) > 4 {
@@ -185,6 +162,6 @@ func response(conn net.Conn) {
 			fmt.Printf("(err):%s\n", res)
 		}
 	} else {
-		fmt.Println("(err): unknow")
+		fmt.Println("(err): unknown")
 	}
 }

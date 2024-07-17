@@ -5,11 +5,10 @@
 
 ***/
 
-package executer
+package executor
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"topiik/internal/datatype"
 	"topiik/shared"
@@ -27,7 +26,6 @@ import (
 ** 	GET KEY
 **/
 func get(pieces []string) (result string, err error) {
-	fmt.Println(pieces)
 	if len(pieces) != 1 {
 		return "", errors.New(RES_SYNTAX_ERROR)
 	}

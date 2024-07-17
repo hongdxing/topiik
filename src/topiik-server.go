@@ -8,7 +8,7 @@ import (
 	"net"
 	"os"
 	"topiik/cluster"
-	"topiik/executer"
+	"topiik/executor"
 	"topiik/internal/config"
 	"topiik/internal/proto"
 	"topiik/internal/util"
@@ -79,7 +79,7 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 		//fmt.Printf("%s: %s\n", time.Now().Format(consts.DATA_FMT_MICRO_SECONDS), cmd)
-		result := executer.Execute(msg, conn.RemoteAddr().String(), serverConfig)
+		result := executor.Execute(msg, conn.RemoteAddr().String(), serverConfig)
 		conn.Write(result)
 	}
 }

@@ -4,7 +4,7 @@
 * desc:
 ***/
 
-package executer
+package executor
 
 import (
 	"errors"
