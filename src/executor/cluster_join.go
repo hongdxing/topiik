@@ -56,7 +56,7 @@ func clusterJoin(myAddr string, controllerAddr string, role string) (result stri
 
 	var cmdBytes []byte
 	var byteBuf = new(bytes.Buffer) // int to byte buf
-	_ = binary.Write(byteBuf, binary.LittleEndian, cluster.ClusterCmdMap[cluster.CLUSTER_JOIN_ACK])
+	_ = binary.Write(byteBuf, binary.LittleEndian, cluster.CLUSTER_JOIN_ACK)
 	cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
 	line := nodeId + consts.SPACE + myAddr + consts.SPACE + role
 	cmdBytes = append(cmdBytes, []byte(line)...)

@@ -7,6 +7,8 @@
 package executor
 
 import (
+	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"strings"
@@ -15,6 +17,7 @@ import (
 	"topiik/internal/config"
 	"topiik/internal/consts"
 	"topiik/internal/util"
+	"topiik/logger"
 	"topiik/resp"
 )
 
@@ -38,11 +41,32 @@ const (
 	RES_REJECTED = "R"
 )
 
+var log = logger.Get()
+
 func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []byte {
-	strMsg := msg[4:]
+	msgData := msg[4:] // strip the lenght header
 	// split msg into [CMD, params]
-	strs := strings.SplitN(strings.TrimLeft(string(strMsg), consts.SPACE), consts.SPACE, 2)
+	strs := strings.SplitN(strings.TrimLeft(string(msgData), consts.SPACE), consts.SPACE, 2)
 	CMD := strings.ToUpper(strings.TrimSpace(strs[0]))
+
+	var icmd int16 // two bytes of command
+	if len(msgData) >= 2 {
+		cmdBytes := msgData[:2]
+		byteBuf := bytes.NewBuffer(cmdBytes)
+		err := binary.Read(byteBuf, binary.LittleEndian, &icmd)
+		if err != nil {
+			log.Err(err)
+		}
+	}
+
+	//dataBytes := msgData[2:]
+	if icmd == command.GET_CONTROLLER_LEADER_ADDR {
+		log.Info().Msg("get controller address")
+		if cluster.GetNodeStatus().Role == cluster.RAFT_LEADER { // if is leader, then just return leader's address
+			return resp.StringResponse(serverConfig.Listen, "", msg)
+		}
+		return resp.StringResponse(cluster.GetNodeStatus().LeaderControllerAddr, "", msg)
+	}
 
 	// cluster command
 	if CMD == command.CLUSTER {

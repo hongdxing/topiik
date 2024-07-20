@@ -35,6 +35,10 @@ const (
 	QUIT = "QUIT"
 )
 
+const (
+	GET_CONTROLLER_LEADER_ADDR int16 = 3001
+)
+
 var CmdMap = map[string]int16{
 	// Cluster: 1 - 15
 	CLUSTER: 1,

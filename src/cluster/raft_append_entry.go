@@ -103,7 +103,7 @@ func send(isController bool, destAddr string, nodeId string, dialErrorCounter *i
 	var cmdBytes []byte
 	var byteBuf = new(bytes.Buffer) // int to byte byte buf
 	// 2 bytes of command + 1 byte of entry type + the entry
-	binary.Write(byteBuf, binary.LittleEndian, ClusterCmdMap[RPC_APPENDENTRY])
+	binary.Write(byteBuf, binary.LittleEndian, RPC_APPENDENTRY)
 	cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
 
 	if isController {

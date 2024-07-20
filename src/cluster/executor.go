@@ -47,7 +47,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 
 	dataBytes := msg[2:]
 
-	if icmd == ClusterCmdMap[CLUSTER_JOIN_ACK] {
+	if icmd == CLUSTER_JOIN_ACK {
 		pieces := strings.Split(string(dataBytes), consts.SPACE)
 		if len(pieces) < 1 {
 			return resp.ErrorResponse(errors.New(RES_SYNTAX_ERROR))
@@ -57,7 +57,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringResponse(result, CMD, msg)
-	} else if icmd == ClusterCmdMap[RPC_VOTE] {
+	} else if icmd == RPC_VOTE {
 		cTerm, err := strconv.Atoi(string(dataBytes))
 		if err != nil {
 			return resp.ErrorResponse(errors.New(RES_SYNTAX_ERROR))
@@ -65,7 +65,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 			result := vote(cTerm)
 			return resp.StringResponse(result, CMD, msg)
 		}
-	} else if icmd == ClusterCmdMap[RPC_APPENDENTRY] {
+	} else if icmd == RPC_APPENDENTRY {
 		err := appendEntry(dataBytes, serverConfig)
 		if err != nil {
 			return resp.ErrorResponse(err)

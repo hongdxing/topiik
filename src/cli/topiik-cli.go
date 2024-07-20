@@ -63,23 +63,28 @@ func main() {
 		}
 		conn, err := net.DialTCP("tcp", nil, tcpServer)
 	*/
-	conn, err := util.PreapareSocketClient(host)
+
+	// Get Controller Leader address
+	leaderAddr, err := getControllerLeaderAddr(host)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	conn, err := util.PreapareSocketClient(leaderAddr)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	err = confirmLeader(conn)
-	//err = response(conn)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
+	if leaderAddr != host {
+		fmt.Printf("redirect to %s\n", leaderAddr)
 	}
 
 	reader := bufio.NewReader(os.Stdin)
 
 	// for loop keep cli alive
 	for {
-		fmt.Print(host + ">")
+		fmt.Print(leaderAddr + ">")
 		line, err := reader.ReadString('\n')
 		line = strings.TrimRight(line, " \t\r\n")
 		if err != nil {
@@ -167,12 +172,6 @@ func response(conn *net.TCPConn) error {
 					fmt.Printf("(err):%s\n", err.Error())
 				}
 				fmt.Printf("%v\n", result)
-			} else if datatype == 32 {
-				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
-				err := redirect(string(bufSlice), conn)
-				if err != nil {
-					return err
-				}
 			} else {
 				fmt.Println("(err): invalid response type")
 			}
@@ -188,23 +187,23 @@ func response(conn *net.TCPConn) error {
 	return nil
 }
 
-/**
-** After connect to Server, send confirm immediately to confirm is Leader or not
+/*
+** Desc: get controller leader address
+** Return:
+**	- leader address
 **
-**
-**/
-func confirmLeader(conn *net.TCPConn) error {
-	line := "CLUSTER LEADER"
-	data, err := proto.Encode(line)
+ */
+func getControllerLeaderAddr(host string) (addr string, err error) {
+	conn, err := util.PreapareSocketClient(host)
 	if err != nil {
-		return err
+		return "", err
 	}
+	defer conn.Close()
 
-	// Send
-	_, err = conn.Write(data)
-	if err != nil {
-		return err
-	}
+	byteBuf := new(bytes.Buffer)
+	binary.Write(byteBuf, binary.LittleEndian, command.GET_CONTROLLER_LEADER_ADDR)
+	data, _ := proto.EncodeB(byteBuf.Bytes())
+	conn.Write(data)
 
 	reader := bufio.NewReader(conn)
 	buf, err := proto.Decode(reader)
@@ -212,7 +211,7 @@ func confirmLeader(conn *net.TCPConn) error {
 		if err == io.EOF {
 			fmt.Printf("(err): %s\n", err)
 		}
-		return err
+		return "", err
 	}
 	if len(buf) > 4 {
 		bufSlice := buf[4:5]
@@ -220,24 +219,14 @@ func confirmLeader(conn *net.TCPConn) error {
 		var flag int8
 		err = binary.Read(byteBuf, binary.LittleEndian, &flag)
 		if err != nil {
-			return err
+			return "", err
 		}
 		if flag == 1 {
 			bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
-			err = redirect(string(bufSlice), conn)
-			if err != nil {
-				return nil
-			}
+			return string(bufSlice), nil
 		} else {
-			return errors.New("(err): unknown")
+			return "", errors.New("(err): unknown")
 		}
 	}
-	return nil
-}
-
-func redirect(leaderAddr string, conn *net.TCPConn) (err error) {
-	fmt.Printf("redirected to %s\n", leaderAddr)
-	//conn.Close()
-	fmt.Print()
-	return nil
+	return "", errors.New("(err): unknown")
 }

@@ -16,16 +16,11 @@ const (
 )
 
 const (
-	RPC_VOTE         = "__TOPIIK_VOTE"
-	RPC_APPENDENTRY  = "__TOPIIK_APPENDENTRY"
-	CLUSTER_JOIN_ACK = "__TOPIIK_CLUSTER_JOIN_ACK"
+	RPC_VOTE         int16 = 1
+	RPC_APPENDENTRY  int16 = 2
+	CLUSTER_JOIN_ACK int16 = 3
 )
 
-var ClusterCmdMap = map[string]int16{
-	RPC_VOTE:         1,
-	RPC_APPENDENTRY:  2,
-	CLUSTER_JOIN_ACK: 3,
-}
 
 const (
 	ENTRY_TYPE_DEFAULT  int8 = 1

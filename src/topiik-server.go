@@ -14,7 +14,6 @@ import (
 	"topiik/internal/util"
 	"topiik/logger"
 	"topiik/persistent"
-	"topiik/resp"
 )
 
 const (
@@ -59,18 +58,7 @@ func main() {
 			fmt.Println(err)
 			continue
 		}
-		// if current node is Controller Follower, then return Leader addr to client for re-connect
-		if cluster.IsNodeController() {
-			if cluster.GetNodeStatus().Role == cluster.RAFT_FOLLOWER {
-				result := resp.RedirectResponse(cluster.GetNodeStatus().LeaderControllerAddr)
-				conn.Write(result)
-				continue
-			} else {
-				result := resp.IntegerResponse(1, "", []byte{})
-				conn.Write(result)
-			}
-		}
-		fmt.Printf("--------------------")
+
 		// Handle the connection in a new goroutine
 		go handleConnection(conn)
 	}
