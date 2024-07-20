@@ -19,14 +19,12 @@ import (
 
 type envConfig struct {
 	Listen     string
-	Role       string // controller, worker
-	SaveMillis uint   // Persistent Job interval
+	SaveMillis uint // Persistent Job interval
 }
 
 type ServerConfig struct {
 	Listen     string
-	Role       string // controller, worker
-	SaveMillis uint   // Persistent Job interval
+	SaveMillis uint // Persistent Job interval
 
 	/*** Internal Use Only***/
 	RaftHeartbeatMin uint16 // Raft random heartbeat Min
@@ -66,7 +64,6 @@ func ParseServerConfig(configPath string) (*ServerConfig, error) {
 	fmt.Printf("Using config file: %s\n", theConfigPath)
 
 	serverConfig.Listen = config.Listen
-	serverConfig.Role = config.Role
 	serverConfig.SaveMillis = config.SaveMillis
 
 	// set PORT2 to PORT + 10000

@@ -21,6 +21,17 @@ const (
 	CLUSTER_JOIN_ACK = "__TOPIIK_CLUSTER_JOIN_ACK"
 )
 
+var ClusterCmdMap = map[string]int16{
+	RPC_VOTE:         1,
+	RPC_APPENDENTRY:  2,
+	CLUSTER_JOIN_ACK: 3,
+}
+
+const (
+	ENTRY_TYPE_DEFAULT  int8 = 1
+	ENTRY_TYPE_METADATA int8 = 2
+)
+
 const (
 	VOTE_ACCEPTED = "A"
 	VOTE_REJECTED = "R"

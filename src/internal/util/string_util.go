@@ -61,7 +61,7 @@ func ValidateCommandLinePieces(pieces *[]string) bool {
 	return true
 }
 
-var letterRunes = []rune("ab0cd1ef2gh3ij4kl5mn6op7qr8st9uvwxyz")
+var letterRunes = []rune("AaBb0CcDd1EeFf2GgHh3iIJj4KkLl5MmNn6OoPp7QqRr8SsTt9UuVvWwXxYyZz")
 
 func RandStringRunes(n int) string {
 	b := make([]rune, n)

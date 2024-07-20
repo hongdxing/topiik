@@ -12,3 +12,8 @@ package resp
 ** 	datatype: 1:string, 2:integer, 3:string array
 */
 const RESPONSE_HEADER_SIZE = 6 
+
+
+const(
+	RES_REDIRECT = "REDIRECT"
+)

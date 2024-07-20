@@ -54,7 +54,7 @@ func handleConnection(conn net.Conn, serverConfig *config.ServerConfig) {
 			fmt.Println(err)
 			return
 		}
-		result := Execute(msg, serverConfig)
+		result := Execute(msg[4:], serverConfig)
 		conn.Write(result)
 	}
 }

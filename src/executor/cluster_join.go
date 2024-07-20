@@ -52,10 +52,16 @@ func clusterJoin(myAddr string, controllerAddr string, role string) (result stri
 	defer conn.Close()
 
 	// CLUSTER JOIN_ACK nodeId addr role
-	line := cluster.CLUSTER_JOIN_ACK + consts.SPACE + nodeId + consts.SPACE + myAddr + consts.SPACE + role
-	//fmt.Println(line)
+	//line := cluster.CLUSTER_JOIN_ACK + consts.SPACE + nodeId + consts.SPACE + myAddr + consts.SPACE + role
 
-	data, err := proto.Encode(line)
+	var cmdBytes []byte
+	var byteBuf = new(bytes.Buffer) // int to byte buf
+	_ = binary.Write(byteBuf, binary.LittleEndian, cluster.ClusterCmdMap[cluster.CLUSTER_JOIN_ACK])
+	cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
+	line := nodeId + consts.SPACE + myAddr + consts.SPACE + role
+	cmdBytes = append(cmdBytes, []byte(line)...)
+
+	data, err := proto.EncodeB(cmdBytes)
 	if err != nil {
 		fmt.Println(err)
 	}

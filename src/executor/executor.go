@@ -103,7 +103,11 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 		/***String GET***/
 		pieces := []string{}
 		if len(strs) == 2 {
-			pieces = strings.Split(strs[1], consts.SPACE)
+			//pieces = strings.Split(strs[1], consts.SPACE)
+			pieces, err = util.SplitCommandLine(strs[1])
+			if err != nil {
+				return resp.ErrorResponse(err)
+			}
 		}
 		result, err := set(pieces)
 		if err != nil {

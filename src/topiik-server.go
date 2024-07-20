@@ -12,7 +12,9 @@ import (
 	"topiik/internal/config"
 	"topiik/internal/proto"
 	"topiik/internal/util"
+	"topiik/logger"
 	"topiik/persistent"
+	"topiik/resp"
 )
 
 const (
@@ -20,6 +22,7 @@ const (
 )
 
 var serverConfig *config.ServerConfig
+var log = logger.Get()
 
 func main() {
 	printBanner()
@@ -57,10 +60,17 @@ func main() {
 			continue
 		}
 		// if current node is Controller Follower, then return Leader addr to client for re-connect
-		if cluster.IsNodeController() && cluster.GetNodeStatus().Role == cluster.RAFT_FOLLOWER {
-
+		if cluster.IsNodeController() {
+			if cluster.GetNodeStatus().Role == cluster.RAFT_FOLLOWER {
+				result := resp.RedirectResponse(cluster.GetNodeStatus().LeaderControllerAddr)
+				conn.Write(result)
+				continue
+			} else {
+				result := resp.IntegerResponse(1, "", []byte{})
+				conn.Write(result)
+			}
 		}
-
+		fmt.Printf("--------------------")
 		// Handle the connection in a new goroutine
 		go handleConnection(conn)
 	}
@@ -92,6 +102,7 @@ func handleConnection(conn net.Conn) {
 ** Print banner
 **/
 func printBanner() {
+	log.Info().Msg("Starting Topiik Server...")
 	fmt.Println("Starting Topiik Server...")
 }
 
@@ -117,7 +128,7 @@ func readConfig() (*config.ServerConfig, error) {
 }
 
 func initNode() (err error) {
-	fmt.Printf("Topiik: self check start\n")
+	log.Info().Msg("Topiik: self check start")
 
 	var exist bool
 	dataDir := "data"
@@ -146,7 +157,7 @@ func initNode() (err error) {
 	var buf []byte
 	var node cluster.Node
 	if !exist {
-		fmt.Println("creating node file...")
+		log.Info().Msg("creating node file...")
 
 		node.Id = util.RandStringRunes(16)
 		buf, _ = json.Marshal(node)
@@ -155,7 +166,7 @@ func initNode() (err error) {
 			panic("loading node failed")
 		}
 	} else {
-		fmt.Println("loading node...")
+		log.Info().Msg("loading node...")
 
 		buf, err = os.ReadFile(nodeFile)
 		if err != nil {
@@ -165,7 +176,8 @@ func initNode() (err error) {
 		if err != nil {
 			panic("loading node failed")
 		}
-		fmt.Printf("load node %s\n", node)
+		node.Address = serverConfig.Listen
+		log.Info().Msgf("load node %s", node)
 	}
 
 	// load controller metadata
@@ -174,6 +186,6 @@ func initNode() (err error) {
 		panic(err)
 	}
 
-	fmt.Printf("Topiik: self check done\n")
+	log.Info().Msg("Topiik: self check done")
 	return nil
 }

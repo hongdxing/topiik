@@ -24,6 +24,23 @@ func Encode(message string) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
+func EncodeB(msg []byte) ([]byte, error) {
+	// Lenght of message, int32(4 bytes)
+	var length = int32(len(msg))
+	var buffer = new(bytes.Buffer)
+	// Write message HEADER
+	err := binary.Write(buffer, binary.LittleEndian, length)
+	if err != nil {
+		return nil, err
+	}
+	// Write message BODY
+	err = binary.Write(buffer, binary.LittleEndian, msg)
+	if err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
+}
+
 // Decode
 /*
 func Decode(reader *bufio.Reader) (string, error) {

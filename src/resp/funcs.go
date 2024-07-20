@@ -70,6 +70,14 @@ func StringArrayResponse(res []string, CMD string, msg []byte) (result []byte) {
 	return result
 }
 
+func RedirectResponse(leaderAddr string) (result []byte) {
+	result = append(result, byte(int8(1)))
+	result = append(result, byte(int8(32))) // why 32? 302 = http redirect, but int8 not enough ~!~
+	result = append(result, []byte(leaderAddr)...)
+	result, _ = proto.Encode(string(result))
+	return result
+}
+
 /*
 func Response[T any](flag int8, res T) (result []byte) {
 	buf, _ := json.Marshal(res)

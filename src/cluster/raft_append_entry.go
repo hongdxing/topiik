@@ -9,14 +9,17 @@ package cluster
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net"
 	"time"
-	"topiik/internal/consts"
 	"topiik/internal/proto"
 	"topiik/internal/util"
+
+	"github.com/rs/zerolog/log"
 )
 
 var ticker *time.Ticker
@@ -38,18 +41,12 @@ func AppendEntries() {
 	ticker = time.NewTicker(200 * time.Millisecond)
 	quit = make(chan struct{})
 
-	dialErrorCounter := 0
+	dialErrorCounter := 0 // this not 'thread' safe, but it's not important
 	for {
 		select {
 		case <-ticker.C:
-			for _, controller := range clusterInfo.Controllers {
-				if controller.Id == nodeInfo.Id {
-					continue
-				}
-				//wgAppend.Add(1)
-				send(controller.Address2, controller.Id, &dialErrorCounter)
-				//wgAppend.Wait()
-			}
+			go appendWorkers(&dialErrorCounter)
+			appendControllers(&dialErrorCounter)
 		case <-quit:
 			ticker.Stop()
 			return
@@ -57,52 +54,90 @@ func AppendEntries() {
 	}
 }
 
-func send(address string, controllerId string, dialErrorCounter *int) string {
+func appendControllers(dialErrorCounter *int) {
+	for _, worker := range clusterInfo.Controllers {
+		if worker.Id == nodeInfo.Id {
+			continue
+		}
+		send(false, worker.Address2, worker.Id, dialErrorCounter)
+	}
+}
+
+func appendWorkers(dialErrorCounter *int) {
+	for _, controller := range clusterInfo.Workers {
+		if controller.Id == nodeInfo.Id {
+			continue
+		}
+		//wgAppend.Add(1)
+		send(true, controller.Address2, controller.Id, dialErrorCounter)
+		//wgAppend.Wait()
+	}
+}
+
+func send(isController bool, destAddr string, nodeId string, dialErrorCounter *int) string {
 	defer func() {
 		*dialErrorCounter++
+		if *dialErrorCounter >= 10000 {
+			*dialErrorCounter = 0
+		}
 		//wgAppend.Done()
 	}()
 
 	var err error
 	var conn *net.TCPConn
 
-	if v, ok := connCache[controllerId]; ok {
+	if v, ok := connCache[nodeId]; ok {
 		conn = v
 	}
 	if conn == nil {
-		conn, err = util.PreapareSocketClient(address)
+		conn, err = util.PreapareSocketClient(destAddr)
 		if err != nil {
 			if *dialErrorCounter%50 == 0 {
-				fmt.Println(err)
+				log.Err(err)
 			}
 			return ""
 		}
-		connCache[controllerId] = conn
+		connCache[nodeId] = conn
 	}
-	//defer conn.Close()
 
-	line := RPC_APPENDENTRY + consts.SPACE
-	if _, ok := clusterMetadataPendingAppend[controllerId]; ok {
-		line += "METADATA "
-		buf, _ := json.Marshal(clusterInfo)
-		line += string(buf)
+	var cmdBytes []byte
+	var byteBuf = new(bytes.Buffer) // int to byte byte buf
+	// 2 bytes of command + 1 byte of entry type + the entry
+	binary.Write(byteBuf, binary.LittleEndian, ClusterCmdMap[RPC_APPENDENTRY])
+	cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
+
+	if isController {
+		if _, ok := clusterMetadataPendingAppend[nodeId]; ok { // if metadata pending
+			byteBuf.Reset()
+			binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_METADATA)
+			cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
+			buf, _ := json.Marshal(clusterInfo)
+			cmdBytes = append(cmdBytes, buf...)
+		}
+	}
+
+	if len(cmdBytes) == 2 { // means no data, then append controller's addr
+		byteBuf.Reset()
+		binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_DEFAULT)
+		cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
+		cmdBytes = append(cmdBytes, []byte(nodeInfo.Address)...)
 	}
 
 	// Enocde
-	data, err := proto.Encode(line)
+	data, err := proto.EncodeB(cmdBytes)
 	if err != nil {
-		fmt.Println(err)
+		log.Err(err)
 	}
 
 	// Send
 	_, err = conn.Write(data)
 	if err != nil {
-		fmt.Println(err)
-		if conn, ok := connCache[controllerId]; ok {
+		log.Err(err)
+		if conn, ok := connCache[nodeId]; ok {
 			conn.Close()
 			conn = nil
-			fmt.Println("raft_append_entries::send Delete connCache")
-			delete(connCache, controllerId)
+			log.Warn().Msg("raft_append_entries::send Delete connCache")
+			delete(connCache, nodeId)
 		}
 
 		return ""
@@ -116,6 +151,6 @@ func send(address string, controllerId string, dialErrorCounter *int) string {
 		}
 	}
 	// remove the pending conroller id from Pending map
-	delete(clusterMetadataPendingAppend, controllerId)
-	return string(buf[4:])
+	delete(clusterMetadataPendingAppend, nodeId)
+	return string(buf)
 }

@@ -9,6 +9,8 @@ package cluster
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"math/rand/v2"
@@ -134,10 +136,15 @@ func voteMe(address string) {
 	}
 	defer conn.Close()
 
-	line := RPC_VOTE + " " + strconv.Itoa(int(clusterInfo.Ver))
+	//line := RPC_VOTE + " " + strconv.Itoa(int(clusterInfo.Ver))
+	var cmdBytes []byte
+	var byteBuf = new(bytes.Buffer) // int to byte buf
+	_ = binary.Write(byteBuf, binary.LittleEndian, ClusterCmdMap[RPC_VOTE])
+	cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
+	cmdBytes = append(cmdBytes, []byte(strconv.Itoa(int(clusterInfo.Ver)))...)
 
 	// Enocde
-	data, err := proto.Encode(line)
+	data, err := proto.EncodeB(cmdBytes)
 	if err != nil {
 		fmt.Println(err)
 	}
