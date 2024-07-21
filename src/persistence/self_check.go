@@ -5,7 +5,7 @@
 **
 **/
 
-package persistent
+package persistence
 
 import (
 	"fmt"

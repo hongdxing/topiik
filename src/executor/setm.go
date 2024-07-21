@@ -12,7 +12,7 @@ import (
 	"strings"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
-	"topiik/shared"
+	"topiik/memo"
 )
 
 /***
@@ -30,7 +30,7 @@ func setM(pieces []string) (result int, err error) {
 	kv := make(map[string]string)
 	for i := 0; i < len(pieces)-1; i += 2 {
 		key := strings.TrimSpace(pieces[i])
-		if val, ok := shared.MemMap[key]; ok {
+		if val, ok := memo.MemMap[key]; ok {
 			if val.Typ != datatype.V_TYPE_STRING {
 				return 0, errors.New(RES_DATA_TYPE_NOT_MATCH + ":" + key)
 			}
@@ -38,10 +38,10 @@ func setM(pieces []string) (result int, err error) {
 		kv[key] = pieces[i+1]
 	}
 	for k, v := range kv {
-		if val, ok := shared.MemMap[k]; ok {
+		if val, ok := memo.MemMap[k]; ok {
 			val.Str = []byte(v)
 		} else {
-			shared.MemMap[k] = &datatype.TValue{
+			memo.MemMap[k] = &datatype.TValue{
 				Typ: datatype.V_TYPE_STRING,
 				Str: []byte(v),
 				Exp: consts.UINT32_MAX,

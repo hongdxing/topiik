@@ -94,6 +94,7 @@ func main() {
 		strs := strings.SplitN(line, " ", 2)
 		if strings.ToUpper(strs[0]) == command.QUIT {
 			conn.Close()
+			break
 		}
 		// TODO: valid command
 		// Enocde

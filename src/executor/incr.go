@@ -13,7 +13,7 @@ import (
 	"strings"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
-	"topiik/shared"
+	"topiik/memo"
 )
 
 /***
@@ -35,7 +35,7 @@ func incr(pieces []string) (result int64, err error) {
 			return 0, err
 		}
 		i++
-		shared.MemMap[key].Str = []byte(string(i))
+		memo.MemMap[key].Str = []byte(string(i))
 		return i, nil
 	} else if len(pieces) == 2 { // KEY num
 		var i int64
@@ -50,7 +50,7 @@ func incr(pieces []string) (result int64, err error) {
 			return 0, err
 		}
 		i += int64(num)
-		shared.MemMap[key].Str = []byte(string(i))
+		memo.MemMap[key].Str = []byte(string(i))
 		return i, nil
 	} else {
 		return 0, errors.New(RES_WRONG_NUMBER_OF_ARGS)
@@ -58,13 +58,13 @@ func incr(pieces []string) (result int64, err error) {
 }
 
 func preINCR(key string) (i int64, err error) {
-	if val, ok := shared.MemMap[key]; ok {
+	if val, ok := memo.MemMap[key]; ok {
 		i, err = strconv.ParseInt(string(val.Str), 10, 0)
 		if err != nil {
 			return i, errors.New(RES_DATA_TYPE_NOT_MATCH)
 		}
 	} else {
-		shared.MemMap[key] = &datatype.TValue{
+		memo.MemMap[key] = &datatype.TValue{
 			Typ: datatype.V_TYPE_STRING,
 			Str: []byte("0"),
 			Exp: consts.UINT32_MAX}

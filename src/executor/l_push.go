@@ -14,7 +14,7 @@ import (
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/internal/util"
-	"topiik/shared"
+	"topiik/memo"
 )
 
 /***
@@ -36,8 +36,8 @@ func pushList(args []string, CMD string) (result int, err error) {
 		return 0, err
 	}
 	key := args[0]
-	if shared.MemMap[key] == nil {
-		shared.MemMap[key] = &datatype.TValue{
+	if memo.MemMap[key] == nil {
+		memo.MemMap[key] = &datatype.TValue{
 			Typ: datatype.V_TYPE_LIST,
 			Lst: list.New(),
 			Exp: consts.UINT32_MAX,
@@ -45,15 +45,15 @@ func pushList(args []string, CMD string) (result int, err error) {
 	}
 	if CMD == command.LPUSH {
 		for _, piece := range pieces {
-			shared.MemMap[key].Lst.PushFront(piece)
+			memo.MemMap[key].Lst.PushFront(piece)
 		}
 	} else if CMD == command.LPUSHR {
 		for _, piece := range pieces {
-			shared.MemMap[key].Lst.PushBack(piece)
+			memo.MemMap[key].Lst.PushBack(piece)
 		}
 	} else {
 		return 0, errors.New(consts.RES_INVALID_CMD)
 	}
 
-	return shared.MemMap[key].Lst.Len(), nil
+	return memo.MemMap[key].Lst.Len(), nil
 }

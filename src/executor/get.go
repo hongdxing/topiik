@@ -11,7 +11,7 @@ import (
 	"errors"
 	"strings"
 	"topiik/internal/datatype"
-	"topiik/shared"
+	"topiik/memo"
 )
 
 /***
@@ -31,7 +31,7 @@ func get(pieces []string) (result string, err error) {
 	}
 
 	key := strings.TrimSpace(pieces[0])
-	if val, ok := shared.MemMap[key]; ok {
+	if val, ok := memo.MemMap[key]; ok {
 		if isKeyExpired(key, val.Exp) {
 			return "", errors.New(RES_KEY_NOT_EXIST)
 		}

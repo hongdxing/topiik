@@ -13,7 +13,7 @@ import (
 	"regexp"
 	"strings"
 	"topiik/internal/consts"
-	"topiik/shared"
+	"topiik/memo"
 )
 
 /***
@@ -41,8 +41,8 @@ func keys(pieces []string) (result []string, err error) {
 	if err != nil {
 		return nil, errors.New(RES_SYNTAX_ERROR)
 	}
-	keys := make([]string, 0, len(shared.MemMap))
-	for k := range shared.MemMap {
+	keys := make([]string, 0, len(memo.MemMap))
+	for k := range memo.MemMap {
 		// Need to exclude internal using KEYs
 		if reg.MatchString(k) && !strings.HasPrefix(k, consts.RESEVERD_PREFIX) {
 			keys = append(keys, k)

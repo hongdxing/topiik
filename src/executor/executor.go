@@ -253,14 +253,14 @@ func splitParams(strs []string) (pieces []string) {
 **/
 /*
 func enqueuePersistentMsg(msg []byte) {
-	if shared.MemMap[consts.PERSISTENT_BUF_QUEUE] == nil {
-		shared.MemMap[consts.PERSISTENT_BUF_QUEUE] = &datatype.TValue{
+	if memo.MemMap[consts.PERSISTENT_BUF_QUEUE] == nil {
+		memo.MemMap[consts.PERSISTENT_BUF_QUEUE] = &datatype.TValue{
 			Typ: datatype.V_TYPE_LIST,
 			Lst: list.New(),
 			Exp: consts.UINT32_MAX,
 		}
 	}
-	shared.MemMap[consts.PERSISTENT_BUF_QUEUE].Lst.PushFront(msg)
+	memo.MemMap[consts.PERSISTENT_BUF_QUEUE].Lst.PushFront(msg)
 }*/
 
 /*** Response json ***/

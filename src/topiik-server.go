@@ -13,7 +13,7 @@ import (
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/logger"
-	"topiik/persistent"
+	"topiik/persistence"
 )
 
 const (
@@ -32,7 +32,7 @@ func main() {
 		return
 	}
 	// self check
-	//err = persistent.SelfCheck()
+	//err = persistence.SelfCheck()
 	err = initNode()
 	if err != nil {
 		return
@@ -47,7 +47,7 @@ func main() {
 
 	// Start routines
 	//go raft.RequestVote(&serverConfig.JoinList, 200, nodeStatus)
-	go persistent.Persist(*serverConfig)
+	go persistence.Persist(*serverConfig)
 	go cluster.StartServer(serverConfig.Host+":"+serverConfig.PORT2, serverConfig)
 
 	// Accept incoming connections and handle them

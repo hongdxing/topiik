@@ -12,10 +12,10 @@ const (
 	RESEVERD_PREFIX       = "__toPIIK"
 )
 
-// relate to persistent
+// relate to persistence
 const (
-	// the Queue that waiting to be persistent
-	PERSISTENT_BUF_QUEUE = "__toPIIK_persistent_buf_queue"
+	// the Queue that waiting to be persistence
+	PERSISTENT_BUF_QUEUE = "__toPIIK_persistence_buf_queue"
 )
 
 // relate to Topic

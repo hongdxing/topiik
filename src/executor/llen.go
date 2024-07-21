@@ -11,7 +11,7 @@ import (
 	"errors"
 	"strings"
 	"topiik/internal/datatype"
-	"topiik/shared"
+	"topiik/memo"
 )
 
 /***
@@ -29,7 +29,7 @@ func llen(pieces []string) (result int, err error) {
 		return 0, errors.New(RES_SYNTAX_ERROR)
 	}
 	key := strings.TrimSpace(pieces[0])
-	if val, ok := shared.MemMap[key]; ok {
+	if val, ok := memo.MemMap[key]; ok {
 		if val.Typ != datatype.V_TYPE_LIST {
 			return 0, errors.New(RES_DATA_TYPE_NOT_MATCH)
 		}

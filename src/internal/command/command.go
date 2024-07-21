@@ -2,8 +2,13 @@ package command
 
 const (
 	/*** CLUSTER ***/
-	CLUSTER = "CLUSTER"
-
+	CLUSTER      = "CLUSTER"
+	INIT_CLUSTER = "INIT-CLUSTER"
+	SHOW_CLUSTER = "SHOW-CLUSTER"
+	ADD_NODE     = "ADD-NODE"
+	REMOVE_NODE  = "REMOVE-NODE"
+	SCALE        = "SCALE"
+	
 	/*** String ***/
 	SET  = "SET"
 	GET  = "GET"
@@ -35,13 +40,15 @@ const (
 	QUIT = "QUIT"
 )
 
-const (
-	GET_CONTROLLER_LEADER_ADDR int16 = 3001
-)
-
-var CmdMap = map[string]int16{
+var CmdCode = map[string]int16{
 	// Cluster: 1 - 15
-	CLUSTER: 1,
+	//CLUSTER: 1,
+	INIT_CLUSTER: 1,
+	SHOW_CLUSTER: 2,
+	ADD_NODE:     3,
+	REMOVE_NODE:  4,
+	SCALE:        5,
+
 	// String: 16 - 47 (32)
 	SET:  16,
 	GET:  17,
@@ -81,3 +88,7 @@ var CmdMap = map[string]int16{
 	// Other:
 	QUIT: 2001,
 }
+
+const (
+	GET_CONTROLLER_LEADER_ADDR int16 = 3001
+)

@@ -27,6 +27,9 @@ func Get() zerolog.Logger {
 	once.Do(func() {
 		zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 		zerolog.TimeFieldFormat = time.RFC3339
+		zerolog.TimestampFieldName = "t"
+		zerolog.LevelFieldName = "l"
+		zerolog.MessageFieldName = "m"
 
 		logLevel, err := strconv.Atoi(os.Getenv("LOG_LEVEL"))
 		if err != nil {
@@ -40,11 +43,11 @@ func Get() zerolog.Logger {
 
 		if os.Getenv("APP_ENV") != "development" {
 			fileLogger := &lumberjack.Logger{
-				Filename:   "logs/server.log",
-				MaxSize:    5, //
-				MaxBackups: 10,
-				MaxAge:     14,
-				Compress:   true,
+				Filename: "logs/server.log",
+				MaxSize:  100,
+				//MaxBackups: 30,
+				MaxAge:   180,
+				Compress: true,
 			}
 
 			output = zerolog.MultiLevelWriter(os.Stderr, fileLogger)

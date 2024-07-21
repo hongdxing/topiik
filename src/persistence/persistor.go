@@ -5,7 +5,7 @@
 **
 **/
 
-package persistent
+package persistence
 
 import (
 	"fmt"
@@ -13,15 +13,15 @@ import (
 	"time"
 	"topiik/internal/config"
 	"topiik/internal/consts"
-	"topiik/shared"
+	"topiik/memo"
 )
 
-var persistentTicker *time.Ticker
-var persistentWG sync.WaitGroup
+var persistenceTicker *time.Ticker
+var persistenceWG sync.WaitGroup
 var quit chan struct{}
 
 func Persist(serverConfig config.ServerConfig) {
-	persistentTicker = time.NewTicker(time.Duration(serverConfig.SaveMillis) * time.Millisecond)
+	persistenceTicker = time.NewTicker(time.Duration(serverConfig.SaveMillis) * time.Millisecond)
 	quit = make(chan struct{})
 
 	// Start compress routine
@@ -29,26 +29,26 @@ func Persist(serverConfig config.ServerConfig) {
 
 	for {
 		select {
-		case <-persistentTicker.C:
-			persistentWG.Add(1)
+		case <-persistenceTicker.C:
+			persistenceWG.Add(1)
 			doPersist()
 		case <-quit:
-			persistentTicker.Stop()
+			persistenceTicker.Stop()
 			return
 		}
 	}
 }
 
 func doPersist() {
-	defer persistentWG.Done()
+	defer persistenceWG.Done()
 
-	if shared.MemMap[consts.PERSISTENT_BUF_QUEUE] == nil {
+	if memo.MemMap[consts.PERSISTENT_BUF_QUEUE] == nil {
 		return
 	}
-	for ele := shared.MemMap[consts.PERSISTENT_BUF_QUEUE].Lst.Back(); ele != nil; ele = ele.Prev() {
+	for ele := memo.MemMap[consts.PERSISTENT_BUF_QUEUE].Lst.Back(); ele != nil; ele = ele.Prev() {
 		//result = append(result, ele.Value.(string))
 		//eleToBeRemoved = append(eleToBeRemoved, ele)
 		fmt.Printf("%b", ele.Value)
-		shared.MemMap[consts.PERSISTENT_BUF_QUEUE].Lst.Remove(ele)
+		memo.MemMap[consts.PERSISTENT_BUF_QUEUE].Lst.Remove(ele)
 	}
 }

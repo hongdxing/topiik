@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 	"topiik/internal/consts"
-	"topiik/shared"
+	"topiik/memo"
 )
 
 /***
@@ -37,13 +37,13 @@ func ttl(pieces []string) (ttl int64, err error) {
 	}
 
 	key := strings.TrimSpace(pieces[0])
-	if val, ok := shared.MemMap[key]; ok {
+	if val, ok := memo.MemMap[key]; ok {
 		if len(pieces) == 1 {
 			if val.Exp == consts.INT64_MAX {
 				return -1, nil // never expire
 			} else if val.Exp-time.Now().UTC().Unix() < 0 {
 				// delete the key
-				delete(shared.MemMap, key)
+				delete(memo.MemMap, key)
 				return 0, errors.New(RES_KEY_NOT_EXIST)
 			}
 			return val.Exp - time.Now().UTC().Unix(), nil

@@ -14,7 +14,7 @@ import (
 	"time"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
-	"topiik/shared"
+	"topiik/memo"
 )
 
 /***
@@ -66,14 +66,14 @@ func set(pieces []string) (result string, err error) {
 				i++
 			} else if piece == "EX" {
 				fmt.Println("EX")
-				if _, ok := shared.MemMap[key]; ok {
+				if _, ok := memo.MemMap[key]; ok {
 					//
 				} else {
 					return "", errors.New(RES_KEY_NOT_EXIST)
 				}
 			} else if piece == "NX" {
 				fmt.Println("NX")
-				if _, ok := shared.MemMap[key]; ok {
+				if _, ok := memo.MemMap[key]; ok {
 					return "", errors.New(RES_KEY_EXIST_ALREADY)
 				}
 			} else {
@@ -82,7 +82,7 @@ func set(pieces []string) (result string, err error) {
 		}
 	}
 
-	if val, ok := shared.MemMap[key]; ok {
+	if val, ok := memo.MemMap[key]; ok {
 		if val.Typ != datatype.V_TYPE_STRING {
 			return "", errors.New(RES_DATA_TYPE_NOT_MATCH)
 		}
@@ -91,11 +91,11 @@ func set(pieces []string) (result string, err error) {
 			oldValue = string(val.Str)
 		}
 
-		shared.MemMap[key].Str = []byte(pieces[1])
-		shared.MemMap[key].Exp = ttl
+		memo.MemMap[key].Str = []byte(pieces[1])
+		memo.MemMap[key].Exp = ttl
 		return oldValue, nil
 	} else {
-		shared.MemMap[key] = &datatype.TValue{
+		memo.MemMap[key] = &datatype.TValue{
 			Typ: datatype.V_TYPE_STRING,
 			Str: []byte(pieces[1]),
 			Exp: ttl}

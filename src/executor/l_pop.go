@@ -15,7 +15,7 @@ import (
 	"topiik/internal/command"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
-	"topiik/shared"
+	"topiik/memo"
 )
 
 /***
@@ -42,7 +42,7 @@ func popList(args []string, cmd string) (result []string, err error) {
 		}
 	}
 	key := strings.TrimSpace(args[0])
-	if val, ok := shared.MemMap[key]; ok {
+	if val, ok := memo.MemMap[key]; ok {
 		if val.Typ != datatype.V_TYPE_LIST {
 			return result, errors.New(RES_DATA_TYPE_NOT_MATCH)
 		}
@@ -71,7 +71,7 @@ func popList(args []string, cmd string) (result []string, err error) {
 		}
 		// if no element, delete the list
 		if val.Lst.Len() == 0 {
-			delete(shared.MemMap, key)
+			delete(memo.MemMap, key)
 		}
 
 		return result, nil

@@ -6,7 +6,7 @@
 **
 **/
 
-package persistent
+package persistence
 
 import "os"
 
