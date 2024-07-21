@@ -63,7 +63,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 	if err != nil {
 		return resp.ErrorResponse(err)
 	}
-	log.Info().Msg(string(msgData[2:]))
+	//log.Info().Msg(string(msgData[2:]))
 	if icmd == command.INIT_CLUSTER {
 		err := clusterInit(pieces, serverConfig)
 		if err != nil {
@@ -93,7 +93,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 	}
 
 	// cluster command
-	if icmd == command.INIT_CLUSTER {
+	/*if icmd == command.INIT_CLUSTER {
 		pieces := splitParams(strs)
 		if len(pieces) < 1 {
 			return resp.ErrorResponse(errors.New(RES_SYNTAX_ERROR))
@@ -118,7 +118,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 			clusterInfo()
 		}
 		return resp.ErrorResponse(errors.New(RES_SYNTAX_ERROR))
-	}
+	}*/
 
 	// if is Controller, forward to worker(s)
 	if cluster.IsNodeController() {
@@ -137,11 +137,6 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 
 	if icmd == command.GET { // STRING COMMANDS
 		/***String SET***/
-		//pieces, err := needKEY(strs)
-		pieces := []string{}
-		if len(strs) == 2 {
-			pieces = strings.Split(strs[1], consts.SPACE)
-		}
 		result, err := get(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
@@ -149,10 +144,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 		return resp.StringResponse(result, CMD, msg)
 	} else if icmd == command.SET {
 		/***String GET***/
-		pieces := []string{}
 		if len(strs) == 2 {
-			//pieces = strings.Split(strs[1], consts.SPACE)
-			pieces, err = util.SplitCommandLine(strs[1])
 			if err != nil {
 				return resp.ErrorResponse(err)
 			}
@@ -163,32 +155,18 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 		}
 		return resp.StringResponse(result, CMD, msg)
 	} else if icmd == command.GETM {
-		//pieces, err := needKEY(strs)
-		pieces := []string{}
-		if len(strs) == 2 {
-			pieces = strings.Split(strs[1], consts.SPACE)
-		}
 		result, err := getM(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringArrayResponse(result, CMD, msg)
 	} else if icmd == command.SETM {
-		//pieces, err := needKEY(strs)
-		pieces := []string{}
-		if len(strs) == 2 {
-			pieces = strings.Split(strs[1], consts.SPACE)
-		}
 		result, err := setM(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.IntegerResponse(int64(result), CMD, msg)
 	} else if icmd == command.INCR {
-		pieces, err := needKEY(strs)
-		if err != nil {
-			return resp.ErrorResponse(err)
-		}
 		result, err := incr(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
@@ -196,44 +174,30 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 		return resp.IntegerResponse(result, CMD, msg)
 	} else if icmd == command.LPUSH || icmd == command.LPUSHR { // LIST COMMANDS
 		/***List LPUSH***/
-		pieces, err := needKEY(strs)
-		if err != nil {
-			return resp.ErrorResponse(err)
-		}
 		result, err := pushList(pieces, icmd)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.IntegerResponse(int64(result), CMD, msg)
 	} else if icmd == command.LPOP || icmd == command.LPOPR {
-		pieces, err := needKEY(strs)
-		if err != nil {
-			return resp.ErrorResponse(err)
-		}
 		result, err := popList(pieces, icmd)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringArrayResponse(result, CMD, msg)
 	} else if icmd == command.LLEN {
-		pieces, err := needKEY(strs)
-		if err != nil {
-			return resp.ErrorResponse(err)
-		}
 		result, err := llen(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.IntegerResponse(int64(result), CMD, msg)
 	} else if icmd == command.TTL { // KEY COMMANDS
-		pieces := splitParams(strs)
 		result, err := ttl(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.IntegerResponse(result, CMD, msg)
 	} else if icmd == command.KEYS {
-		pieces := splitParams(strs)
 		result, err := keys(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
@@ -258,18 +222,6 @@ func needKEY(cmdKeyParams []string) (pieces []string, err error) {
 	return strings.SplitN(strings.TrimLeft(cmdKeyParams[1], consts.SPACE), consts.SPACE, 2), nil
 }
 
-/***
-** Split command parameters if any
-**
-** Return:
-**	The command pieces except the CMD itself
-**/
-func splitParams(strs []string) (pieces []string) {
-	if len(strs) == 2 {
-		pieces = strings.Split(strs[1], consts.SPACE)
-	}
-	return pieces
-}
 
 /***
 ** Persist command

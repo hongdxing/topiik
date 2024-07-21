@@ -28,20 +28,22 @@ import (
 **		-
 ** Syntax: LPOP|RPOP key [COUNT]
 **/
-func popList(args []string, icmd int16) (result []string, err error) {
+func popList(pieces []string, icmd int16) (result []string, err error) {
 	count := 1
-	if len(args) > 2 {
-		return nil, errors.New(RES_WRONG_NUMBER_OF_ARGS)
-	} else if len(args) == 2 {
-		count, err = strconv.Atoi(args[1])
+	if len(pieces) == 1 {
+		//
+	} else if len(pieces) == 2 {
+		count, err = strconv.Atoi(pieces[1])
 		if err != nil {
 			return nil, errors.New(RES_WRONG_ARG)
 		}
 		if count < 1 {
 			return nil, errors.New(RES_WRONG_ARG)
 		}
+	} else {
+		return nil, errors.New(RES_SYNTAX_ERROR)
 	}
-	key := strings.TrimSpace(args[0])
+	key := strings.TrimSpace(pieces[0])
 	if val, ok := memo.MemMap[key]; ok {
 		if val.Typ != datatype.V_TYPE_LIST {
 			return result, errors.New(RES_DATA_TYPE_NOT_MATCH)
