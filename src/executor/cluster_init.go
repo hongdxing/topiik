@@ -9,7 +9,6 @@ package executor
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 	"topiik/cluster"
 	"topiik/internal/config"
@@ -30,17 +29,19 @@ func clusterInit(pieces []string, serverConfig *config.ServerConfig) error {
 		return errors.New("current node already in cluster:" + cluster.GetNodeInfo().ClusterId)
 	}
 
-	if len(pieces) != 3 {
+	if len(pieces) != 2 {
 		return errors.New(RES_SYNTAX_ERROR)
 	}
-	partitions, err := strconv.Atoi(pieces[1])
+	partitionIndex := 0
+	replicaIndex := 1
+	partitions, err := strconv.Atoi(pieces[partitionIndex])
 	if err != nil || partitions < 1 {
-		fmt.Printf("%s invalid partition number: %s", RES_SYNTAX_ERROR, pieces[1])
+		log.Err(err).Msgf("%s invalid partition number: %s", RES_SYNTAX_ERROR, pieces[partitionIndex])
 		return errors.New(RES_SYNTAX_ERROR)
 	}
-	replicas, err := strconv.Atoi(pieces[2])
+	replicas, err := strconv.Atoi(pieces[replicaIndex])
 	if err != nil || replicas < 1 {
-		fmt.Printf("%s invalid replica number: %s", RES_SYNTAX_ERROR, pieces[2])
+		log.Err(err).Msgf("%s invalid replica number: %s", RES_SYNTAX_ERROR, pieces[replicaIndex])
 		return errors.New(RES_SYNTAX_ERROR)
 	}
 

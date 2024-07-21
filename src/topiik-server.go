@@ -164,7 +164,7 @@ func initNode() (err error) {
 		if err != nil {
 			panic("loading node failed")
 		}
-		node.Address = serverConfig.Listen
+		node.Addr = serverConfig.Listen
 		log.Info().Msgf("load node %s", node)
 	}
 

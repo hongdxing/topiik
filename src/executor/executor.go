@@ -59,17 +59,41 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 		}
 	}
 
-	//dataBytes := msgData[2:]
-	if icmd == command.GET_CONTROLLER_LEADER_ADDR {
-		log.Info().Msg("get controller address")
-		if cluster.GetNodeStatus().Role == cluster.RAFT_LEADER { // if is leader, then just return leader's address
-			return resp.StringResponse(serverConfig.Listen, "", msg)
+	pieces, err := util.SplitCommandLine(string(msgData[2:]))
+	if err != nil {
+		return resp.ErrorResponse(err)
+	}
+	log.Info().Msg(string(msgData[2:]))
+	if icmd == command.INIT_CLUSTER {
+		err := clusterInit(pieces, serverConfig)
+		if err != nil {
+			return resp.ErrorResponse(err)
 		}
-		return resp.StringResponse(cluster.GetNodeStatus().LeaderControllerAddr, "", msg)
+		return resp.StringResponse(RES_OK, "", nil)
+	} else if icmd == command.ADD_NODE {
+		result, err := addNode(pieces)
+		if err != nil {
+			return resp.ErrorResponse(err)
+		}
+		return resp.StringResponse(result, "", nil)
+	} else if icmd == command.GET_CONTROLLER_LEADER_ADDR {
+		log.Info().Msg("get controller address")
+		var address string
+		if cluster.GetNodeStatus().Role == cluster.RAFT_LEADER { // if is leader, then just return leader's address
+			address = serverConfig.Listen
+		} else {
+			address = cluster.GetNodeStatus().LeaderControllerAddr
+		}
+		// if not current not controller leader, nor in any cluster, i.e. LeaderControllerAddr is empty
+		// then use listen address
+		if address == "" {
+			address = serverConfig.Listen
+		}
+		return resp.StringResponse(address, "", msg)
 	}
 
 	// cluster command
-	if CMD == command.CLUSTER {
+	if icmd == command.INIT_CLUSTER {
 		pieces := splitParams(strs)
 		if len(pieces) < 1 {
 			return resp.ErrorResponse(errors.New(RES_SYNTAX_ERROR))
@@ -106,12 +130,12 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 		return resp.ErrorResponse(errors.New("current node not member of cluster"))
 	}
 	// allow cmd only from Controller Leader, and TODO: allow from Partition Leader
-	err := srcFilter(srcAddr)
+	err = srcFilter(srcAddr)
 	if err != nil {
 		return resp.ErrorResponse(err)
 	}
 
-	if CMD == command.GET { // STRING COMMANDS
+	if icmd == command.GET { // STRING COMMANDS
 		/***String SET***/
 		//pieces, err := needKEY(strs)
 		pieces := []string{}
@@ -123,7 +147,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringResponse(result, CMD, msg)
-	} else if CMD == command.SET {
+	} else if icmd == command.SET {
 		/***String GET***/
 		pieces := []string{}
 		if len(strs) == 2 {
@@ -138,7 +162,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringResponse(result, CMD, msg)
-	} else if CMD == command.GETM {
+	} else if icmd == command.GETM {
 		//pieces, err := needKEY(strs)
 		pieces := []string{}
 		if len(strs) == 2 {
@@ -149,7 +173,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringArrayResponse(result, CMD, msg)
-	} else if CMD == command.SETM {
+	} else if icmd == command.SETM {
 		//pieces, err := needKEY(strs)
 		pieces := []string{}
 		if len(strs) == 2 {
@@ -160,7 +184,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 			return resp.ErrorResponse(err)
 		}
 		return resp.IntegerResponse(int64(result), CMD, msg)
-	} else if CMD == command.INCR {
+	} else if icmd == command.INCR {
 		pieces, err := needKEY(strs)
 		if err != nil {
 			return resp.ErrorResponse(err)
@@ -170,28 +194,28 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 			return resp.ErrorResponse(err)
 		}
 		return resp.IntegerResponse(result, CMD, msg)
-	} else if CMD == command.LPUSH || CMD == command.LPUSHR { // LIST COMMANDS
+	} else if icmd == command.LPUSH || icmd == command.LPUSHR { // LIST COMMANDS
 		/***List LPUSH***/
 		pieces, err := needKEY(strs)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		result, err := pushList(pieces, CMD)
+		result, err := pushList(pieces, icmd)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.IntegerResponse(int64(result), CMD, msg)
-	} else if CMD == command.LPOP || CMD == command.LPOPR {
+	} else if icmd == command.LPOP || icmd == command.LPOPR {
 		pieces, err := needKEY(strs)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		result, err := popList(pieces, CMD)
+		result, err := popList(pieces, icmd)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringArrayResponse(result, CMD, msg)
-	} else if CMD == command.LLEN {
+	} else if icmd == command.LLEN {
 		pieces, err := needKEY(strs)
 		if err != nil {
 			return resp.ErrorResponse(err)
@@ -201,14 +225,14 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 			return resp.ErrorResponse(err)
 		}
 		return resp.IntegerResponse(int64(result), CMD, msg)
-	} else if CMD == command.TTL { // KEY COMMANDS
+	} else if icmd == command.TTL { // KEY COMMANDS
 		pieces := splitParams(strs)
 		result, err := ttl(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.IntegerResponse(result, CMD, msg)
-	} else if CMD == command.KEYS {
+	} else if icmd == command.KEYS {
 		pieces := splitParams(strs)
 		result, err := keys(pieces)
 		if err != nil {

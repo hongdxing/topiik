@@ -34,45 +34,45 @@ func clusterJoin(pieces []string) (result string, err error) {
 	id := pieces[0]
 	addr := pieces[1]
 	role := pieces[2]
-	if strings.ToUpper(role) == ROLE_CONTROLLER {
+	if strings.ToUpper(role) == ROLE_CONTROLLER { // add controller
 		var addrSplit []string
 		addrSplit, err = util.SplitAddress(addr)
 		if err != nil {
 			return "", errors.New("join cluster failed")
 		}
 
-		if exist, ok := clusterInfo.Controllers[id]; ok {
-			if exist.Address == addr {
+		if exist, ok := clusterInfo.Ctls[id]; ok {
+			if exist.Addr == addr {
 				return nodeInfo.ClusterId, nil
 			} else {
-				exist.Address = addr // update adddress
+				exist.Addr = addr // update adddress
 			}
 		} else {
-			clusterInfo.Controllers[id] = NodeSlim{
-				Id:       id,
-				Address:  addr,
-				Address2: addrSplit[0] + ":" + addrSplit[2],
+			clusterInfo.Ctls[id] = NodeSlim{
+				Id:    id,
+				Addr:  addr,
+				Addr2: addrSplit[0] + ":" + addrSplit[2],
 			}
 		}
 
-	} else if strings.ToUpper(role) == ROLE_WORKER {
+	} else if strings.ToUpper(role) == ROLE_WORKER { // add worker
 		var addrSplit []string
 		addrSplit, err = util.SplitAddress(addr)
 		if err != nil {
 			return "", errors.New("join cluster failed")
 		}
 
-		if exist, ok := clusterInfo.Workers[id]; ok {
-			if exist.Address == addr {
+		if exist, ok := clusterInfo.Wkrs[id]; ok {
+			if exist.Addr == addr {
 				return nodeInfo.ClusterId, nil
 			} else {
-				exist.Address = addr // update adddress
+				exist.Addr = addr // update adddress
 			}
 		} else {
-			clusterInfo.Workers[id] = NodeSlim{
-				Id:       id,
-				Address:  addr,
-				Address2: addrSplit[0] + ":" + addrSplit[2],
+			clusterInfo.Wkrs[id] = Worker{
+				Id:    id,
+				Addr:  addr,
+				Addr2: addrSplit[0] + ":" + addrSplit[2],
 			}
 		}
 	} else {
@@ -99,7 +99,7 @@ func clusterJoin(pieces []string) (result string, err error) {
 	}
 
 	// cluster meta changed, pending to sync to follower(s)
-	for _, v := range clusterInfo.Controllers {
+	for _, v := range clusterInfo.Ctls {
 		if v.Id != nodeInfo.Id {
 			clusterMetadataPendingAppend[v.Id] = v.Id
 		}

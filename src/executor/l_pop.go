@@ -28,7 +28,7 @@ import (
 **		-
 ** Syntax: LPOP|RPOP key [COUNT]
 **/
-func popList(args []string, cmd string) (result []string, err error) {
+func popList(args []string, icmd int16) (result []string, err error) {
 	count := 1
 	if len(args) > 2 {
 		return nil, errors.New(RES_WRONG_NUMBER_OF_ARGS)
@@ -48,14 +48,14 @@ func popList(args []string, cmd string) (result []string, err error) {
 		}
 
 		var eleToBeRemoved []*list.Element
-		if cmd == command.LPOP { //LPOP
+		if icmd == command.LPOP { //LPOP
 			looper := 0
 			for ele := val.Lst.Front(); ele != nil && looper < count; ele = ele.Next() {
 				looper++
 				result = append(result, ele.Value.(string))
 				eleToBeRemoved = append(eleToBeRemoved, ele)
 			}
-		} else if cmd == command.LPOPR { //RPOP
+		} else if icmd == command.LPOPR { //RPOP
 			looper := 0
 			for ele := val.Lst.Back(); ele != nil && looper < count; ele = ele.Prev() {
 				looper++

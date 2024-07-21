@@ -7,30 +7,39 @@
 
 package cluster
 
-type Metadata struct {
-	Node Node
-}
-
 type Cluster struct {
-	Id          string // auto generated when INIT a cluster
-	Partitions  uint16 // number of partitions, given parameter when INIT a cluster
-	Replicas    uint16 // number of replicas, recommend 3 relicas at most, given parameter when INIT a cluster
-	Ver         uint   // compare which is more lastest
-	Controllers map[string]NodeSlim
-	Workers     map[string]NodeSlim
+	Id   string // auto generated when INIT a cluster
+	Ptns uint16 // number of partitions, given parameter when INIT a cluster
+	Rpls uint16 // number of replicas, recommend 3 relicas at most, given parameter when INIT a cluster
+	Ver  uint   // compare which is more lastest
+	Ctls map[string]NodeSlim
+	Wkrs map[string]Worker
 }
 
 type Node struct {
 	Id        string
 	ClusterId string
-	Address   string
-	Address2  string
+	Addr      string
+	Addr2     string
 }
 
 type NodeSlim struct {
+	Id    string
+	Addr  string
+	Addr2 string
+}
+
+type Worker struct {
 	Id       string
-	Address  string
-	Address2 string
+	Addr     string
+	Addr2    string
+	LeaderId string // Partition Leader Node Id
+	Slots    []Slot // Slots of current Node
+}
+
+type Slot struct {
+	From uint16
+	To   uint16
 }
 
 type Partition struct {

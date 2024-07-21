@@ -12,14 +12,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net"
 	"time"
 	"topiik/internal/proto"
 	"topiik/internal/util"
-
-	"github.com/rs/zerolog/log"
 )
 
 var ticker *time.Ticker
@@ -55,21 +52,21 @@ func AppendEntries() {
 }
 
 func appendControllers(dialErrorCounter *int) {
-	for _, worker := range clusterInfo.Controllers {
-		if worker.Id == nodeInfo.Id {
+	for _, controller := range clusterInfo.Ctls {
+		if controller.Id == nodeInfo.Id {
 			continue
 		}
-		send(false, worker.Address2, worker.Id, dialErrorCounter)
+		send(true, controller.Addr2, controller.Id, dialErrorCounter)
 	}
 }
 
 func appendWorkers(dialErrorCounter *int) {
-	for _, controller := range clusterInfo.Workers {
-		if controller.Id == nodeInfo.Id {
+	for _, worker := range clusterInfo.Wkrs {
+		if worker.Id == nodeInfo.Id {
 			continue
 		}
 		//wgAppend.Add(1)
-		send(true, controller.Address2, controller.Id, dialErrorCounter)
+		send(false, worker.Addr2, worker.Id, dialErrorCounter)
 		//wgAppend.Wait()
 	}
 }
@@ -93,7 +90,7 @@ func send(isController bool, destAddr string, nodeId string, dialErrorCounter *i
 		conn, err = util.PreapareSocketClient(destAddr)
 		if err != nil {
 			if *dialErrorCounter%50 == 0 {
-				log.Err(err)
+				tLog.Err(err)
 			}
 			return ""
 		}
@@ -120,23 +117,23 @@ func send(isController bool, destAddr string, nodeId string, dialErrorCounter *i
 		byteBuf.Reset()
 		binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_DEFAULT)
 		cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
-		cmdBytes = append(cmdBytes, []byte(nodeInfo.Address)...)
+		cmdBytes = append(cmdBytes, []byte(nodeInfo.Addr)...)
 	}
 
 	// Enocde
 	data, err := proto.EncodeB(cmdBytes)
 	if err != nil {
-		log.Err(err)
+		tLog.Err(err)
 	}
 
 	// Send
 	_, err = conn.Write(data)
 	if err != nil {
-		log.Err(err)
+		tLog.Err(err)
 		if conn, ok := connCache[nodeId]; ok {
 			conn.Close()
 			conn = nil
-			log.Warn().Msg("raft_append_entries::send Delete connCache")
+			tLog.Warn().Msg("raft_append_entries::send Delete connCache")
 			delete(connCache, nodeId)
 		}
 
@@ -147,7 +144,7 @@ func send(isController bool, destAddr string, nodeId string, dialErrorCounter *i
 	buf, err := proto.Decode(reader)
 	if err != nil {
 		if err == io.EOF {
-			fmt.Printf("rpc_append_entries::send %s\n", err)
+			tLog.Err(err).Msgf("rpc_append_entries::send %s\n", err)
 		}
 	}
 	// remove the pending conroller id from Pending map

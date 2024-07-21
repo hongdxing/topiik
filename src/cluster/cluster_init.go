@@ -71,17 +71,17 @@ func initCluster(partitions uint16, replicas uint16, serverConfig *config.Server
 	}
 	// set clusterInfo
 	clusterInfo.Id = util.RandStringRunes(16)
-	clusterInfo.Partitions = partitions
-	clusterInfo.Replicas = replicas
+	clusterInfo.Ptns = partitions
+	clusterInfo.Rpls = replicas
 
 	addrSplit, err := util.SplitAddress(serverConfig.Listen)
 	if err != nil {
 		panic(err) // if cannot resovle the Address, it's severe error
 	}
-	clusterInfo.Controllers[nodeInfo.Id] = NodeSlim{
-		Id:       nodeInfo.Id,
-		Address:  serverConfig.Listen,
-		Address2: addrSplit[0] + ":" + addrSplit[2]}
+	clusterInfo.Ctls[nodeInfo.Id] = NodeSlim{
+		Id:    nodeInfo.Id,
+		Addr:  serverConfig.Listen,
+		Addr2: addrSplit[0] + ":" + addrSplit[2]}
 
 	// persist cluster metadata
 	clusterPath := GetClusterFilePath()
@@ -117,10 +117,10 @@ func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err e
 			panic(err)
 		}
 
-		clusterInfo.Controllers[nodeId] = NodeSlim{
-			Id:       nodeId,
-			Address:  serverConfig.Listen,
-			Address2: addrSplit[0] + ":" + addrSplit[2],
+		clusterInfo.Ctls[nodeId] = NodeSlim{
+			Id:    nodeId,
+			Addr:  serverConfig.Listen,
+			Addr2: addrSplit[0] + ":" + addrSplit[2],
 		}
 		var jsonBytes []byte
 		jsonBytes, err = json.Marshal(clusterInfo)

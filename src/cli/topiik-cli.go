@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"topiik/cli/internal"
 	"topiik/internal/command"
 	"topiik/internal/proto"
 	"topiik/internal/util"
@@ -55,15 +56,6 @@ func main() {
 		}
 	}
 
-	/*
-		tcpServer, err := net.ResolveTCPAddr("tcp", host)
-		if err != nil {
-			println("server not available:", err.Error())
-			os.Exit(1)
-		}
-		conn, err := net.DialTCP("tcp", nil, tcpServer)
-	*/
-
 	// Get Controller Leader address
 	leaderAddr, err := getControllerLeaderAddr(host)
 	if err != nil {
@@ -71,6 +63,7 @@ func main() {
 		return
 	}
 
+	// connect to leader
 	conn, err := util.PreapareSocketClient(leaderAddr)
 	if err != nil {
 		fmt.Println(err)
@@ -91,14 +84,24 @@ func main() {
 			break
 		}
 
-		strs := strings.SplitN(line, " ", 2)
-		if strings.ToUpper(strs[0]) == command.QUIT {
+		pieces := strings.SplitN(line, " ", 2)
+		cmd := strings.ToUpper(pieces[0])
+		if cmd == command.S_QUIT {
 			conn.Close()
 			break
 		}
+		msg, err := internal.EncodeCmd(cmd)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+
+		if len(pieces) == 2 {
+			msg = append(msg, []byte(pieces[1])...)
+		}
+
 		// TODO: valid command
 		// Enocde
-		data, err := proto.Encode(line)
+		data, err := proto.EncodeB(msg)
 		if err != nil {
 			fmt.Println()
 			fmt.Println(err)

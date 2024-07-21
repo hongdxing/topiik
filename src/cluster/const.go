@@ -18,9 +18,9 @@ const (
 const (
 	RPC_VOTE         int16 = 1
 	RPC_APPENDENTRY  int16 = 2
-	CLUSTER_JOIN_ACK int16 = 3
+	RPC_ADD_NODE     int16 = 3
+	CLUSTER_JOIN_ACK int16 = 4
 )
-
 
 const (
 	ENTRY_TYPE_DEFAULT  int8 = 1

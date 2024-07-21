@@ -21,6 +21,8 @@ import (
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/resp"
+
+	"github.com/rs/zerolog/log"
 )
 
 var voteMeResults []string // Return values from other Nodes, "R": Rejected or "A": Accepted
@@ -35,8 +37,9 @@ const requestVoteInterval = 100
 **/
 func RequestVote() {
 
-	// if this is the only Controller, then it alawys Leader
-	if len(clusterInfo.Controllers) == 1 {
+	if len(clusterInfo.Ctls) == 0 {
+		return
+	} else if len(clusterInfo.Ctls) == 1 { // if this is the only Controller, then it alawys Leader
 		nodeStatus.Role = RAFT_LEADER
 		go AppendEntries()
 		return
@@ -66,11 +69,11 @@ func RequestVote() {
 		}*/
 		// merge controller and woker address2
 		var addr2List = []string{}
-		for _, v := range clusterInfo.Controllers {
-			addr2List = append(addr2List, v.Address2)
+		for _, v := range clusterInfo.Ctls {
+			addr2List = append(addr2List, v.Addr2)
 		}
-		for _, v := range clusterInfo.Workers {
-			addr2List = append(addr2List, v.Address2)
+		for _, v := range clusterInfo.Wkrs {
+			addr2List = append(addr2List, v.Addr2)
 		}
 
 		nodeStatus.Role = RAFT_CANDIDATOR
@@ -109,16 +112,12 @@ func RequestVote() {
 			nodeStatus.Role = RAFT_LEADER
 
 			// when new Leader selected, try to sync cluster meta data
-			for _, v := range clusterInfo.Controllers {
-				if v.Id != nodeInfo.Id {
-					clusterMetadataPendingAppend[v.Id] = v.Id
-				}
-			}
+			UpdatePendingAppend()
 
 			// Leader start to AppendEntries
 			go AppendEntries()
 			// Print Selected Leader
-			fmt.Printf("[TOPIIK] ~!~ selected as new leader\n")
+			log.Info().Msgf("[TOPIIK] ~!~ selected as new leader")
 			// Leader no RequestVote, quite RequestVote
 			break
 		} else {

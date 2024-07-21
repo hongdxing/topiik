@@ -57,6 +57,13 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringResponse(result, CMD, msg)
+	} else if icmd == RPC_ADD_NODE {
+		pieces := strings.Split(string(dataBytes), consts.SPACE)
+		result, err := addNode(pieces)
+		if err != nil {
+			return resp.ErrorResponse(err)
+		}
+		return resp.StringResponse(result, "", nil)
 	} else if icmd == RPC_VOTE {
 		cTerm, err := strconv.Atoi(string(dataBytes))
 		if err != nil {

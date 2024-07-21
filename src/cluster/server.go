@@ -15,7 +15,10 @@ import (
 	"net"
 	"topiik/internal/config"
 	"topiik/internal/proto"
+	"topiik/logger"
 )
+
+var tLog = logger.Get()
 
 func StartServer(address string, serverConfig *config.ServerConfig) {
 	// Listen for incoming connections

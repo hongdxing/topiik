@@ -9,14 +9,16 @@ package cluster
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"topiik/internal/util"
 )
 
 // var metadata = Metadata{}
 var nodeInfo *Node
-var clusterInfo = &Cluster{Controllers: make(map[string]NodeSlim), Workers: make(map[string]NodeSlim)}
+var clusterInfo = &Cluster{Ctls: make(map[string]NodeSlim), Wkrs: make(map[string]Worker)}
 var nodeStatus = &NodeStatus{Role: RAFT_FOLLOWER, Term: 0}
 
 const (
@@ -34,26 +36,26 @@ func LoadControllerMetadata(node *Node) (err error) {
 	clusterPath := GetClusterFilePath()
 	exist, err = util.PathExists(clusterPath)
 	if err != nil {
-		panic(err)
+		tLog.Panic().Msg(err.Error())
 	}
 	if exist {
-		fmt.Println("loading cluster metadata...")
+		tLog.Info().Msg("Loading cluster metadata...")
 		jsonStr, err := os.ReadFile(clusterPath)
 		if err != nil {
-			panic(err)
+			tLog.Panic().Msg(err.Error())
 		}
 		err = json.Unmarshal([]byte(jsonStr), &clusterInfo)
 		fmt.Println(clusterInfo)
 		if err != nil {
-			panic(err)
+			tLog.Panic().Msg(err.Error())
+			//panic(err)
 		}
 	}
 
-	if len(clusterInfo.Controllers) >= 1 {
+	tLog.Info().Msgf("Current node role: %d", nodeStatus.Role)
+	if len(clusterInfo.Ctls) >= 1 {
 		go RequestVote()
 	}
-
-	fmt.Printf("current node role: %d\n", nodeStatus.Role)
 
 	return nil
 }
@@ -75,9 +77,40 @@ func UpdateNodeClusterId(clusterId string) (err error) {
 	return nil
 }
 
+func AddNode(nodeId string, addr string, addr2 string, role string) (err error) {
+	if strings.ToUpper(role) == ROLE_CONTROLLER {
+		clusterInfo.Ctls[nodeId] = NodeSlim{Id: nodeId, Addr: addr, Addr2: addr2}
+	} else {
+		clusterInfo.Wkrs[nodeId] = Worker{Id: nodeId, Addr: addr, Addr2: addr2}
+	}
+	clusterPath := GetClusterFilePath()
+	buf, err := json.Marshal(clusterInfo)
+	if err != nil {
+		return errors.New("update cluster failed")
+	}
+	err = os.Truncate(clusterPath, 0) // TODO: myabe need backup first
+	if err != nil {
+		return errors.New("update cluster failed")
+	}
+	err = os.WriteFile(clusterPath, buf, 0664) // save back controller file
+	if err != nil {
+		return errors.New("update cluster failed")
+	}
+
+	return nil
+}
+
+func UpdatePendingAppend() {
+	for _, v := range clusterInfo.Ctls {
+		if v.Id != nodeInfo.Id {
+			clusterMetadataPendingAppend[v.Id] = v.Id
+		}
+	}
+}
+
 func IsNodeController() bool {
 	// if current node controllerMap has value
-	return len(clusterInfo.Controllers) > 0
+	return len(clusterInfo.Ctls) > 0
 }
 
 func GetNodeInfo() Node {
@@ -90,8 +123,8 @@ func GetNodeStatus() NodeStatus {
 
 // metadata file path
 func GetClusterFilePath() string {
-	return util.GetMainPath() + slash + dataDIR + slash + "__cluster_metadata"
+	return util.GetMainPath() + slash + dataDIR + slash + "__metadata_cluster__"
 }
 func GetNodeFilePath() string {
-	return util.GetMainPath() + slash + dataDIR + slash + "__node_metadata"
+	return util.GetMainPath() + slash + dataDIR + slash + "__metadata_node__"
 }

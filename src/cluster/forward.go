@@ -19,23 +19,24 @@ import (
 var tcpMap = make(map[string]*net.TCPConn)
 
 func Forward(msg []byte) []byte {
-	if len(clusterInfo.Workers) == 0 {
+	if len(clusterInfo.Wkrs) == 0 {
 		res, _ := proto.Encode("")
 		return res
 	}
 	var err error
 	// TODO: find worker base on key partition, and get LeaderWorkerId
+
 	// and then get Address of Worker
 
-	var targetWorker NodeSlim
-	for _, worker := range clusterInfo.Workers {
+	var targetWorker Worker
+	for _, worker := range clusterInfo.Wkrs {
 		targetWorker = worker
 		break
 	}
 
 	conn, ok := tcpMap[targetWorker.Id]
 	if !ok {
-		conn, err = util.PreapareSocketClientWithPort(targetWorker.Address, CONTROLLER_FORWORD_PORT)
+		conn, err = util.PreapareSocketClientWithPort(targetWorker.Addr, CONTROLLER_FORWORD_PORT)
 		//conn, err = util.PreapareSocketClient(targetWorker.Address)
 		if err != nil {
 			return []byte{} // TODO: should retry
