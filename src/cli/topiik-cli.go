@@ -79,28 +79,34 @@ func main() {
 	for {
 		fmt.Print(leaderAddr + ">")
 		line, err := reader.ReadString('\n')
+		if err != nil {
+			break
+		}
 		line = strings.TrimRight(line, " \t\r\n")
-		if err != nil {
-			break
+		if len(line) == 0 {
+			continue
 		}
 
-		pieces := strings.SplitN(line, " ", 2)
-		cmd := strings.ToUpper(pieces[0])
-		if cmd == command.S_QUIT {
-			conn.Close()
-			break
-		}
-		msg, err := internal.EncodeCmd(cmd)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
+		/*
+			pieces := strings.SplitN(line, " ", 2)
+			cmd := strings.ToUpper(pieces[0])
+			if cmd == command.S_QUIT {
+				conn.Close()
+				break
+			}
+			msg, err := internal.EncodeCmd(cmd)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
 
-		if len(pieces) == 2 {
-			msg = append(msg, []byte(pieces[1])...)
-		}
+			if len(pieces) == 2 {
+				msg = append(msg, []byte(pieces[1])...)
+			}
+		*/
 
 		// TODO: valid command
 		// Enocde
+		msg, err := internal.EncodeCmd(line)
 		data, err := proto.EncodeB(msg)
 		if err != nil {
 			fmt.Println()
@@ -204,9 +210,17 @@ func getControllerLeaderAddr(host string) (addr string, err error) {
 	}
 	defer conn.Close()
 
-	byteBuf := new(bytes.Buffer)
-	binary.Write(byteBuf, binary.LittleEndian, command.GET_CONTROLLER_LEADER_ADDR)
-	data, _ := proto.EncodeB(byteBuf.Bytes())
+	/*
+		byteBuf := new(bytes.Buffer)
+		binary.Write(byteBuf, binary.LittleEndian, command.GET_CONTROLLER_LEADER_ADDR)
+		data, _ := proto.EncodeB(byteBuf.Bytes())
+		conn.Write(data)
+	*/
+	msg, err := internal.EncodeCmd(command.GET_CTL_LEADER_ADDR)
+	if err != nil {
+		fmt.Printf("(err):%s\n", err)
+	}
+	data, _ := proto.EncodeB(msg)
 	conn.Write(data)
 
 	reader := bufio.NewReader(conn)

@@ -18,7 +18,7 @@ func SplitCommandLine(str string) (pieces []string, err error) {
 	quoted := false
 	pre := space
 	pieces = strings.FieldsFunc(str, func(r rune) bool {
-		if r == '"' && pre != '\\' {
+		if r == '"' && pre != backSlash {
 			quoted = !quoted
 		}
 		pre = r
@@ -38,9 +38,9 @@ func ValidateCommandLinePieces(pieces *[]string) bool {
 		// check if piece is double quoted
 		piece = strings.TrimSpace(piece)
 		if piece[0] == doubleQuote {
-			if piece[len(piece)-1] != doubleQuote { //the last must double quote too
+			if len(piece) > 1 && piece[len(piece)-1] != doubleQuote { //the last must double quote too
 				return false
-			} else if piece[len(piece)-2] == backSlash { // but if the last double quote escaped, then wrong
+			} else if len(piece) > 2 && piece[len(piece)-2] == backSlash { // but if the last double quote escaped, then wrong
 				return false
 			}
 			quoted = true

@@ -15,6 +15,7 @@ import (
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/memo"
+	"topiik/resp"
 )
 
 /***
@@ -28,40 +29,35 @@ import (
 ** Syntax: SET KEY VALUE [GET] [TTL seconds] | [TTLAT unxix-time-seconds] | [EX|NX]
 **	- GET: Return old value of the key, or nil if key did not exist
 **/
-func set(pieces []string) (result string, err error) {
-	if len(pieces) < 2 {
-		return "", errors.New(RES_SYNTAX_ERROR)
-	}
+func set(req datatype.Req) (result string, err error) {
 
-	key := strings.TrimSpace(pieces[0])
+	key := req.KEYS[0]
 	returnOld := false
 	ttl := consts.INT64_MAX
-	if len(pieces) > 2 {
-		for i := 2; i < len(pieces); i++ {
-			if i == 0 || i == 1 {
-				continue // skip KEY VALUE
-			}
+	if len(req.ARGS) > 0 {
+		pieces := strings.Split(req.ARGS, consts.SPACE)
+		for i := 0; i < len(pieces); i++ {
 			piece := strings.ToUpper(strings.TrimSpace(pieces[i]))
 			fmt.Printf("---%s---\n", piece)
 			if piece == "GET" {
 				returnOld = true
 			} else if strings.ToUpper(pieces[i]) == "TTL" {
 				if len(pieces) <= i+1 {
-					return "", errors.New(RES_SYNTAX_ERROR + " near TTL")
+					return "", errors.New(resp.RES_SYNTAX_ERROR + " near TTL")
 				}
 				ttl, err = strconv.ParseInt(pieces[i+1], 10, 64)
 				if err != nil {
-					return "", errors.New(RES_SYNTAX_ERROR + " near TTL")
+					return "", errors.New(resp.RES_SYNTAX_ERROR + " near TTL")
 				}
 				i++
 				ttl += time.Now().UTC().Unix() // will overflow??? or should limit ttl user can type???
 			} else if piece == "TTLAT" {
 				if len(pieces) <= i+1 {
-					return "", errors.New(RES_SYNTAX_ERROR + " near TTLAT")
+					return "", errors.New(resp.RES_SYNTAX_ERROR + " near TTLAT")
 				}
 				ttl, err = strconv.ParseInt(pieces[i+1], 10, 64)
 				if err != nil {
-					return "", errors.New(RES_SYNTAX_ERROR + " near TTLAT")
+					return "", errors.New(resp.RES_SYNTAX_ERROR + " near TTLAT")
 				}
 				i++
 			} else if piece == "EX" {
@@ -69,39 +65,39 @@ func set(pieces []string) (result string, err error) {
 				if _, ok := memo.MemMap[key]; ok {
 					//
 				} else {
-					return "", errors.New(RES_KEY_NOT_EXIST)
+					return "", errors.New(resp.RES_KEY_NOT_EXIST)
 				}
 			} else if piece == "NX" {
 				fmt.Println("NX")
 				if _, ok := memo.MemMap[key]; ok {
-					return "", errors.New(RES_KEY_EXIST_ALREADY)
+					return "", errors.New(resp.RES_KEY_EXIST_ALREADY)
 				}
 			} else {
-				return "", errors.New(RES_SYNTAX_ERROR)
+				return "", errors.New(resp.RES_SYNTAX_ERROR)
 			}
 		}
 	}
 
 	if val, ok := memo.MemMap[key]; ok {
 		if val.Typ != datatype.V_TYPE_STRING {
-			return "", errors.New(RES_DATA_TYPE_NOT_MATCH)
+			return "", errors.New(resp.RES_DATA_TYPE_NOT_MATCH)
 		}
-		oldValue := RES_OK
+		oldValue := resp.RES_OK
 		if returnOld {
 			oldValue = string(val.Str)
 		}
 
-		memo.MemMap[key].Str = []byte(pieces[1])
+		memo.MemMap[key].Str = []byte(req.VALS[0])
 		memo.MemMap[key].Exp = ttl
 		return oldValue, nil
 	} else {
 		memo.MemMap[key] = &datatype.TValue{
 			Typ: datatype.V_TYPE_STRING,
-			Str: []byte(pieces[1]),
+			Str: []byte(req.VALS[0]),
 			Exp: ttl}
 		if returnOld {
 			return "", nil
 		}
-		return RES_OK, nil
+		return resp.RES_OK, nil
 	}
 }

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"topiik/internal/datatype"
 	"topiik/memo"
+	"topiik/resp"
 )
 
 /***
@@ -25,21 +26,22 @@ import (
 ** Syntax:
 ** 	GET KEY
 **/
-func get(pieces []string) (result string, err error) {
-	if len(pieces) != 1 {
-		return "", errors.New(RES_SYNTAX_ERROR)
-	}
+func get(req datatype.Req) (result string, err error) {
 
-	key := strings.TrimSpace(pieces[0])
+	/*if len(pieces) != 1 {
+		return "", errors.New(resp.RES_SYNTAX_ERROR)
+	}*/
+
+	key := strings.TrimSpace(req.KEYS[0])
 	if val, ok := memo.MemMap[key]; ok {
 		if isKeyExpired(key, val.Exp) {
-			return "", errors.New(RES_KEY_NOT_EXIST)
+			return "", errors.New(resp.RES_KEY_NOT_EXIST)
 		}
 		if val.Typ != datatype.V_TYPE_STRING {
-			return "", errors.New(RES_DATA_TYPE_NOT_MATCH)
+			return "", errors.New(resp.RES_DATA_TYPE_NOT_MATCH)
 		}
 		return string(val.Str), nil
 	} else {
-		return "", errors.New(RES_KEY_NOT_EXIST)
+		return "", errors.New(resp.RES_KEY_NOT_EXIST)
 	}
 }

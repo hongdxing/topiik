@@ -7,8 +7,7 @@
 package executor
 
 import (
-	"bytes"
-	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	"topiik/internal/command"
 	"topiik/internal/config"
 	"topiik/internal/consts"
+	"topiik/internal/datatype"
 	"topiik/internal/util"
 	"topiik/logger"
 	"topiik/resp"
@@ -46,37 +46,48 @@ var log = logger.Get()
 func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []byte {
 	msgData := msg[4:] // strip the lenght header
 	// split msg into [CMD, params]
-	strs := strings.SplitN(strings.TrimLeft(string(msgData), consts.SPACE), consts.SPACE, 2)
-	CMD := strings.ToUpper(strings.TrimSpace(strs[0]))
+	//strs := strings.SplitN(strings.TrimLeft(string(msgData), consts.SPACE), consts.SPACE, 2)
+	//CMD := strings.ToUpper(strings.TrimSpace(strs[0]))
 
-	var icmd int16 // two bytes of command
-	if len(msgData) >= 2 {
-		cmdBytes := msgData[:2]
-		byteBuf := bytes.NewBuffer(cmdBytes)
-		err := binary.Read(byteBuf, binary.LittleEndian, &icmd)
-		if err != nil {
-			log.Err(err)
-		}
-	}
-
-	pieces, err := util.SplitCommandLine(string(msgData[2:]))
+	var req datatype.Req
+	err := json.Unmarshal(msgData, &req)
 	if err != nil {
 		return resp.ErrorResponse(err)
 	}
-	//log.Info().Msg(string(msgData[2:]))
-	if icmd == command.INIT_CLUSTER {
+	CMD := strings.ToUpper(req.CMD)
+	/*
+			var icmd int16 // two bytes of command
+			if len(msgData) >= 2 {
+				cmdBytes := msgData[:2]
+				byteBuf := bytes.NewBuffer(cmdBytes)
+				err := binary.Read(byteBuf, binary.LittleEndian, &icmd)
+				if err != nil {
+					log.Err(err)
+				}
+			}
+
+
+		pieces, err := util.SplitCommandLine(string(msgData[2:]))
+		if err != nil {
+			return resp.ErrorResponse(err)
+		}
+		//log.Info().Msg(string(msgData[2:]))
+		log.Info().Msg(strings.Join(pieces, ","))
+	*/
+	pieces := []string{}
+	if CMD == command.INIT_CLUSTER {
 		err := clusterInit(pieces, serverConfig)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringResponse(RES_OK, "", nil)
-	} else if icmd == command.ADD_NODE {
+	} else if CMD == command.ADD_NODE {
 		result, err := addNode(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringResponse(result, "", nil)
-	} else if icmd == command.GET_CONTROLLER_LEADER_ADDR {
+	} else if CMD == command.GET_CTL_LEADER_ADDR {
 		log.Info().Msg("get controller address")
 		var address string
 		if cluster.GetNodeStatus().Role == cluster.RAFT_LEADER { // if is leader, then just return leader's address
@@ -135,69 +146,62 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 		return resp.ErrorResponse(err)
 	}
 
-	if icmd == command.GET { // STRING COMMANDS
-		/***String SET***/
-		result, err := get(pieces)
+	if CMD == command.GET { // STRING COMMANDS
+		result, err := get(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringResponse(result, CMD, msg)
-	} else if icmd == command.SET {
-		/***String GET***/
-		if len(strs) == 2 {
-			if err != nil {
-				return resp.ErrorResponse(err)
-			}
-		}
-		result, err := set(pieces)
+	} else if CMD == command.SET {
+		result, err := set(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringResponse(result, CMD, msg)
-	} else if icmd == command.GETM {
+	} else if CMD == command.GETM {
 		result, err := getM(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringArrayResponse(result, CMD, msg)
-	} else if icmd == command.SETM {
+	} else if CMD == command.SETM {
 		result, err := setM(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.IntegerResponse(int64(result), CMD, msg)
-	} else if icmd == command.INCR {
+	} else if CMD == command.INCR {
 		result, err := incr(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.IntegerResponse(result, CMD, msg)
-	} else if icmd == command.LPUSH || icmd == command.LPUSHR { // LIST COMMANDS
+	} else if CMD == command.LPUSH || CMD == command.LPUSHR { // LIST COMMANDS
 		/***List LPUSH***/
-		result, err := pushList(pieces, icmd)
+		result, err := pushList(pieces, CMD)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.IntegerResponse(int64(result), CMD, msg)
-	} else if icmd == command.LPOP || icmd == command.LPOPR {
-		result, err := popList(pieces, icmd)
+	} else if CMD == command.LPOP || CMD == command.LPOPR {
+		result, err := popList(pieces, CMD)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringArrayResponse(result, CMD, msg)
-	} else if icmd == command.LLEN {
+	} else if CMD == command.LLEN {
 		result, err := llen(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.IntegerResponse(int64(result), CMD, msg)
-	} else if icmd == command.TTL { // KEY COMMANDS
+	} else if CMD == command.TTL { // KEY COMMANDS
 		result, err := ttl(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.IntegerResponse(result, CMD, msg)
-	} else if icmd == command.KEYS {
+	} else if CMD == command.KEYS {
 		result, err := keys(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
@@ -221,7 +225,6 @@ func needKEY(cmdKeyParams []string) (pieces []string, err error) {
 	}
 	return strings.SplitN(strings.TrimLeft(cmdKeyParams[1], consts.SPACE), consts.SPACE, 2), nil
 }
-
 
 /***
 ** Persist command

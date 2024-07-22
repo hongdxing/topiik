@@ -2,44 +2,46 @@ package command
 
 const (
 	/*** CLUSTER ***/
-	S_CLUSTER      = "CLUSTER"
-	S_INIT_CLUSTER = "INIT-CLUSTER"
-	S_SHOW_CLUSTER = "SHOW-CLUSTER"
-	S_ADD_NODE     = "ADD-NODE"
-	S_REMOVE_NODE  = "REMOVE-NODE"
-	S_SCALE        = "SCALE"
+	CLUSTER      = "CLUSTER"
+	INIT_CLUSTER = "INIT-CLUSTER"
+	SHOW_CLUSTER = "SHOW-CLUSTER"
+	ADD_NODE     = "ADD-NODE"
+	REMOVE_NODE  = "REMOVE-NODE"
+	SCALE        = "SCALE"
 
 	/*** String ***/
-	S_SET  = "SET"
-	S_GET  = "GET"
-	S_SETM = "SETM"
-	S_GETM = "GETM"
-	S_INCR = "INCR"
+	SET  = "SET"
+	GET  = "GET"
+	SETM = "SETM"
+	GETM = "GETM"
+	INCR = "INCR"
 
 	/*** List ***/
-	S_LPUSH  = "LPUSH"
-	S_LPOP   = "LPOP"
-	S_LPUSHR = "LPUSHR"
-	S_LPOPR  = "LPOPR"
-	S_LLEN   = "LLEN"
+	LPUSH  = "LPUSH"
+	LPOP   = "LPOP"
+	LPUSHR = "LPUSHR"
+	LPOPR  = "LPOPR"
+	LLEN   = "LLEN"
 
 	// List blocking
-	S_LPUSHB  = "LPUSHB"
-	S_LPOPB   = "LPOPB"
-	S_LPUSHRB = "LPUSHRB"
-	S_LPOPRB  = "LPOPRB"
+	LPUSHB  = "LPUSHB"
+	LPOPB   = "LPOPB"
+	LPUSHRB = "LPUSHRB"
+	LPOPRB  = "LPOPRB"
 
 	/*** Key ***/
-	S_EXISTS = "EXISTS"
-	S_KEYS   = "KEYS"
-	S_EXPIRE = "EXPIRE"
-	S_DEL    = "DEL"
-	S_TTL    = "TTL"
+	EXISTS = "EXISTS"
+	KEYS   = "KEYS"
+	EXPIRE = "EXPIRE"
+	DEL    = "DEL"
+	TTL    = "TTL"
 
 	/*** OTHERS ***/
-	S_QUIT = "QUIT"
+	QUIT = "QUIT"
+	GET_CTL_LEADER_ADDR = "GET-CTL-LEADER-ADDR"
 )
 
+/*
 // command integer
 const (
 	// Cluster: 1 - 15
@@ -138,3 +140,5 @@ var CmdCode = map[string]int16{
 	// Other:
 	S_QUIT: 2001,
 }
+
+*/
