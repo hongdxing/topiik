@@ -20,6 +20,7 @@ import (
 var nodeInfo *Node
 var clusterInfo = &Cluster{Ctls: make(map[string]NodeSlim), Wkrs: make(map[string]Worker)}
 var nodeStatus = &NodeStatus{Role: RAFT_FOLLOWER, Term: 0}
+var slots = make(map[uint16]string)
 
 const (
 	slash   = string(os.PathSeparator)
@@ -27,9 +28,7 @@ const (
 )
 
 func LoadControllerMetadata(node *Node) (err error) {
-
 	nodeInfo = node
-
 	exist := false // whether the file exist
 
 	// the cluster file
@@ -52,6 +51,24 @@ func LoadControllerMetadata(node *Node) (err error) {
 		}
 	}
 
+	// the slots file
+	slotsPath := GetSlotsFilePath()
+	exist, err = util.PathExists(slotsPath)
+	if err != nil {
+		tLog.Panic().Msg(err.Error())
+	}
+	if exist {
+		data, err := util.ReadBinaryFile(slotsPath)
+		if err != nil {
+			tLog.Panic().Msg(err.Error())
+		}
+		err = json.Unmarshal(data, &slots)
+		if err != nil {
+			tLog.Panic().Msg(err.Error())
+		}
+	}
+
+	//
 	tLog.Info().Msgf("Current node role: %d", nodeStatus.Role)
 	if len(clusterInfo.Ctls) >= 1 {
 		go RequestVote()
@@ -81,7 +98,21 @@ func AddNode(nodeId string, addr string, addr2 string, role string) (err error) 
 	if strings.ToUpper(role) == ROLE_CONTROLLER {
 		clusterInfo.Ctls[nodeId] = NodeSlim{Id: nodeId, Addr: addr, Addr2: addr2}
 	} else {
-		clusterInfo.Wkrs[nodeId] = Worker{Id: nodeId, Addr: addr, Addr2: addr2}
+		worker := Worker{Id: nodeId, Addr: addr, Addr2: addr2}
+		clusterInfo.Wkrs[nodeId] = worker
+
+		// TODO: if it's worker, base on partition and replicas, to assign it's partitons Leader or Follower
+		// Leader first
+		if role == ROLE_WORKER {
+			partitions := int(GetClusterInfo().Ptns)
+			if len(GetClusterInfo().Wkrs) < partitions {
+				if partitions == 1 {
+					slot := Slot{From: 0, To: SLOTS}
+					worker.LeaderId = worker.Id
+					worker.Slots = append(worker.Slots, slot)
+				}
+			}
+		}
 	}
 	clusterPath := GetClusterFilePath()
 	buf, err := json.Marshal(clusterInfo)
@@ -117,6 +148,10 @@ func GetNodeInfo() Node {
 	return *nodeInfo
 }
 
+func GetClusterInfo() Cluster {
+	return *clusterInfo
+}
+
 func GetNodeStatus() NodeStatus {
 	return *nodeStatus
 }
@@ -127,4 +162,8 @@ func GetClusterFilePath() string {
 }
 func GetNodeFilePath() string {
 	return util.GetMainPath() + slash + dataDIR + slash + "__metadata_node__"
+}
+
+func GetSlotsFilePath() string {
+	return util.GetMainPath() + slash + dataDIR + slash + "__metadata_slots__"
 }

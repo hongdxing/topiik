@@ -33,7 +33,7 @@ func addNode(pieces []string) (result string, err error) {
 		return "", errors.New(RES_SYNTAX_ERROR)
 	}
 	nodeAddr := pieces[0]
-	role := pieces[1]
+	role := strings.ToUpper(pieces[1])
 	// validate host
 	reg, _ := regexp.Compile(consts.HOST_PATTERN)
 	if !reg.MatchString(nodeAddr) {

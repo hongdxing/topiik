@@ -38,9 +38,17 @@ func EncodeCmd(input string) (result []byte, err error) {
 	}
 	cmd := strings.ToUpper(pieces[0])
 	req := datatype.Req{VER: 1, CMD: cmd, KEYS: []string{}, VALS: []string{}}
-	if cmd == command.INIT_CLUSTER {
-
-	} else if cmd == command.SET {
+	if cmd == command.INIT_CLUSTER { // INIT-CLUSTER 1 1
+		if len(pieces) != 3 {
+			return syntaxErr()
+		}
+		req.ARGS = strings.Join(pieces[1:], consts.SPACE)
+	} else if cmd == command.ADD_NODE { // ADD-NODE host:port role
+		if len(pieces) != 3 {
+			return syntaxErr()
+		}
+		req.ARGS = strings.Join(pieces[1:], consts.SPACE)
+	} else if cmd == command.SET { // SET key val args
 		if len(pieces) < 3 {
 			return syntaxErr()
 		}
@@ -55,6 +63,19 @@ func EncodeCmd(input string) (result []byte, err error) {
 			return syntaxErr()
 		}
 		req.KEYS = []string{pieces[1]} // key
+	} else if cmd == command.SETM { // SETM k1 v1 k2 v2
+		if len(pieces) < 3 || (len(pieces)-1)%2 != 0 {
+			return syntaxErr()
+		}
+		for i := 1; i < len(pieces)-1; i += 2 {
+			req.KEYS = append(req.KEYS, pieces[i])
+			req.VALS = append(req.VALS, pieces[i+1])
+		}
+	} else if cmd == command.GETM { // GETM k1 k2
+		if len(pieces) < 2 {
+			return syntaxErr()
+		}
+		req.KEYS = append(req.KEYS, pieces[1:]...)
 	} else if cmd == command.GET_CTL_LEADER_ADDR {
 		// no additional data
 	} else {

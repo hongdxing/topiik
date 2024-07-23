@@ -32,4 +32,6 @@ const (
 	VOTE_REJECTED = "R"
 )
 
+const SLOTS = 1024
+
 const CONTROLLER_FORWORD_PORT = "9302"
