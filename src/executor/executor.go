@@ -25,17 +25,12 @@ import (
 /***Command RESponse***/
 const (
 	RES_OK                   = "OK"
-	RES_NIL                  = "NIL"
 	RES_WRONG_ARG            = "WRONG_ARG"
 	RES_WRONG_NUMBER_OF_ARGS = "WRONG_NUM_OF_ARGS"
 	RES_DATA_TYPE_NOT_MATCH  = "DATA_TYPE_NOT_MATCH"
 	RES_SYNTAX_ERROR         = "SYNTAX_ERR"
 	RES_KEY_NOT_EXIST        = "KEY_NOT_EXIST"
 	RES_KEY_EXIST_ALREADY    = "KEY_EXIST_ALREADY"
-
-	RES_INVALID_OP = "INVALID_OP"
-
-	RES_INVALID_ADDR = "INVALID_ADDR"
 
 	/*** VOTE response ***/
 	RES_ACCEPTED = "A"
@@ -55,6 +50,9 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 		log.Err(err)
 	}
 
+	if len(msgData) < 2 {
+		return resp.ErrorResponse(errors.New(resp.RES_SYNTAX_ERROR))
+	}
 	var req datatype.Req
 	err = json.Unmarshal(msgData[2:], &req) // 2= 1 icmd and 1 ver
 	if err != nil {
@@ -85,7 +83,11 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 		}
 		return resp.StringResponse(result, icmd, nil)
 	} else if icmd == command.SCALE_I {
-
+		result, err := scale(req)
+		if err != nil {
+			return resp.ErrorResponse(err)
+		}
+		return resp.StringResponse(result, icmd, msg)
 	} else if icmd == command.GET_LEADER_ADDR_I {
 		log.Info().Msg("get controller address")
 		var address string

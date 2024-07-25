@@ -34,7 +34,6 @@ type Worker struct {
 	Addr     string
 	Addr2    string
 	LeaderId string // Partition Leader Node Id
-	Slots    []Slot // Slots of current Node
 }
 
 type Slot struct {

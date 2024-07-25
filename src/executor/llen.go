@@ -12,6 +12,7 @@ import (
 	"strings"
 	"topiik/internal/datatype"
 	"topiik/memo"
+	"topiik/resp"
 )
 
 /***
@@ -21,7 +22,7 @@ import (
 ** Return:
 **	- Length of the LIST
 **	- SYNTAX_ERROR if synctax error
-**	- NIL if KEY not exists
+**	- ERROR if KEY not exists
 ** Syntax: LLEN KEY
 **/
 func llen(pieces []string) (result int, err error) {
@@ -35,6 +36,6 @@ func llen(pieces []string) (result int, err error) {
 		}
 		return val.Lst.Len(), nil
 	} else {
-		return 0, errors.New(RES_NIL)
+		return 0, errors.New(resp.RES_KEY_NOT_EXIST)
 	}
 }

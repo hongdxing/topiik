@@ -53,6 +53,12 @@ func EncodeCmd(input string) (result []byte, err error) {
 		}
 		icmd = command.ADD_NODE_I
 		req.ARGS = strings.Join(pieces[1:], consts.SPACE)
+	} else if cmd == command.SCALE {
+		if len(pieces) != 3 {
+			return syntaxErr()
+		}
+		icmd = command.SCALE_I
+		req.ARGS = strings.Join(pieces[1:], consts.SPACE)
 	} else if cmd == command.SET { // SET key val args
 		if len(pieces) < 3 {
 			return syntaxErr()
