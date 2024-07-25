@@ -26,7 +26,7 @@ import (
 **
 ** Syntax: LPUSH|RPUSH key value1 [... valueN]
 **/
-func pushList(pieces []string, CMD string) (result int, err error) {
+func pushList(pieces []string, icmd uint8) (result int, err error) {
 	if len(pieces) < 2 { // except KEY, at least need one value
 		return 0, errors.New(RES_WRONG_NUMBER_OF_ARGS)
 	}
@@ -42,11 +42,11 @@ func pushList(pieces []string, CMD string) (result int, err error) {
 			Exp: consts.UINT32_MAX,
 		}
 	}
-	if CMD == command.LPUSH {
+	if icmd == command.LPUSH_I {
 		for _, piece := range pieces[1:] {
 			memo.MemMap[key].Lst.PushFront(piece)
 		}
-	} else if CMD == command.LPUSHR {
+	} else if icmd == command.LPUSHR_I {
 		for _, piece := range pieces[1:] {
 			memo.MemMap[key].Lst.PushBack(piece)
 		}

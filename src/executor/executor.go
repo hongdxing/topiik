@@ -16,6 +16,7 @@ import (
 	"topiik/internal/config"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
+	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/logger"
 	"topiik/resp"
@@ -49,45 +50,43 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 	//strs := strings.SplitN(strings.TrimLeft(string(msgData), consts.SPACE), consts.SPACE, 2)
 	//CMD := strings.ToUpper(strings.TrimSpace(strs[0]))
 
-	var req datatype.Req
-	err := json.Unmarshal(msgData, &req)
+	icmd, _, err := proto.DecodeHeader(msgData)
 	if err != nil {
+		log.Err(err)
+	}
+
+	var req datatype.Req
+	err = json.Unmarshal(msgData[2:], &req) // 2= 1 icmd and 1 ver
+	if err != nil {
+		log.Err(err).Msg(err.Error())
 		return resp.ErrorResponse(err)
 	}
-	CMD := strings.ToUpper(req.CMD)
-	/*
-			var icmd int16 // two bytes of command
-			if len(msgData) >= 2 {
-				cmdBytes := msgData[:2]
-				byteBuf := bytes.NewBuffer(cmdBytes)
-				err := binary.Read(byteBuf, binary.LittleEndian, &icmd)
-				if err != nil {
-					log.Err(err)
-				}
-			}
+	//log.Info().Msgf("aaa %s", req.CMD)
+	//CMD := strings.ToUpper(req.CMD)
 
+	//pieces, err := util.SplitCommandLine(string(msgData[2:]))
+	//if err != nil {
+	//	return resp.ErrorResponse(err)
+	//}
+	//log.Info().Msg(string(msgData[2:]))
+	//log.Info().Msg(strings.Join(pieces, ","))
 
-		pieces, err := util.SplitCommandLine(string(msgData[2:]))
-		if err != nil {
-			return resp.ErrorResponse(err)
-		}
-		//log.Info().Msg(string(msgData[2:]))
-		log.Info().Msg(strings.Join(pieces, ","))
-	*/
 	pieces := []string{}
-	if CMD == command.INIT_CLUSTER {
+	if icmd == command.INIT_CLUSTER_I {
 		err := clusterInit(pieces, serverConfig)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.StringResponse(RES_OK, "", nil)
-	} else if CMD == command.ADD_NODE {
+		return resp.StringResponse(RES_OK, icmd, nil)
+	} else if icmd == command.ADD_NODE_I {
 		result, err := addNode(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.StringResponse(result, "", nil)
-	} else if CMD == command.GET_CTL_LEADER_ADDR {
+		return resp.StringResponse(result, icmd, nil)
+	} else if icmd == command.SCALE_I {
+
+	} else if icmd == command.GET_LEADER_ADDR_I {
 		log.Info().Msg("get controller address")
 		var address string
 		if cluster.GetNodeStatus().Role == cluster.RAFT_LEADER { // if is leader, then just return leader's address
@@ -100,7 +99,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 		if address == "" {
 			address = serverConfig.Listen
 		}
-		return resp.StringResponse(address, "", msg)
+		return resp.StringResponse(address, icmd, msg)
 	}
 
 	// cluster command
@@ -146,69 +145,69 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 		return resp.ErrorResponse(err)
 	}
 
-	if CMD == command.GET { // STRING COMMANDS
+	if icmd == command.GET_I { // STRING COMMANDS
 		result, err := get(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.StringResponse(result, CMD, msg)
-	} else if CMD == command.SET {
+		return resp.StringResponse(result, icmd, msg)
+	} else if icmd == command.SET_I {
 		result, err := set(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.StringResponse(result, CMD, msg)
-	} else if CMD == command.GETM {
+		return resp.StringResponse(result, icmd, msg)
+	} else if icmd == command.GETM_I {
 		result, err := getM(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.StringArrayResponse(result, CMD, msg)
-	} else if CMD == command.SETM {
+		return resp.StringArrayResponse(result, icmd, msg)
+	} else if icmd == command.SETM_I {
 		result, err := setM(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.IntegerResponse(int64(result), CMD, msg)
-	} else if CMD == command.INCR {
+		return resp.IntegerResponse(int64(result), icmd, msg)
+	} else if icmd == command.INCR_I {
 		result, err := incr(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.IntegerResponse(result, CMD, msg)
-	} else if CMD == command.LPUSH || CMD == command.LPUSHR { // LIST COMMANDS
+		return resp.IntegerResponse(result, icmd, msg)
+	} else if icmd == command.LPUSH_I || icmd == command.LPUSHR_I { // LIST COMMANDS
 		/***List LPUSH***/
-		result, err := pushList(pieces, CMD)
+		result, err := pushList(pieces, icmd)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.IntegerResponse(int64(result), CMD, msg)
-	} else if CMD == command.LPOP || CMD == command.LPOPR {
-		result, err := popList(pieces, CMD)
+		return resp.IntegerResponse(int64(result), icmd, msg)
+	} else if icmd == command.LPOP_I || icmd == command.LPOPR_I {
+		result, err := popList(pieces, icmd)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.StringArrayResponse(result, CMD, msg)
-	} else if CMD == command.LLEN {
+		return resp.StringArrayResponse(result, icmd, msg)
+	} else if icmd == command.LLEN_I {
 		result, err := llen(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.IntegerResponse(int64(result), CMD, msg)
-	} else if CMD == command.TTL { // KEY COMMANDS
+		return resp.IntegerResponse(int64(result), icmd, msg)
+	} else if icmd == command.TTL_I { // KEY COMMANDS
 		result, err := ttl(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.IntegerResponse(result, CMD, msg)
-	} else if CMD == command.KEYS {
+		return resp.IntegerResponse(result, icmd, msg)
+	} else if icmd == command.KEYS_I {
 		result, err := keys(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.StringArrayResponse(result, CMD, msg)
+		return resp.StringArrayResponse(result, icmd, msg)
 	} else {
-		fmt.Printf("Invalid cmd: %s\n", CMD)
+		fmt.Printf("Invalid cmd: %s\n", icmd)
 		return resp.ErrorResponse(errors.New(consts.RES_INVALID_CMD))
 	}
 }

@@ -13,6 +13,7 @@ import (
 	"strings"
 	"topiik/cli/internal"
 	"topiik/internal/command"
+	"topiik/internal/datatype"
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/resp"
@@ -216,10 +217,21 @@ func getControllerLeaderAddr(host string) (addr string, err error) {
 		data, _ := proto.EncodeB(byteBuf.Bytes())
 		conn.Write(data)
 	*/
-	msg, err := internal.EncodeCmd(command.GET_CTL_LEADER_ADDR)
+	/*
+		msg, err := internal.EncodeCmd(command.GET_LEADER_ADDR)
+		if err != nil {
+			fmt.Printf("(err):%s\n", err)
+		}*/
+	msg, err := proto.EncodeHeader(command.GET_LEADER_ADDR_I, 1)
 	if err != nil {
-		fmt.Printf("(err):%s\n", err)
+		return "", errors.New("syntax error")
 	}
+	req := datatype.Req{KEYS: []string{}, VALS: []string{}}
+	reqBytes, err := json.Marshal(req)
+	if err != nil {
+		fmt.Println("error")
+	}
+	msg = append(msg, reqBytes...)
 	data, _ := proto.EncodeB(msg)
 	conn.Write(data)
 
@@ -231,6 +243,7 @@ func getControllerLeaderAddr(host string) (addr string, err error) {
 		}
 		return "", err
 	}
+	//fmt.Println(string(buf[6:]))
 	if len(buf) > 4 {
 		bufSlice := buf[4:5]
 		byteBuf := bytes.NewBuffer(bufSlice)
@@ -239,6 +252,7 @@ func getControllerLeaderAddr(host string) (addr string, err error) {
 		if err != nil {
 			return "", err
 		}
+		fmt.Println(flag)
 		if flag == 1 {
 			bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
 			return string(bufSlice), nil

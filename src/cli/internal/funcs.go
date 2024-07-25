@@ -7,6 +7,7 @@ import (
 	"topiik/internal/command"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
+	"topiik/internal/proto"
 	"topiik/internal/util"
 )
 
@@ -37,21 +38,26 @@ func EncodeCmd(input string) (result []byte, err error) {
 		return nil, err
 	}
 	cmd := strings.ToUpper(pieces[0])
-	req := datatype.Req{VER: 1, CMD: cmd, KEYS: []string{}, VALS: []string{}}
+	var icmd uint8 = 0
+	var ver uint8 = 0
+	req := datatype.Req{KEYS: []string{}, VALS: []string{}}
 	if cmd == command.INIT_CLUSTER { // INIT-CLUSTER 1 1
 		if len(pieces) != 3 {
 			return syntaxErr()
 		}
+		icmd = command.INIT_CLUSTER_I
 		req.ARGS = strings.Join(pieces[1:], consts.SPACE)
 	} else if cmd == command.ADD_NODE { // ADD-NODE host:port role
 		if len(pieces) != 3 {
 			return syntaxErr()
 		}
+		icmd = command.ADD_NODE_I
 		req.ARGS = strings.Join(pieces[1:], consts.SPACE)
 	} else if cmd == command.SET { // SET key val args
 		if len(pieces) < 3 {
 			return syntaxErr()
 		}
+		icmd = command.SET_I
 		req.KEYS = []string{pieces[1]} // key
 		req.VALS = []string{pieces[2]} // value
 		// the rest as args
@@ -62,11 +68,13 @@ func EncodeCmd(input string) (result []byte, err error) {
 		if len(pieces) != 2 {
 			return syntaxErr()
 		}
+		icmd = command.GET_I
 		req.KEYS = []string{pieces[1]} // key
 	} else if cmd == command.SETM { // SETM k1 v1 k2 v2
 		if len(pieces) < 3 || (len(pieces)-1)%2 != 0 {
 			return syntaxErr()
 		}
+		icmd = command.SETM_I
 		for i := 1; i < len(pieces)-1; i += 2 {
 			req.KEYS = append(req.KEYS, pieces[i])
 			req.VALS = append(req.VALS, pieces[i+1])
@@ -75,16 +83,23 @@ func EncodeCmd(input string) (result []byte, err error) {
 		if len(pieces) < 2 {
 			return syntaxErr()
 		}
+		icmd = command.GETM_I
 		req.KEYS = append(req.KEYS, pieces[1:]...)
-	} else if cmd == command.GET_CTL_LEADER_ADDR {
+	} else if cmd == command.GET_LEADER_ADDR {
 		// no additional data
 	} else {
 		return nil, errors.New("syntax error")
 	}
-	result, err = json.Marshal(req)
+	reqBytes, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
+	result, err = proto.EncodeHeader(icmd, ver)
+	if err != nil {
+		return nil, errors.New("syntax error")
+	}
+	result = append(result, reqBytes...)
+
 	return result, nil
 }
 

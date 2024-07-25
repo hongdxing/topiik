@@ -16,8 +16,8 @@
 package datatype
 
 type Req struct {
-	VER  uint8
-	CMD  string
+	//VER  uint8
+	//CMD  string
 	KEYS []string
 	VALS []string
 	ARGS string

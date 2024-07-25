@@ -16,10 +16,10 @@ const (
 )
 
 const (
-	RPC_VOTE         int16 = 1
-	RPC_APPENDENTRY  int16 = 2
-	RPC_ADD_NODE     int16 = 3
-	CLUSTER_JOIN_ACK int16 = 4
+	RPC_VOTE         uint8 = 1
+	RPC_APPENDENTRY  uint8 = 2
+	RPC_ADD_NODE     uint8 = 3
+	CLUSTER_JOIN_ACK uint8 = 4
 )
 
 const (

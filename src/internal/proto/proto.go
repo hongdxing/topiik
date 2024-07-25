@@ -4,6 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"errors"
+
+	"github.com/rs/zerolog/log"
 )
 
 // Encode
@@ -92,4 +95,42 @@ func Decode(reader *bufio.Reader) ([]byte, error) {
 		return nil, err
 	}
 	return buf, nil
+}
+
+func EncodeHeader(icmd uint8, ver uint8) (header []byte, err error) {
+	var buffer = new(bytes.Buffer)
+	// Write VER
+	err = binary.Write(buffer, binary.LittleEndian, ver)
+	if err != nil {
+		return nil, err
+	}
+	header = append(header, buffer.Bytes()...)
+	buffer.Reset()
+
+	// Write CMD
+	err = binary.Write(buffer, binary.LittleEndian, icmd)
+	if err != nil {
+		return nil, err
+	}
+	header = append(header, buffer.Bytes()...)
+	return header, nil
+}
+
+func DecodeHeader(buf []byte) (icmd uint8, ver uint8, err error) {
+	if len(buf) < 2 {
+		return 0, 0, errors.New("SYNTAX_ERR")
+	}
+	byteBuf := bytes.NewBuffer([]byte{buf[0]})
+	err = binary.Read(byteBuf, binary.LittleEndian, &ver)
+	if err != nil {
+		log.Err(err)
+		return 0, 0, errors.New("SYNTAX_ERR")
+	}
+	byteBuf = bytes.NewBuffer([]byte{buf[1]})
+	err = binary.Read(byteBuf, binary.LittleEndian, &icmd)
+	if err != nil {
+		log.Err(err)
+		return 0, 0, errors.New("SYNTAX_ERR")
+	}
+	return icmd, ver, nil
 }

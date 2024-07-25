@@ -2,26 +2,43 @@ package command
 
 const (
 	/*** CLUSTER ***/
-	CLUSTER      = "CLUSTER"
-	INIT_CLUSTER = "INIT-CLUSTER"
-	SHOW_CLUSTER = "SHOW-CLUSTER"
-	ADD_NODE     = "ADD-NODE"
-	REMOVE_NODE  = "REMOVE-NODE"
-	SCALE        = "SCALE"
+	CLUSTER                 = "CLUSTER"
+	INIT_CLUSTER            = "INIT-CLUSTER"
+	INIT_CLUSTER_I    uint8 = 1
+	SHOW_CLUSTER            = "SHOW-CLUSTER"
+	SHOW_CLUSTER_I    uint8 = 2
+	ADD_NODE                = "ADD-NODE"
+	ADD_NODE_I        uint8 = 3
+	RM_NODE                 = "RM-NODE"
+	RM_NODE_I         uint8 = 4
+	SCALE                   = "SCALE"
+	SCALE_I           uint8 = 5
+	GET_LEADER_ADDR         = "GET-LADDR"
+	GET_LEADER_ADDR_I uint8 = 15
 
 	/*** String ***/
-	SET  = "SET"
-	GET  = "GET"
-	SETM = "SETM"
-	GETM = "GETM"
-	INCR = "INCR"
+	SET          = "SET"
+	SET_I  uint8 = 16
+	GET          = "GET"
+	GET_I  uint8 = 17
+	SETM         = "SETM"
+	SETM_I uint8 = 18
+	GETM         = "GETM"
+	GETM_I uint8 = 19
+	INCR         = "INCR"
+	INCR_I uint8 = 20
 
 	/*** List ***/
-	LPUSH  = "LPUSH"
-	LPOP   = "LPOP"
-	LPUSHR = "LPUSHR"
-	LPOPR  = "LPOPR"
-	LLEN   = "LLEN"
+	LPUSH          = "LPUSH"
+	LPUSH_I  uint8 = 32
+	LPOP           = "LPOP"
+	LPOP_I   uint8 = 33
+	LPUSHR         = "LPUSHR"
+	LPUSHR_I uint8 = 34
+	LPOPR          = "LPOPR"
+	LPOPR_I  uint8 = 35
+	LLEN           = "LLEN"
+	LLEN_I   uint8 = 36
 
 	// List blocking
 	LPUSHB  = "LPUSHB"
@@ -29,16 +46,29 @@ const (
 	LPUSHRB = "LPUSHRB"
 	LPOPRB  = "LPOPRB"
 
-	/*** Key ***/
-	EXISTS = "EXISTS"
-	KEYS   = "KEYS"
-	EXPIRE = "EXPIRE"
-	DEL    = "DEL"
-	TTL    = "TTL"
+	// Set 48
 
-	/*** OTHERS ***/
+	// ZSet 64
+
+	// Hash 80
+
+	// Geo 96
+
+	// Event 112
+
+	/*** KEYS 128 ***/
+	TTL            = "TTL"
+	TTL_I    uint8 = 128
+	DEL            = "DEL"
+	DEL_I    uint8 = 129
+	KEYS           = "KEYS"
+	KEYS_I   uint8 = 130
+	EXISTS         = "EXISTS"
+	EXISTS_I uint8 = 131
+	EXPIRE         = "EXPIRE"
+
+	/*** OTHERS  ***/
 	QUIT = "QUIT"
-	GET_CTL_LEADER_ADDR = "GET-CTL-LEADER-ADDR"
 )
 
 /*

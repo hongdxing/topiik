@@ -23,7 +23,7 @@ func ErrorResponse(err error) (result []byte) {
 	return result
 }
 
-func StringResponse(res string, CMD string, msg []byte) (result []byte) {
+func StringResponse(res string, icmd uint8, msg []byte) (result []byte) {
 	buf := []byte(res)
 	result = append(result, byte(int8(1)))
 	result = append(result, byte(int8(1))) // string type
@@ -32,7 +32,7 @@ func StringResponse(res string, CMD string, msg []byte) (result []byte) {
 	return result
 }
 
-func IntegerResponse(res int64, CMD string, msg []byte) (result []byte) {
+func IntegerResponse(res int64, icmd uint8, msg []byte) (result []byte) {
 	var buffer = new(bytes.Buffer)
 	// Write message HEADER
 	err := binary.Write(buffer, binary.LittleEndian, int8(1)) // one byte of success flag
@@ -58,7 +58,7 @@ func IntegerResponse(res int64, CMD string, msg []byte) (result []byte) {
 	return result
 }
 
-func StringArrayResponse(res []string, CMD string, msg []byte) (result []byte) {
+func StringArrayResponse(res []string, icmd uint8, msg []byte) (result []byte) {
 	buf, _ := json.Marshal(res)
 	result = append(result, byte(int8(1)))
 	result = append(result, byte(int8(3))) // string array type
