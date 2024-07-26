@@ -32,6 +32,11 @@ func Scale(p int, r int) (result string, err error) {
 				Id:           pId,
 				LeaderNodeId: works[0],
 			}
+			nodeSet := make(map[string]byte)
+			for _, worker := range keys {
+				nodeSet[worker] = byte(0) // the value is not used, map just to make sure no duplicate
+			}
+			partition.NodeSet = nodeSet
 
 			var from int
 			var to int

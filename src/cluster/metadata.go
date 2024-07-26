@@ -54,23 +54,26 @@ func LoadControllerMetadata(node *Node) (err error) {
 	}
 
 	// the slots file
-	/*
-		slotsPath := GetSlotsFilePath()
-		exist, err = util.PathExists(slotsPath)
+
+	filePath := GetPatitionFilePath()
+	exist, err = util.PathExists(filePath)
+	if err != nil {
+		tLog.Panic().Msg(err.Error())
+	}
+	if exist {
+		data, err := util.ReadBinaryFile(filePath)
 		if err != nil {
 			tLog.Panic().Msg(err.Error())
 		}
-		if exist {
-			data, err := util.ReadBinaryFile(slotsPath)
-			if err != nil {
-				tLog.Panic().Msg(err.Error())
-			}
-			err = json.Unmarshal(data, &slots)
-			if err != nil {
-				tLog.Panic().Msg(err.Error())
-			}
+
+		if err != nil {
+			tLog.Panic().Msg(err.Error())
 		}
-	*/
+		err = json.Unmarshal(data, &partitionInfo)
+		if err != nil {
+			tLog.Panic().Msg(err.Error())
+		}
+	}
 
 	//
 	tLog.Info().Msgf("Current node role: %d", nodeStatus.Role)

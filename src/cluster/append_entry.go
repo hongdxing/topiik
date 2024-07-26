@@ -42,7 +42,7 @@ func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 			// log.Info().Msgf("appendEntry() Leader addr:%s", string(entry[1:]))
 			nodeStatus.LeaderControllerAddr = string(entry[1:])
 		} else if entryType == ENTRY_TYPE_METADATA { // append cluster metadata
-			tLog.Info().Msg("appendEntry() metadata")
+			tLog.Info().Msg("appendEntry: metadata")
 			var clusterData = &Cluster{}
 			err := json.Unmarshal(entry[1:], clusterData) // verify
 			if err != nil {
@@ -59,6 +59,24 @@ func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 				}
 			}
 			err = os.WriteFile(clusterPath, entry[1:], 0644)
+			if err != nil {
+				tLog.Err(err)
+				return err
+			}
+		} else if entryType == ENTRY_TYPE_PARTITION {
+			tLog.Info().Msg("appendEntry: partittion")
+			var partitions = make(map[string]Partition)
+			err := json.Unmarshal(entry[1:], &partitions) // verify
+			if err != nil {
+				tLog.Err(err)
+				return err
+			}
+			filePath := GetPatitionFilePath()
+			exist, _ := util.PathExists(filePath)
+			if exist {
+				os.Remove(filePath) //TODO: move to archive
+			}
+			err = util.WriteBinaryFile(filePath, entry[1:])
 			if err != nil {
 				tLog.Err(err)
 				return err

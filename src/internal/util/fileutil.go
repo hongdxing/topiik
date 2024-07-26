@@ -32,7 +32,7 @@ func WriteBinaryFile(path string, data []byte) (err error) {
 	return nil
 }
 
-func ReadBinaryFile(path string) (data []byte, err error) {
+func ReadBinaryFile(path string) ([]byte, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -46,13 +46,13 @@ func ReadBinaryFile(path string) (data []byte, err error) {
 
 	var size int64 = stats.Size()
 	bytes := make([]byte, size)
-	binary.Read(file, binary.LittleEndian, &bytes)
-
+	err = binary.Read(file, binary.LittleEndian, &bytes)
 	/*bufr := bufio.NewReader(file)
 	_, err = bufr.Read(bytes)
+	*/
 	if err != nil {
 		return nil, err
-	}*/
+	}
 
-	return data, nil
+	return bytes, nil
 }

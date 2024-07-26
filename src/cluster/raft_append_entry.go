@@ -109,21 +109,21 @@ func send(isController bool, destAddr string, nodeId string, dialErrorCounter *i
 			byteBuf.Reset()
 			buf, err := json.Marshal(clusterInfo)
 			if err != nil {
+				tLog.Err(err).Msg(err.Error())
+			} else {
 				binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_METADATA)
 				cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
 				cmdBytes = append(cmdBytes, buf...)
-			} else {
-				tLog.Err(err).Msg(err.Error())
 			}
 		} else if _, ok := partitionMetadataPendingAppend[nodeId]; ok { // if partition pending
 			byteBuf.Reset()
 			buf, err := json.Marshal(partitionInfo)
 			if err != nil {
+				tLog.Err(err).Msg(err.Error())
+			} else {
 				binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_PARTITION)
 				cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
 				cmdBytes = append(cmdBytes, buf...)
-			} else {
-				tLog.Err(err).Msg(err.Error())
 			}
 		}
 	}
@@ -164,5 +164,6 @@ func send(isController bool, destAddr string, nodeId string, dialErrorCounter *i
 	}
 	// remove the pending conroller id from Pending map
 	delete(clusterMetadataPendingAppend, nodeId)
+	delete(partitionMetadataPendingAppend, nodeId)
 	return string(buf)
 }
