@@ -71,13 +71,13 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 
 	pieces := []string{}
 	if icmd == command.INIT_CLUSTER_I {
-		err := clusterInit(pieces, serverConfig)
+		err := clusterInit(req, serverConfig)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringResponse(RES_OK, icmd, nil)
 	} else if icmd == command.ADD_NODE_I {
-		result, err := addNode(pieces)
+		result, err := addNode(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}

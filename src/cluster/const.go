@@ -23,8 +23,9 @@ const (
 )
 
 const (
-	ENTRY_TYPE_DEFAULT  int8 = 1
-	ENTRY_TYPE_METADATA int8 = 2
+	ENTRY_TYPE_DEFAULT   int8 = 1
+	ENTRY_TYPE_METADATA  int8 = 2
+	ENTRY_TYPE_PARTITION int8 = 3
 )
 
 const (

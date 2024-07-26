@@ -9,10 +9,12 @@ package cluster
 
 import (
 	"bufio"
+	"errors"
 	"io"
 	"net"
 	"topiik/internal/proto"
 	"topiik/internal/util"
+	"topiik/resp"
 )
 
 // cache Tcp Conn from Controller to Workers
@@ -20,8 +22,12 @@ var tcpMap = make(map[string]*net.TCPConn)
 
 func Forward(msg []byte) []byte {
 	if len(clusterInfo.Wkrs) == 0 {
-		res, _ := proto.Encode("")
-		return res
+		//res, _ := proto.Encode("")
+		//return res
+		return resp.ErrorResponse(errors.New(resp.RES_NO_ENOUGH_WORKER))
+	}
+	if len(partitionInfo) == 0 {
+		return resp.ErrorResponse(errors.New(resp.RES_NO_PARTITION))
 	}
 	var err error
 	// TODO: find worker base on key partition, and get LeaderWorkerId

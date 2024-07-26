@@ -17,6 +17,7 @@ import (
 	"strings"
 	"topiik/cluster"
 	"topiik/internal/consts"
+	"topiik/internal/datatype"
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/resp"
@@ -28,7 +29,8 @@ import (
 ** Syntax: ADD-NODE host:port CONTROLLER|WORKER
 **
  */
-func addNode(pieces []string) (result string, err error) {
+func addNode(req datatype.Req) (result string, err error) {
+	pieces, err := util.SplitCommandLine(req.ARGS)
 	if len(pieces) != 2 { // must have target address
 		return "", errors.New(RES_SYNTAX_ERROR)
 	}

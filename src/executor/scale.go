@@ -31,7 +31,10 @@ func scale(req datatype.Req) (result string, err error) {
 		return "", errors.New(RES_SYNTAX_ERROR)
 	}
 
-	cluster.Scale(int(partitions), int(replicas))
+	result, err = cluster.Scale(int(partitions), int(replicas))
+	if err != nil {
+		return "", err
+	}
 
 	log.Info().Msg("***scale done***")
 	return result, nil

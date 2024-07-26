@@ -25,7 +25,8 @@ var quit chan struct{}
 //var wgAppend sync.WaitGroup
 
 // indicate metadata changed on controller Leader, need to sync to Follower(s)
-var clusterMetadataPendingAppend = make(map[string]string) // the controller id, id
+var clusterMetadataPendingAppend = make(map[string]string)   // the controller id, id
+var partitionMetadataPendingAppend = make(map[string]string) // the controller id, id
 
 var connCache = make(map[string]*net.TCPConn)
 
@@ -106,10 +107,24 @@ func send(isController bool, destAddr string, nodeId string, dialErrorCounter *i
 	if isController {
 		if _, ok := clusterMetadataPendingAppend[nodeId]; ok { // if metadata pending
 			byteBuf.Reset()
-			binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_METADATA)
-			cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
-			buf, _ := json.Marshal(clusterInfo)
-			cmdBytes = append(cmdBytes, buf...)
+			buf, err := json.Marshal(clusterInfo)
+			if err != nil {
+				binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_METADATA)
+				cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
+				cmdBytes = append(cmdBytes, buf...)
+			} else {
+				tLog.Err(err).Msg(err.Error())
+			}
+		} else if _, ok := partitionMetadataPendingAppend[nodeId]; ok { // if partition pending
+			byteBuf.Reset()
+			buf, err := json.Marshal(partitionInfo)
+			if err != nil {
+				binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_PARTITION)
+				cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
+				cmdBytes = append(cmdBytes, buf...)
+			} else {
+				tLog.Err(err).Msg(err.Error())
+			}
 		}
 	}
 

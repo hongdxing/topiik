@@ -252,7 +252,7 @@ func getControllerLeaderAddr(host string) (addr string, err error) {
 		if err != nil {
 			return "", err
 		}
-		fmt.Println(flag)
+
 		if flag == 1 {
 			bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
 			return string(bufSlice), nil

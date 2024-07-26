@@ -7,13 +7,28 @@
 package util
 
 import (
-	"bufio"
-	"encoding/json"
+	"encoding/binary"
 	"os"
 )
 
-func WriteBinaryFile(path string, data []byte) error {
+func WriteBinaryFile(path string, data []byte) (err error) {
+	var file *os.File
+	exist, err := PathExists(path)
+	if err != nil {
+		return err
+	}
+	if !exist {
+		file, err = os.Create(path)
+		if err != nil {
+			return err
+		}
+	}
+	defer file.Close()
 
+	err = binary.Write(file, binary.LittleEndian, data)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -31,17 +46,13 @@ func ReadBinaryFile(path string) (data []byte, err error) {
 
 	var size int64 = stats.Size()
 	bytes := make([]byte, size)
+	binary.Read(file, binary.LittleEndian, &bytes)
 
-	bufr := bufio.NewReader(file)
+	/*bufr := bufio.NewReader(file)
 	_, err = bufr.Read(bytes)
 	if err != nil {
 		return nil, err
-	}
-	err = json.Unmarshal(bytes, &data)
-	if err != nil {
-		return nil, err
-	}
-	//binary.Read(file, binary.LittleEndian, &bytes)
+	}*/
 
 	return data, nil
 }

@@ -8,6 +8,7 @@
 package cluster
 
 import (
+	"encoding/json"
 	"errors"
 	"topiik/internal/util"
 	"topiik/resp"
@@ -50,5 +51,30 @@ func Scale(p int, r int) (result string, err error) {
 	} else { // scale in
 		//
 	}
+	// persist
+	filePath := GetPatitionFilePath()
+	data, err := json.Marshal(partitionInfo)
+	if err != nil {
+		tLog.Err(err).Msgf("scale: %s", err.Error())
+		return "", err
+	}
+	err = util.WriteBinaryFile(filePath, data)
+	if err != nil {
+		tLog.Err(err).Msgf("scale: %s", err.Error())
+		return "", err
+	}
+
+	// update cluster info
+	clusterInfo.Ptns = uint16(p)
+	clusterInfo.Rpls = uint16(r)
+	UpdatePendingAppend()
+
+	// sync partition info to controllers
+	for _, v := range clusterInfo.Ctls {
+		if v.Id != nodeInfo.Id {
+			partitionMetadataPendingAppend[v.Id] = v.Id
+		}
+	}
+
 	return resp.RES_OK, nil
 }

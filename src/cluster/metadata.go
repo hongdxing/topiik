@@ -155,6 +155,6 @@ func GetNodeFilePath() string {
 	return util.GetMainPath() + slash + dataDIR + slash + "__metadata_node__"
 }
 
-func GetSlotsFilePath() string {
-	return util.GetMainPath() + slash + dataDIR + slash + "__metadata_slots__"
+func GetPatitionFilePath() string {
+	return util.GetMainPath() + slash + dataDIR + slash + "__metadata_partition__"
 }

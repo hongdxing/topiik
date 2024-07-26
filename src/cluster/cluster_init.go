@@ -18,11 +18,11 @@ import (
 
 const cluster_init_failed = "cluster init failed"
 
-func ClusterInit(partitions uint16, replicas uint16, serverConfig *config.ServerConfig) (err error) {
+func ClusterInit(serverConfig *config.ServerConfig) (err error) {
 	fmt.Println("ClusterInit start...")
 
 	// 0. init cluster
-	initCluster(partitions, replicas, serverConfig)
+	initCluster(serverConfig)
 
 	// 1. open node file
 	nodePath := GetNodeFilePath()
@@ -65,14 +65,14 @@ func ClusterInit(partitions uint16, replicas uint16, serverConfig *config.Server
 	return nil
 }
 
-func initCluster(partitions uint16, replicas uint16, serverConfig *config.ServerConfig) error {
+func initCluster(serverConfig *config.ServerConfig) error {
 	if len(clusterInfo.Id) > 0 {
 		return errors.New("current node already in cluster:" + clusterInfo.Id)
 	}
 	// set clusterInfo
 	clusterInfo.Id = util.RandStringRunes(16)
-	clusterInfo.Ptns = partitions
-	clusterInfo.Rpls = replicas
+	//clusterInfo.Ptns = partitions
+	//clusterInfo.Rpls = replicas
 
 	addrSplit, err := util.SplitAddress(serverConfig.Listen)
 	if err != nil {

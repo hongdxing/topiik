@@ -9,9 +9,9 @@ package executor
 
 import (
 	"errors"
-	"strconv"
 	"topiik/cluster"
 	"topiik/internal/config"
+	"topiik/internal/datatype"
 )
 
 /***
@@ -19,9 +19,9 @@ import (
 ** Parameters:
 **	- pieces:
 **	- serverConfig:
-** Syntax: CLUSTER INIT partitions replicas
+** Syntax: INIT-CLUSTER
 **/
-func clusterInit(pieces []string, serverConfig *config.ServerConfig) error {
+func clusterInit(req datatype.Req, serverConfig *config.ServerConfig) error {
 	// validate
 
 	// if node already in a cluster, return error
@@ -29,7 +29,7 @@ func clusterInit(pieces []string, serverConfig *config.ServerConfig) error {
 		return errors.New("current node already in cluster:" + cluster.GetNodeInfo().ClusterId)
 	}
 
-	if len(pieces) != 2 {
+	/*if len(pieces) != 2 {
 		return errors.New(RES_SYNTAX_ERROR)
 	}
 	partitionIndex := 0
@@ -43,7 +43,7 @@ func clusterInit(pieces []string, serverConfig *config.ServerConfig) error {
 	if err != nil || replicas < 1 {
 		log.Err(err).Msgf("%s invalid replica number: %s", RES_SYNTAX_ERROR, pieces[replicaIndex])
 		return errors.New(RES_SYNTAX_ERROR)
-	}
+	}*/
 
-	return cluster.ClusterInit(uint16(partitions), uint16(replicas), serverConfig)
+	return cluster.ClusterInit(serverConfig)
 }
