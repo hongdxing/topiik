@@ -47,11 +47,14 @@ func main() {
 
 	// Start routines
 	//go raft.RequestVote(&serverConfig.JoinList, 200, nodeStatus)
-	go persistence.Persist(*serverConfig)
+	if ! cluster.IsNodeController(){
+		persistence.Load()
+	}
+	go persistence.Persist()
 	go cluster.StartServer(serverConfig.Host+":"+serverConfig.PORT2, serverConfig)
 
 	// Accept incoming connections and handle them
-	fmt.Printf("Listen to address %s\n", serverConfig.Listen)
+	log.Info().Msgf("Listen to address %s\n", serverConfig.Listen)
 	for {
 		conn, err := ln.Accept()
 		if err != nil {

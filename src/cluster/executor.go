@@ -54,28 +54,28 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.StringResponse(result, icmd, msg)
+		return resp.StringResponse(result, icmd)
 	} else if icmd == RPC_ADD_NODE {
 		pieces := strings.Split(string(dataBytes), consts.SPACE)
 		result, err := addNode(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.StringResponse(result, icmd, nil)
+		return resp.StringResponse(result, icmd)
 	} else if icmd == RPC_VOTE {
 		cTerm, err := strconv.Atoi(string(dataBytes))
 		if err != nil {
 			return resp.ErrorResponse(errors.New(RES_SYNTAX_ERROR))
 		} else {
 			result := vote(cTerm)
-			return resp.StringResponse(result, icmd, msg)
+			return resp.StringResponse(result, icmd)
 		}
 	} else if icmd == RPC_APPENDENTRY {
 		err := appendEntry(dataBytes, serverConfig)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.StringResponse("", icmd, msg)
+		return resp.StringResponse("", icmd)
 	}
 	return resp.ErrorResponse(errors.New(consts.RES_INVALID_CMD))
 }

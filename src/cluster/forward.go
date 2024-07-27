@@ -10,6 +10,7 @@ package cluster
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"topiik/internal/proto"
@@ -42,24 +43,37 @@ func Forward(msg []byte) []byte {
 
 	conn, ok := tcpMap[targetWorker.Id]
 	if !ok {
-		conn, err = util.PreapareSocketClientWithPort(targetWorker.Addr, CONTROLLER_FORWORD_PORT)
-		//conn, err = util.PreapareSocketClient(targetWorker.Address)
+		fmt.Printf("---------------")
+		//conn, err = util.PreapareSocketClientWithPort(targetWorker.Addr, CONTROLLER_FORWORD_PORT)
+		conn, err = util.PreapareSocketClient(targetWorker.Addr)
 		if err != nil {
-			return []byte{} // TODO: should retry
+			tLog.Err(err).Msg(err.Error())
+			return resp.ErrorResponse(errors.New(resp.RES_CONN_RESET))
 		}
 		tcpMap[targetWorker.Id] = conn
 	}
 	// Send
 	_, err = conn.Write(msg)
 	if err != nil {
-		return []byte{} // TODO: should retry
+		tLog.Err(err).Msg(err.Error())
+		if _, ok = tcpMap[targetWorker.Id]; ok {
+			tLog.Warn().Msgf("Forward() delete worker %s from tcpMap", targetWorker.Id)
+			delete(tcpMap, targetWorker.Id)
+		}
+		// try reconnect
+		conn, err = util.PreapareSocketClient(targetWorker.Addr)
+		if err != nil {
+			tLog.Err(err).Msg(err.Error())
+			return resp.ErrorResponse(errors.New(resp.RES_CONN_RESET))
+		}
+		conn.Write(msg)
 	}
 
 	reader := bufio.NewReader(conn)
 	responseBytes, err := proto.Decode(reader)
 	if err != nil {
 		if err == io.EOF {
-			return []byte{}
+			return resp.ErrorResponse(errors.New(resp.RES_CONN_RESET))
 		}
 	}
 	return responseBytes

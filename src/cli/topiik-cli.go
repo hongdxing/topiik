@@ -257,7 +257,8 @@ func getControllerLeaderAddr(host string) (addr string, err error) {
 			bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
 			return string(bufSlice), nil
 		} else {
-			return "", errors.New("(err): unknown")
+			bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
+			return "", errors.New("(err):" + string(bufSlice))
 		}
 	}
 	return "", errors.New("(err): unknown")

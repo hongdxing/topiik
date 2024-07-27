@@ -1,5 +1,7 @@
 package consts
 
+import "os"
+
 const (
 	DATA_FMT_MICRO_SECONDS = "2006-01-02 15:04:05.000000"
 )
@@ -34,4 +36,9 @@ const (
 
 const (
 	HOST_PATTERN = `^.+:\d{4,5}`
+)
+
+const (
+	SLASH    = string(os.PathSeparator)
+	DATA_DIR = "data"
 )
