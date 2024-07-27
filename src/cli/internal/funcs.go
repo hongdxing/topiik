@@ -91,6 +91,21 @@ func EncodeCmd(input string) (result []byte, err error) {
 		}
 		icmd = command.GETM_I
 		req.KEYS = append(req.KEYS, pieces[1:]...)
+	} else if cmd == command.TTL {
+		if len(pieces) < 1 {
+			return syntaxErr()
+		}
+		icmd = command.TTL_I
+		req.KEYS = append(req.KEYS, pieces[0])
+		req.ARGS = strings.Join(pieces[1:], consts.SPACE)
+	} else if cmd == command.LPUSH {
+
+	} else if cmd == command.LPOP {
+
+	} else if cmd == command.LPUSHB {
+
+	} else if cmd == command.LPOPB {
+
 	} else if cmd == command.GET_LEADER_ADDR {
 		// no additional data
 	} else {

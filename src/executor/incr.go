@@ -14,22 +14,26 @@ import (
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/memo"
+	"topiik/resp"
 )
 
 /***
 ** Increase a KEY, if KEY not exists, create the KEY first
 ** Parameters
-** 	- pieces: command line that CMD stripped, the first piece is the KEY
+** 	- req
 ** Return
 **	- The value after increase if success
 **	- INVALID_OPT if the KEY is NOT STRING
 **
 ** Syntax: INCR KEY [num]
 **/
-func incr(pieces []string) (result int64, err error) {
-	if (len(pieces)) == 1 { // KEY
+func incr(req datatype.Req) (result int64, err error) {
+	if len(req.KEYS) == 0 {
+		return 0, errors.New(resp.RES_SYNTAX_ERROR)
+	}
+	if req.ARGS == "" { // KEY
 		var i int64 = 0
-		key := strings.TrimSpace(pieces[0])
+		key := strings.TrimSpace(req.KEYS[0])
 		i, err = preINCR(key)
 		if err != nil {
 			return 0, err
@@ -37,14 +41,14 @@ func incr(pieces []string) (result int64, err error) {
 		i++
 		memo.MemMap[key].Str = []byte(string(i))
 		return i, nil
-	} else if len(pieces) == 2 { // KEY num
+	} else { // KEY num
 		var i int64
 		var num int
-		num, err = strconv.Atoi(pieces[1])
+		num, err = strconv.Atoi(req.ARGS)
 		if err != nil {
 			return 0, errors.New(RES_SYNTAX_ERROR)
 		}
-		key := strings.TrimSpace(pieces[0])
+		key := strings.TrimSpace(req.KEYS[0])
 		i, err = preINCR(key)
 		if err != nil {
 			return 0, err
@@ -52,8 +56,6 @@ func incr(pieces []string) (result int64, err error) {
 		i += int64(num)
 		memo.MemMap[key].Str = []byte(string(i))
 		return i, nil
-	} else {
-		return 0, errors.New(RES_WRONG_NUMBER_OF_ARGS)
 	}
 }
 

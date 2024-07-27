@@ -23,19 +23,19 @@ import (
 **	- number of key set if success
 ** Syntax: SETM KEY1 VALUE1 [... KEYn VALUEn]
 **/
-func setM(pieces []string) (result int, err error) {
-	if len(pieces)%2 == 1 {
+func setM(req datatype.Req) (result int, err error) {
+	if len(req.KEYS) != len(req.VALS) || len(req.KEYS) == 0 {
 		return 0, errors.New(RES_SYNTAX_ERROR)
 	}
 	kv := make(map[string]string)
-	for i := 0; i < len(pieces)-1; i += 2 {
-		key := strings.TrimSpace(pieces[i])
-		if val, ok := memo.MemMap[key]; ok {
+	for i := 0; i < len(req.KEYS); i++ {
+		key := strings.TrimSpace(req.KEYS[i])
+		if val, ok := memo.MemMap[key]; ok {// if the key exists, but not String type, then error
 			if val.Typ != datatype.V_TYPE_STRING {
 				return 0, errors.New(RES_DATA_TYPE_NOT_MATCH + ":" + key)
 			}
 		}
-		kv[key] = pieces[i+1]
+		kv[key] = req.VALS[i]
 	}
 	for k, v := range kv {
 		if val, ok := memo.MemMap[k]; ok {

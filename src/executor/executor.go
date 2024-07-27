@@ -160,19 +160,19 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) []by
 		}
 		return resp.StringResponse(result, icmd, msg)
 	} else if icmd == command.GETM_I {
-		result, err := getM(pieces)
+		result, err := getM(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringArrayResponse(result, icmd, msg)
 	} else if icmd == command.SETM_I {
-		result, err := setM(pieces)
+		result, err := setM(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.IntegerResponse(int64(result), icmd, msg)
 	} else if icmd == command.INCR_I {
-		result, err := incr(pieces)
+		result, err := incr(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}

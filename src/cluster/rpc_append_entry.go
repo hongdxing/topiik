@@ -17,14 +17,21 @@ import (
 	"topiik/internal/util"
 )
 
-/***
-**
-**
-** Parameter: 1 byte of entry type + entry
-**
-**
-***/
+/*
+* Raft Append Entry
+*
+* Parameter: 
+* 	entry: 1 byte of entry type + entry
+*
+*
+ */
 func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
+	// In case of multi Leader, if node can receive appendEntry,
+	// and role is RAFT_LEADER, then step back
+	if nodeStatus.Role == RAFT_LEADER {
+		nodeStatus.Role = RAFT_FOLLOWER
+	}
+
 	// update Raft Heartbeat
 	nodeStatus.Heartbeat = uint16(rand.IntN(int(serverConfig.RaftHeartbeatMax-serverConfig.RaftHeartbeatMin))) + serverConfig.RaftHeartbeatMin
 	nodeStatus.HeartbeatAt = time.Now().UnixMilli()

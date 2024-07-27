@@ -14,21 +14,21 @@ import (
 	"topiik/memo"
 )
 
-/***
-** Get multi values of STRING KEYs
-** Parameters:
-**	- pieces: command line that CMD stripped, the first piece is the KEY
-** Return:
-**	- list of value, the length of the returned values is the same as lenght of KEYs, if some key not exist then NIL in that position
-**	- RES_DATA_TYPE_NOT_MATCH if any KEY is not STRING
-**
-** Syntax: GETM KEY1 KEY2 [... KEYn]
-**/
-func getM(pieces []string) (result []string, err error) {
-	if len(pieces) < 1 {
+/*
+* Get multi values of STRING KEYs
+* Parameters:
+*	- req
+* Return:
+*	- list of value, the length of the returned values is the same as lenght of KEYs, if some key not exist then NIL in that position
+*	- RES_DATA_TYPE_NOT_MATCH if any KEY is not STRING
+*
+* Syntax: GETM KEY1 KEY2 [... KEYn]
+ */
+func getM(req datatype.Req) (result []string, err error) {
+	if len(req.KEYS) < 1 {
 		return nil, errors.New(RES_SYNTAX_ERROR)
 	}
-	for _, key := range pieces {
+	for _, key := range req.KEYS {
 		key = strings.TrimSpace(key)
 		if val, ok := memo.MemMap[key]; ok {
 			if isKeyExpired(key, val.Exp) {
