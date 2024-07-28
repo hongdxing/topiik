@@ -9,6 +9,7 @@ package executor
 import (
 	"encoding/json"
 	"errors"
+	"slices"
 	"topiik/cluster"
 	"topiik/internal/command"
 	"topiik/internal/config"
@@ -27,16 +28,27 @@ const (
 	RES_DATA_TYPE_NOT_MATCH  = "DATA_TYPE_NOT_MATCH"
 	RES_SYNTAX_ERROR         = "SYNTAX_ERR"
 	RES_KEY_NOT_EXIST        = "KEY_NOT_EXIST"
-	RES_KEY_EXIST_ALREADY    = "KEY_EXIST_ALREADY"
-
-	/*** VOTE response ***/
-	RES_ACCEPTED = "A"
-	RES_REJECTED = "R"
 )
 
 var log = logger.Get()
 
 var PersistenceCh = make(chan []byte)
+var persistCmds = []uint8{
+	// String
+	command.SET_I,
+	command.SETM_I,
+	command.INCR_I,
+	// List
+	command.LPUSH_I,
+	command.LPUSHR_I,
+	command.LPOP_I,
+	command.LPOPR_I,
+
+	//command.LPUSHB_I,
+	//command.LPUSHRB_I,
+	command.DEL_I,
+	command.TTL_I, //??
+}
 
 func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (finalRes []byte) {
 	msgData := msg[4:] // strip the lenght header
@@ -124,7 +136,9 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 
 	finalRes = Execute1(icmd, req)
 
-	PersistenceCh <- msg
+	if slices.Contains(persistCmds, icmd) {
+		PersistenceCh <- msg
+	}
 	return finalRes
 }
 
