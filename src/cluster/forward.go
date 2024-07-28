@@ -10,7 +10,6 @@ package cluster
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"topiik/internal/proto"
@@ -43,7 +42,6 @@ func Forward(msg []byte) []byte {
 
 	conn, ok := tcpMap[targetWorker.Id]
 	if !ok {
-		fmt.Printf("---------------")
 		//conn, err = util.PreapareSocketClientWithPort(targetWorker.Addr, CONTROLLER_FORWORD_PORT)
 		conn, err = util.PreapareSocketClient(targetWorker.Addr)
 		if err != nil {
