@@ -2,7 +2,6 @@ package command
 
 const (
 	/*** CLUSTER ***/
-	CLUSTER                 = "CLUSTER"
 	INIT_CLUSTER            = "INIT-CLUSTER"
 	INIT_CLUSTER_I    uint8 = 1
 	SHOW_CLUSTER            = "SHOW-CLUSTER"
@@ -55,6 +54,12 @@ const (
 	// Geo 96
 
 	// Event 112
+	PUB     = "PUB"
+	PUB_I   = 112
+	POLL    = "POLL"
+	POLL_I  = 113
+	POLLB   = "POLLB" // Poll Blocking
+	POLLB_I = 114
 
 	/*** KEYS 128 ***/
 	TTL            = "TTL"
