@@ -92,7 +92,7 @@ func handleConnection(conn net.Conn) {
 * Print banner(TODO)
  */
 func printBanner() {
-	log.Info().Msg("[Topiik] Starting Topiik Server...")
+	log.Info().Msg("[TOPIIK] Starting Topiik Server...")
 }
 
 /***

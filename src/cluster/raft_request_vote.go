@@ -33,7 +33,7 @@ const requestVoteInterval = 100
 /**
 ** Parameters:
 **	-
-** Follower issues RequestVote RPCs to Workers to request for votes.
+** Follower(s) issue RequestVote RPCs to Controller(s) and Worker(s) to request for votes.
 **/
 func RequestVote() {
 
@@ -54,7 +54,7 @@ func RequestVote() {
 		quorum = 1 // I vote myself
 		voteMeResults = voteMeResults[:0]
 
-		heartbeat = time.Duration(rand.IntN(199)) + time.Duration(requestVoteInterval) //[0,99) + 200(interval), this must less than RaftHeartbeat(300)
+		heartbeat = time.Duration(rand.IntN(199)) + time.Duration(requestVoteInterval) //[0,199) + 100(interval), this must less than RaftHeartbeat(300)
 		time.Sleep(heartbeat * time.Millisecond)
 
 		if time.Now().UTC().UnixMilli() < nodeStatus.HeartbeatAt+int64(nodeStatus.Heartbeat) {
