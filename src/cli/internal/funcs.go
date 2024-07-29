@@ -99,13 +99,14 @@ func EncodeCmd(input string) (result []byte, err error) {
 		req.KEYS = append(req.KEYS, pieces[0])
 		req.ARGS = strings.Join(pieces[1:], consts.SPACE)
 	} else if cmd == command.LPUSH {
-
+		icmd = command.LPUSH_I
 	} else if cmd == command.LPOP {
 
+		icmd = command.LPOP_I
 	} else if cmd == command.LPUSHB {
-
+		icmd = command.LPUSHR_I
 	} else if cmd == command.LPOPB {
-
+		icmd = command.LPOPR_I
 	} else if cmd == command.GET_LEADER_ADDR {
 		// no additional data
 	} else {

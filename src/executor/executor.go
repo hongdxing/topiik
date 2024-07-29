@@ -51,53 +51,41 @@ var persistCmds = []uint8{
 }
 
 func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (finalRes []byte) {
-	msgData := msg[4:] // strip the lenght header
-	// split msg into [CMD, params]
-	//strs := strings.SplitN(strings.TrimLeft(string(msgData), consts.SPACE), consts.SPACE, 2)
-	//CMD := strings.ToUpper(strings.TrimSpace(strs[0]))
+	msgBytes := msg[4:] // strip the lenght header
 
-	icmd, _, err := proto.DecodeHeader(msgData)
+	icmd, _, err := proto.DecodeHeader(msgBytes)
 	if err != nil {
 		log.Err(err)
 	}
 
-	if len(msgData) < 2 {
+	if len(msgBytes) < 2 {
 		return resp.ErrorResponse(errors.New(resp.RES_SYNTAX_ERROR))
 	}
 	var req datatype.Req
-	err = json.Unmarshal(msgData[2:], &req) // 2= 1 icmd and 1 ver
+	err = json.Unmarshal(msgBytes[2:], &req) // 2= 1 icmd and 1 ver
 	if err != nil {
 		log.Err(err).Msg(err.Error())
 		return resp.ErrorResponse(err)
 	}
-	//log.Info().Msgf("aaa %s", req.CMD)
-	//CMD := strings.ToUpper(req.CMD)
-
-	//pieces, err := util.SplitCommandLine(string(msgData[2:]))
-	//if err != nil {
-	//	return resp.ErrorResponse(err)
-	//}
-	//log.Info().Msg(string(msgData[2:]))
-	//log.Info().Msg(strings.Join(pieces, ","))
 
 	if icmd == command.INIT_CLUSTER_I {
 		err := clusterInit(req, serverConfig)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.StringResponse(RES_OK, icmd)
+		return resp.StringResponse(RES_OK)
 	} else if icmd == command.ADD_NODE_I {
 		result, err := addNode(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.StringResponse(result, icmd)
+		return resp.StringResponse(result)
 	} else if icmd == command.SCALE_I {
 		result, err := scale(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.StringResponse(result, icmd)
+		return resp.StringResponse(result)
 	} else if icmd == command.GET_LEADER_ADDR_I {
 		log.Info().Msg("get controller address")
 		var address string
@@ -116,12 +104,46 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 			}
 
 		}
-		return resp.StringResponse(address, icmd)
+		return resp.StringResponse(address)
 	}
 
 	// if is Controller, forward to worker(s)
 	if cluster.IsNodeController() {
-		return cluster.Forward(msg)
+		// special process SETM, because SETM has more than one keys
+		if icmd == command.SETM_I {
+			if len(req.KEYS) != len(req.VALS) {
+				return resp.ErrorResponse(errors.New(resp.RES_SYNTAX_ERROR))
+			}
+			// split setm to multi set
+			for i, key := range req.KEYS {
+				reqN := datatype.Req{KEYS: []string{key}, VALS: []string{req.VALS[i]}} // req object
+				reqBytesN, _ := json.Marshal(reqN)                                     // req bytes
+				msgN, _ := proto.EncodeHeader(command.SET_I, 1)                        // msg header
+				msgN = append(msgN, reqBytesN...)                                      // combine msg header and req bytes
+				msgN, _ = proto.EncodeB(msgN)                                          // encode msg
+				cluster.Forward(key, msgN)
+			}
+			return resp.StringResponse(resp.RES_OK)
+		} else if icmd == command.GETM_I {
+			var res []string
+			// split setm to multi set
+			for _, key := range req.KEYS {
+				reqN := datatype.Req{KEYS: []string{key}, VALS: []string{}} // req object
+				reqBytesN, _ := json.Marshal(reqN)                          // req bytes
+				msgN, _ := proto.EncodeHeader(command.GET_I, 1)             // msg header
+				msgN = append(msgN, reqBytesN...)                           // combine msg header and req bytes
+				msgN, _ = proto.EncodeB(msgN)                               // encode msg
+				resN := cluster.Forward(key, msgN)
+				flag := resp.ParseResFlag(resN)
+				if flag != 1 {
+					res = append(res, "")
+				}
+				res = append(res, string(resN[resp.RESPONSE_HEADER_SIZE:]))
+			}
+			return resp.StringArrayResponse(res)
+		}
+		key := req.KEYS[0]
+		return cluster.Forward(key, msg)
 	}
 
 	// node must be in a cluster
@@ -153,101 +175,68 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		finalRes = resp.StringResponse(result, icmd)
+		finalRes = resp.StringResponse(result)
 	} else if icmd == command.SET_I {
 		result, err := set(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		finalRes = resp.StringResponse(result, icmd)
+		finalRes = resp.StringResponse(result)
 	} else if icmd == command.GETM_I {
 		result, err := getM(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		finalRes = resp.StringArrayResponse(result, icmd)
+		finalRes = resp.StringArrayResponse(result)
 	} else if icmd == command.SETM_I {
 		result, err := setM(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		finalRes = resp.IntegerResponse(int64(result), icmd)
+		finalRes = resp.IntegerResponse(int64(result))
 	} else if icmd == command.INCR_I {
 		result, err := incr(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		finalRes = resp.IntegerResponse(result, icmd)
+		finalRes = resp.IntegerResponse(result)
 	} else if icmd == command.LPUSH_I || icmd == command.LPUSHR_I { // LIST COMMANDS
 		/***List LPUSH***/
 		result, err := pushList(pieces, icmd)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		finalRes = resp.IntegerResponse(int64(result), icmd)
+		finalRes = resp.IntegerResponse(int64(result))
 	} else if icmd == command.LPOP_I || icmd == command.LPOPR_I {
 		result, err := popList(pieces, icmd)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		finalRes = resp.StringArrayResponse(result, icmd)
+		finalRes = resp.StringArrayResponse(result)
 	} else if icmd == command.LLEN_I {
 		result, err := llen(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		finalRes = resp.IntegerResponse(int64(result), icmd)
+		finalRes = resp.IntegerResponse(int64(result))
 	} else if icmd == command.TTL_I { // KEY COMMANDS
 		result, err := ttl(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		finalRes = resp.IntegerResponse(result, icmd)
+		finalRes = resp.IntegerResponse(result)
 	} else if icmd == command.KEYS_I {
 		result, err := keys(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		finalRes = resp.StringArrayResponse(result, icmd)
+		finalRes = resp.StringArrayResponse(result)
 	} else {
 		log.Err(errors.New("Invalid cmd:" + string(icmd)))
 		return resp.ErrorResponse(errors.New(consts.RES_INVALID_CMD))
 	}
 	return finalRes
 }
-
-/***
-** Persist command
-**
-**/
-/*
-func enqueuePersistentMsg(msg []byte) {
-	if memo.MemMap[consts.PERSISTENT_BUF_QUEUE] == nil {
-		memo.MemMap[consts.PERSISTENT_BUF_QUEUE] = &datatype.TValue{
-			Typ: datatype.V_TYPE_LIST,
-			Lst: list.New(),
-			Exp: consts.UINT32_MAX,
-		}
-	}
-	memo.MemMap[consts.PERSISTENT_BUF_QUEUE].Lst.PushFront(msg)
-}*/
-
-/*** Response json ***/
-/*func errorResponse(err error) []byte {
-	return response[string](false, err.Error())
-}
-
-func successResponse[T any](result T, CMD string, msg []byte) []byte {
-	if slices.Contains(needPersistCMD, CMD) {
-		enqueuePersistentMsg(msg)
-	}
-	return response[T](true, result)
-}
-
-func response[T any](success bool, response T) []byte {
-	b, _ := json.Marshal(&datatype.Response[T]{R: success, M: response})
-	return b
-}*/
 
 func srcFilter(srcAddr string) error {
 	// if node member of cluster

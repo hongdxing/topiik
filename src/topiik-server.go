@@ -46,8 +46,7 @@ func main() {
 	}
 
 	// Start routines
-	//go raft.RequestVote(&serverConfig.JoinList, 200, nodeStatus)
-	if ! cluster.IsNodeController(){
+	if !cluster.IsNodeController() {
 		persistence.Load()
 	}
 	go persistence.Persist()
@@ -89,12 +88,11 @@ func handleConnection(conn net.Conn) {
 	}
 }
 
-/***
-** Print banner
-**/
+/*
+* Print banner(TODO)
+ */
 func printBanner() {
-	log.Info().Msg("Starting Topiik Server...")
-	fmt.Println("Starting Topiik Server...")
+	log.Info().Msg("[Topiik] Starting Topiik Server...")
 }
 
 /***

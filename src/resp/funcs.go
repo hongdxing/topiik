@@ -23,7 +23,7 @@ func ErrorResponse(err error) (result []byte) {
 	return result
 }
 
-func StringResponse(res string, icmd uint8) (result []byte) {
+func StringResponse(res string) (result []byte) {
 	buf := []byte(res)
 	result = append(result, byte(int8(1)))
 	result = append(result, byte(int8(1))) // string type
@@ -32,7 +32,7 @@ func StringResponse(res string, icmd uint8) (result []byte) {
 	return result
 }
 
-func IntegerResponse(res int64, icmd uint8) (result []byte) {
+func IntegerResponse(res int64) (result []byte) {
 	var buffer = new(bytes.Buffer)
 	// Write message HEADER
 	err := binary.Write(buffer, binary.LittleEndian, int8(1)) // one byte of success flag
@@ -58,7 +58,7 @@ func IntegerResponse(res int64, icmd uint8) (result []byte) {
 	return result
 }
 
-func StringArrayResponse(res []string, icmd uint8) (result []byte) {
+func StringArrayResponse(res []string) (result []byte) {
 	buf, _ := json.Marshal(res)
 	result = append(result, byte(int8(1)))
 	result = append(result, byte(int8(3))) // string array type
@@ -87,3 +87,18 @@ func Response[T any](flag int8, res T) (result []byte) {
 	return result
 }
 */
+
+/*
+* Return success/fail flag of response
+*
+ */
+func ParseResFlag(res []byte) int8 {
+	flagByte := res[4:5]
+	byteBuf := bytes.NewBuffer(flagByte)
+	var datatype int8
+	err := binary.Read(byteBuf, binary.LittleEndian, &datatype)
+	if err != nil {
+		return 0
+	}
+	return datatype
+}

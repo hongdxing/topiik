@@ -10,6 +10,7 @@ package cluster
 import (
 	"bufio"
 	"errors"
+	"hash/crc32"
 	"io"
 	"net"
 	"topiik/internal/proto"
@@ -20,7 +21,7 @@ import (
 // cache Tcp Conn from Controller to Workers
 var tcpMap = make(map[string]*net.TCPConn)
 
-func Forward(msg []byte) []byte {
+func Forward(key string, msg []byte) []byte {
 	if len(clusterInfo.Wkrs) == 0 {
 		//res, _ := proto.Encode("")
 		//return res
@@ -30,14 +31,26 @@ func Forward(msg []byte) []byte {
 		return resp.ErrorResponse(errors.New(resp.RES_NO_PARTITION))
 	}
 	var err error
-	// TODO: find worker base on key partition, and get LeaderWorkerId
-
-	// and then get Address of Worker
-
+	// find worker base on key partition, and get LeaderWorkerId
 	var targetWorker Worker
-	for _, worker := range clusterInfo.Wkrs {
-		targetWorker = worker
-		break
+	var keyHash = crc32.Checksum([]byte(key), crc32.IEEETable)
+	keyHash = keyHash % SLOTS
+	//fmt.Printf("key hash %v\n", keyHash)
+
+	for _, partition := range partitionInfo {
+		for _, slot := range partition.Slots {
+			if slot.From <= uint16(keyHash) && slot.To >= uint16(keyHash) {
+				targetWorker = clusterInfo.Wkrs[partition.LeaderNodeId]
+				break
+			}
+		}
+		if len(targetWorker.Id) > 0 {
+			break
+		}
+	}
+	if len(targetWorker.Id) == 0 {
+		tLog.Warn().Msg("forward::Forward no slot available")
+		return resp.ErrorResponse(errors.New(resp.RES_NO_PARTITION))
 	}
 
 	conn, ok := tcpMap[targetWorker.Id]
