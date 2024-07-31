@@ -68,7 +68,7 @@ func Forward(key string, msg []byte) []byte {
 	if err != nil {
 		tLog.Err(err).Msg(err.Error())
 		if _, ok = tcpMap[targetWorker.Id]; ok {
-			tLog.Warn().Msgf("Forward() delete worker %s from tcpMap", targetWorker.Id)
+			tLog.Warn().Msgf("forward::Forward remove tcp cache of worker %s", targetWorker.Id)
 			delete(tcpMap, targetWorker.Id)
 		}
 		// try reconnect

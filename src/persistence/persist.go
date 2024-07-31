@@ -18,10 +18,7 @@ import (
 	"topiik/internal/datatype"
 	"topiik/internal/proto"
 	"topiik/internal/util"
-	"topiik/logger"
 )
-
-var l = logger.Get()
 
 //var lineFeed = byte('\n')
 
@@ -46,9 +43,8 @@ func Persist() {
 		// msg sequence
 		msgSeq++
 
-		byteBuf := new(bytes.Buffer)
 		// 1: sequence
-		byteBuf.Reset()
+		byteBuf := new(bytes.Buffer)
 		binary.Write(byteBuf, binary.LittleEndian, msgSeq)
 		buf := byteBuf.Bytes()
 
@@ -90,7 +86,7 @@ func Load() {
 		binary.Read(byteBuf, binary.LittleEndian, &msgSeq)
 		l.Info().Msgf("sequence: %v", msgSeq)
 
-		// 2: read lenght
+		// 2: read length
 		buf = make([]byte, 4)
 		_, err = io.ReadFull(file, buf)
 		if err != nil && err != io.EOF {
@@ -107,7 +103,7 @@ func Load() {
 			l.Panic().Msg(err.Error())
 		}
 
-		// 4: execute msg
+		// 4: replay msg(load from disk to memory)
 		icmd, _, err := proto.DecodeHeader(buf)
 		if err != nil {
 			l.Panic().Msgf("persist::Load %s", err.Error())
