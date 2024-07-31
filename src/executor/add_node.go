@@ -88,14 +88,14 @@ func addNode(req datatype.Req) (result string, err error) {
 	resp := string(buf[resp.RESPONSE_HEADER_SIZE:])
 
 	if flag == 1 {
-		log.Info().Msgf("Add node succeed:%s", resp)
+		l.Info().Msgf("Add node succeed:%s", resp)
 		cluster.AddNode(resp, nodeAddr, nodeAddr2, role)
 
 		// cluster meta changed, pending to sync to follower(s)
 		cluster.UpdatePendingAppend()
 
 	} else {
-		log.Err(nil).Msg("Add node failed")
+		l.Err(nil).Msg("Add node failed")
 		return "", errors.New(resp)
 	}
 

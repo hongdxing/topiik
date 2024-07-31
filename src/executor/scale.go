@@ -17,7 +17,7 @@ import (
 )
 
 func scale(req datatype.Req) (result string, err error) {
-	log.Info().Msg("***scale start***")
+	l.Info().Msg("***scale start***")
 	pieces := strings.SplitN(req.ARGS, consts.SPACE, 2)
 	if len(pieces) != 2 {
 		return "", errors.New(resp.RES_SYNTAX_ERROR)
@@ -36,6 +36,6 @@ func scale(req datatype.Req) (result string, err error) {
 		return "", err
 	}
 
-	log.Info().Msg("***scale done***")
+	l.Info().Msg("***scale done***")
 	return result, nil
 }

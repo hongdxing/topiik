@@ -16,7 +16,6 @@ import (
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/internal/proto"
-	"topiik/logger"
 	"topiik/resp"
 )
 
@@ -29,8 +28,6 @@ const (
 	RES_SYNTAX_ERROR         = "SYNTAX_ERR"
 	RES_KEY_NOT_EXIST        = "KEY_NOT_EXIST"
 )
-
-var log = logger.Get()
 
 var PersistenceCh = make(chan []byte)
 var persistCmds = []uint8{
@@ -55,7 +52,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 
 	icmd, _, err := proto.DecodeHeader(msgBytes)
 	if err != nil {
-		log.Err(err)
+		l.Err(err)
 	}
 
 	if len(msgBytes) < 2 {
@@ -64,7 +61,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 	var req datatype.Req
 	err = json.Unmarshal(msgBytes[2:], &req) // 2= 1 icmd and 1 ver
 	if err != nil {
-		log.Err(err).Msg(err.Error())
+		l.Err(err).Msg(err.Error())
 		return resp.ErrorResponse(err)
 	}
 
@@ -87,7 +84,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 		}
 		return resp.StringResponse(result)
 	} else if icmd == command.GET_LEADER_ADDR_I {
-		log.Info().Msg("get controller address")
+		l.Info().Msg("get controller address")
 		var address string
 		if cluster.GetNodeStatus().Role == cluster.RAFT_LEADER { // if is leader, then just return leader's address
 			address = serverConfig.Listen
@@ -109,41 +106,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 
 	// if is Controller, forward to worker(s)
 	if cluster.IsNodeController() {
-		// special process SETM, because SETM has more than one keys
-		if icmd == command.SETM_I {
-			if len(req.KEYS) != len(req.VALS) {
-				return resp.ErrorResponse(errors.New(resp.RES_SYNTAX_ERROR))
-			}
-			// split setm to multi set
-			for i, key := range req.KEYS {
-				reqN := datatype.Req{KEYS: []string{key}, VALS: []string{req.VALS[i]}} // req object
-				reqBytesN, _ := json.Marshal(reqN)                                     // req bytes
-				msgN, _ := proto.EncodeHeader(command.SET_I, 1)                        // msg header
-				msgN = append(msgN, reqBytesN...)                                      // combine msg header and req bytes
-				msgN, _ = proto.EncodeB(msgN)                                          // encode msg
-				cluster.Forward(key, msgN)
-			}
-			return resp.StringResponse(resp.RES_OK)
-		} else if icmd == command.GETM_I {
-			var res []string
-			// split setm to multi set
-			for _, key := range req.KEYS {
-				reqN := datatype.Req{KEYS: []string{key}, VALS: []string{}} // req object
-				reqBytesN, _ := json.Marshal(reqN)                          // req bytes
-				msgN, _ := proto.EncodeHeader(command.GET_I, 1)             // msg header
-				msgN = append(msgN, reqBytesN...)                           // combine msg header and req bytes
-				msgN, _ = proto.EncodeB(msgN)                               // encode msg
-				resN := cluster.Forward(key, msgN)
-				flag := resp.ParseResFlag(resN)
-				if flag != 1 {
-					res = append(res, "")
-				}
-				res = append(res, string(resN[resp.RESPONSE_HEADER_SIZE:]))
-			}
-			return resp.StringArrayResponse(res)
-		}
-		key := req.KEYS[0]
-		return cluster.Forward(key, msg)
+		return forward(icmd, req, msg)
 	}
 
 	// node must be in a cluster
@@ -162,6 +125,47 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 		PersistenceCh <- msg
 	}
 	return finalRes
+}
+
+func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
+	// special process SETM, because SETM has more than one keys
+	if icmd == command.SETM_I {
+		if len(req.KEYS) != len(req.VALS) {
+			return resp.ErrorResponse(errors.New(resp.RES_SYNTAX_ERROR))
+		}
+		// split setm to multi set
+		for i, key := range req.KEYS {
+			reqN := datatype.Req{KEYS: []string{key}, VALS: []string{req.VALS[i]}} // req object
+			reqBytesN, _ := json.Marshal(reqN)                                     // req bytes
+			msgN, _ := proto.EncodeHeader(command.SET_I, 1)                        // msg header
+			msgN = append(msgN, reqBytesN...)                                      // combine msg header and req bytes
+			msgN, _ = proto.EncodeB(msgN)                                          // encode msg
+			cluster.Forward(key, msgN)
+		}
+		return resp.StringResponse(resp.RES_OK)
+	} else if icmd == command.GETM_I {
+		var res []string
+		// split setm to multi set
+		for _, key := range req.KEYS {
+			reqN := datatype.Req{KEYS: []string{key}, VALS: []string{}} // req object
+			reqBytesN, _ := json.Marshal(reqN)                          // req bytes
+			msgN, _ := proto.EncodeHeader(command.GET_I, 1)             // msg header
+			msgN = append(msgN, reqBytesN...)                           // combine msg header and req bytes
+			msgN, _ = proto.EncodeB(msgN)                               // encode msg
+			resN := cluster.Forward(key, msgN)
+			flag := resp.ParseResFlag(resN)
+			if flag != 1 {
+				res = append(res, "")
+			}
+			res = append(res, string(resN[resp.RESPONSE_HEADER_SIZE:]))
+		}
+		return resp.StringArrayResponse(res)
+	} else if icmd == command.KEYS_I {
+		res := forwardKeys(msg)
+		return resp.StringArrayResponse(res)
+	}
+	key := req.KEYS[0]
+	return cluster.Forward(key, msg)
 }
 
 /*
@@ -226,13 +230,13 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 		}
 		finalRes = resp.IntegerResponse(result)
 	} else if icmd == command.KEYS_I {
-		result, err := keys(pieces)
+		result, err := keys(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		finalRes = resp.StringArrayResponse(result)
 	} else {
-		log.Err(errors.New("Invalid cmd:" + string(icmd)))
+		l.Err(errors.New("Invalid cmd:" + string(icmd)))
 		return resp.ErrorResponse(errors.New(consts.RES_INVALID_CMD))
 	}
 	return finalRes

@@ -146,6 +146,14 @@ func GetClusterInfo() Cluster {
 	return *clusterInfo
 }
 
+func GetWorkerLeaders() (workers []Worker){
+	for _, ptn := range partitionInfo{
+		worker := clusterInfo.Wkrs[ptn.LeaderNodeId]
+		workers = append(workers, worker)
+	}
+	return workers
+}
+
 func GetNodeStatus() NodeStatus {
 	return *nodeStatus
 }
