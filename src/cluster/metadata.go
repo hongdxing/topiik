@@ -37,18 +37,18 @@ func LoadControllerMetadata(node *Node) (err error) {
 	clusterPath := GetClusterFilePath()
 	exist, err = util.PathExists(clusterPath)
 	if err != nil {
-		tLog.Panic().Msg(err.Error())
+		l.Panic().Msg(err.Error())
 	}
 	if exist {
-		tLog.Info().Msg("Loading cluster metadata...")
+		l.Info().Msg("Loading cluster metadata...")
 		jsonStr, err := os.ReadFile(clusterPath)
 		if err != nil {
-			tLog.Panic().Msg(err.Error())
+			l.Panic().Msg(err.Error())
 		}
 		err = json.Unmarshal([]byte(jsonStr), &clusterInfo)
 		fmt.Println(clusterInfo)
 		if err != nil {
-			tLog.Panic().Msg(err.Error())
+			l.Panic().Msg(err.Error())
 			//panic(err)
 		}
 	}
@@ -58,25 +58,25 @@ func LoadControllerMetadata(node *Node) (err error) {
 	filePath := GetPatitionFilePath()
 	exist, err = util.PathExists(filePath)
 	if err != nil {
-		tLog.Panic().Msg(err.Error())
+		l.Panic().Msg(err.Error())
 	}
 	if exist {
 		data, err := util.ReadBinaryFile(filePath)
 		if err != nil {
-			tLog.Panic().Msg(err.Error())
+			l.Panic().Msg(err.Error())
 		}
 
 		if err != nil {
-			tLog.Panic().Msg(err.Error())
+			l.Panic().Msg(err.Error())
 		}
 		err = json.Unmarshal(data, &partitionInfo)
 		if err != nil {
-			tLog.Panic().Msg(err.Error())
+			l.Panic().Msg(err.Error())
 		}
 	}
 
 	//
-	tLog.Info().Msgf("Current node role: %d", nodeStatus.Role)
+	l.Info().Msgf("Current node role: %d", nodeStatus.Role)
 	if len(clusterInfo.Ctls) >= 1 {
 		go RequestVote()
 	}
@@ -126,11 +126,16 @@ func AddNode(nodeId string, addr string, addr2 string, role string) (err error) 
 }
 
 func UpdatePendingAppend() {
-	for _, v := range clusterInfo.Ctls {
-		if v.Id != nodeInfo.Id {
-			clusterMetadataPendingAppend[v.Id] = v.Id
+	l.Info().Msg("metadata::UpdatePendingAppend begin")
+	cluUpdCh <- struct{}{}
+	l.Info().Msg("metadata::UpdatePendingAppend end")
+	/*
+		for _, v := range clusterInfo.Ctls {
+			if v.Id != nodeInfo.Id {
+				clusterMetadataPendingAppend[v.Id] = v.Id
+			}
 		}
-	}
+	*/
 }
 
 func IsNodeController() bool {
@@ -146,8 +151,8 @@ func GetClusterInfo() Cluster {
 	return *clusterInfo
 }
 
-func GetWorkerLeaders() (workers []Worker){
-	for _, ptn := range partitionInfo{
+func GetWorkerLeaders() (workers []Worker) {
+	for _, ptn := range partitionInfo {
 		worker := clusterInfo.Wkrs[ptn.LeaderNodeId]
 		workers = append(workers, worker)
 	}

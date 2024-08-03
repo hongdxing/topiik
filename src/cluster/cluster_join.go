@@ -99,11 +99,14 @@ func clusterJoin(pieces []string) (result string, err error) {
 	}
 
 	// cluster meta changed, pending to sync to follower(s)
-	for _, v := range clusterInfo.Ctls {
-		if v.Id != nodeInfo.Id {
-			clusterMetadataPendingAppend[v.Id] = v.Id
+	/*
+		for _, v := range clusterInfo.Ctls {
+			if v.Id != nodeInfo.Id {
+				clusterMetadataPendingAppend[v.Id] = v.Id
+			}
 		}
-	}
+	*/
+	cluUpdCh <- struct{}{}
 	fmt.Println(nodeInfo.ClusterId)
 	return nodeInfo.ClusterId, nil
 }

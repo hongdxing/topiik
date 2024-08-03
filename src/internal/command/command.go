@@ -2,18 +2,18 @@ package command
 
 const (
 	/*** CLUSTER ***/
-	INIT_CLUSTER            = "INIT-CLUSTER"
-	INIT_CLUSTER_I    uint8 = 1
-	SHOW_CLUSTER            = "SHOW-CLUSTER"
-	SHOW_CLUSTER_I    uint8 = 2
-	ADD_NODE                = "ADD-NODE"
-	ADD_NODE_I        uint8 = 3
-	RM_NODE                 = "RM-NODE"
-	RM_NODE_I         uint8 = 4
-	SCALE                   = "SCALE"
-	SCALE_I           uint8 = 5
-	GET_LEADER_ADDR         = "GET-LADDR"
-	GET_LEADER_ADDR_I uint8 = 15
+	INIT_CLUSTER         = "INIT-CLUSTER"
+	INIT_CLUSTER_I uint8 = 1
+	SHOW_CLUSTER         = "SHOW-CLUSTER"
+	SHOW_CLUSTER_I uint8 = 2
+	ADD_NODE             = "ADD-NODE"
+	ADD_NODE_I     uint8 = 3
+	RM_NODE              = "RM-NODE"
+	RM_NODE_I      uint8 = 4
+	SCALE                = "SCALE"
+	SCALE_I        uint8 = 5
+	GET_LADDR            = "GET-LADDR"
+	GET_LADDR_I    uint8 = 15
 
 	/*** String ***/
 	SET          = "SET"

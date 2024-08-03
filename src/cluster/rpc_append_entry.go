@@ -20,7 +20,7 @@ import (
 /*
 * Raft Append Entry
 *
-* Parameter: 
+* Parameter:
 * 	entry: 1 byte of entry type + entry
 *
 *
@@ -28,32 +28,33 @@ import (
 func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 	// In case of multi Leader, if node can receive appendEntry,
 	// and role is RAFT_LEADER, then step back
-	if nodeStatus.Role == RAFT_LEADER {
+	if IsNodeController() && nodeStatus.Role == RAFT_LEADER {
 		nodeStatus.Role = RAFT_FOLLOWER
+		go RequestVote()
 	}
 
 	// update Raft Heartbeat
 	nodeStatus.Heartbeat = uint16(rand.IntN(int(serverConfig.RaftHeartbeatMax-serverConfig.RaftHeartbeatMin))) + serverConfig.RaftHeartbeatMin
 	nodeStatus.HeartbeatAt = time.Now().UnixMilli()
 
-	var entryType int8 // tow bytes of command
+	var entryType int8 // one byte of command
 	if len(entry) >= 1 {
 		entryTypeByte := entry[:1]
 		byteBuf := bytes.NewBuffer(entryTypeByte)
 		err := binary.Read(byteBuf, binary.LittleEndian, &entryType)
 		if err != nil {
-			tLog.Err(err)
+			l.Err(err)
 		}
 
 		if entryType == ENTRY_TYPE_DEFAULT { // append controller address
 			// log.Info().Msgf("appendEntry() Leader addr:%s", string(entry[1:]))
 			nodeStatus.LeaderControllerAddr = string(entry[1:])
 		} else if entryType == ENTRY_TYPE_METADATA { // append cluster metadata
-			tLog.Info().Msg("appendEntry: metadata")
+			l.Info().Msg("appendEntry: metadata")
 			var clusterData = &Cluster{}
 			err := json.Unmarshal(entry[1:], clusterData) // verify
 			if err != nil {
-				tLog.Err(err)
+				l.Err(err)
 				return err
 			}
 			clusterPath := GetClusterFilePath()
@@ -61,21 +62,21 @@ func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 			if exist {
 				err = os.Truncate(clusterPath, 0) // TODO: backup first
 				if err != nil {
-					tLog.Err(err)
+					l.Err(err)
 					return err
 				}
 			}
 			err = os.WriteFile(clusterPath, entry[1:], 0644)
 			if err != nil {
-				tLog.Err(err)
+				l.Err(err)
 				return err
 			}
 		} else if entryType == ENTRY_TYPE_PARTITION {
-			tLog.Info().Msg("appendEntry: partittion")
+			l.Info().Msg("appendEntry: partittion")
 			var partitions = make(map[string]Partition)
 			err := json.Unmarshal(entry[1:], &partitions) // verify
 			if err != nil {
-				tLog.Err(err)
+				l.Err(err)
 				return err
 			}
 			filePath := GetPatitionFilePath()
@@ -85,7 +86,7 @@ func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 			}
 			err = util.WriteBinaryFile(filePath, entry[1:])
 			if err != nil {
-				tLog.Err(err)
+				l.Err(err)
 				return err
 			}
 		}

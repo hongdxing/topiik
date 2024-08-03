@@ -30,10 +30,9 @@ type NodeSlim struct {
 }
 
 type Worker struct {
-	Id       string
-	Addr     string
-	Addr2    string
-	LeaderId string // Partition Leader Node Id
+	Id    string
+	Addr  string
+	Addr2 string
 }
 
 type Slot struct {
@@ -55,5 +54,5 @@ type NodeStatus struct {
 	Term                 uint   // Raft term
 	Heartbeat            uint16 // Raft heartbeat timeout
 	HeartbeatAt          int64  // The UTC milli seconds when heartbeat received from Leader
-	LeaderControllerAddr string // Leader Controller updated by append entry
+	LeaderControllerAddr string // Leader Controller updated by append entry, for redirect to Cluster Leader
 }

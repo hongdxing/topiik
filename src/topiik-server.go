@@ -48,12 +48,14 @@ func main() {
 	// Start routines
 	if !cluster.IsNodeController() {
 		persistence.Load()
+		go persistence.Persist() // persist
+		go persistence.Sync()    // sync from Partition Leader
 	}
-	go persistence.Persist()
+
 	go cluster.StartServer(serverConfig.Host+":"+serverConfig.PORT2, serverConfig)
 
 	// Accept incoming connections and handle them
-	l.Info().Msgf("Listen to address %s\n", serverConfig.Listen)
+	l.Info().Msgf("Listen to address %s", serverConfig.Listen)
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -72,7 +74,6 @@ func handleConnection(conn net.Conn) {
 	reader := bufio.NewReader(conn)
 
 	for {
-		//cmd, err := proto.Decode(reader)
 		msg, err := proto.Decode(reader)
 		if err != nil {
 			if err == io.EOF {

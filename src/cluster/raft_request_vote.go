@@ -21,8 +21,6 @@ import (
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/resp"
-
-	"github.com/rs/zerolog/log"
 )
 
 var voteMeResults []string // Return values from other Nodes, "R": Rejected or "A": Accepted
@@ -36,6 +34,9 @@ const requestVoteInterval = 100
 ** Follower(s) issue RequestVote RPCs to Controller(s) and Worker(s) to request for votes.
 **/
 func RequestVote() {
+	if nodeStatus.Role == RAFT_LEADER {
+		return
+	}
 
 	if len(clusterInfo.Ctls) == 0 {
 		return
@@ -63,10 +64,6 @@ func RequestVote() {
 			}
 			continue
 		}
-		// need workers to Vote
-		/*if len(workerMap) == 0 {
-			continue
-		}*/
 		// merge controller and woker address2
 		var addr2List = []string{}
 		for _, v := range clusterInfo.Ctls {
@@ -83,7 +80,7 @@ func RequestVote() {
 			go voteMe(addr) // use address2 for Voting
 		}
 		wgRequestVote.Wait()
-		//fmt.Println(voteMeResults)
+		fmt.Println(voteMeResults)
 		for _, s := range voteMeResults {
 			strs := strings.Split(s, ":")
 			if len(strs) != 2 {
@@ -91,7 +88,7 @@ func RequestVote() {
 			}
 			if strings.Compare(strs[0], VOTE_REJECTED) == 0 {
 				if strings.Compare(strs[1], "L") == 0 {
-					//nodeStatus.Role = ROLE_FOLLOWER
+					nodeStatus.Role = RAFT_FOLLOWER
 					break
 				}
 			} else if strings.Compare(strs[0], "A") == 0 {
@@ -111,13 +108,12 @@ func RequestVote() {
 			// promote to Controller
 			nodeStatus.Role = RAFT_LEADER
 
-			// when new Leader selected, try to sync cluster meta data
-			UpdatePendingAppend()
-
 			// Leader start to AppendEntries
 			go AppendEntries()
+			// when new Leader selected, try to sync cluster meta data
+			UpdatePendingAppend()
 			// Print Selected Leader
-			log.Info().Msgf("[TOPIIK] ~!~ selected as new leader")
+			l.Info().Msgf("[TOPIIK] ~!~ selected as new leader")
 			// Leader no RequestVote, quite RequestVote
 			break
 		} else {
@@ -145,25 +141,28 @@ func voteMe(address string) {
 	// Enocde
 	data, err := proto.EncodeB(cmdBytes)
 	if err != nil {
-		fmt.Println(err)
+		l.Err(err).Msg(err.Error())
+		return
 	}
 
 	// Send
 	_, err = conn.Write(data)
 	if err != nil {
-		fmt.Println(err)
+		l.Err(err).Msg(err.Error())
+		return
 	}
 
 	reader := bufio.NewReader(conn)
 	buf, err := proto.Decode(reader)
-	if len(buf) < resp.RESPONSE_HEADER_SIZE {
-		fmt.Printf("invalid len(buf):%v\n", len(buf))
-		return
-	}
 	if err != nil {
 		if err == io.EOF {
-			fmt.Printf("raft_request_vote::voteMe %s\n", err)
+			l.Err(err).Msgf("raft_request_vote::voteMe %s", err)
 		}
+		return
+	}
+	if len(buf) < resp.RESPONSE_HEADER_SIZE {
+		l.Err(err).Msgf("raft_request_vote::voteMe invalid len(buf):%v", len(buf))
+		return
 	}
 	voteMeResults = append(voteMeResults, string(buf[resp.RESPONSE_HEADER_SIZE:]))
 }

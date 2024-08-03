@@ -34,7 +34,7 @@ func Forward(key string, msg []byte) []byte {
 	// find worker base on key partition, and get LeaderWorkerId
 	targetWorker := getWorker(key)
 	if len(targetWorker.Id) == 0 {
-		tLog.Warn().Msg("forward::Forward no slot available")
+		l.Warn().Msg("forward::Forward no slot available")
 		return resp.ErrorResponse(errors.New(resp.RES_NO_PARTITION))
 	}
 
@@ -43,7 +43,7 @@ func Forward(key string, msg []byte) []byte {
 		//conn, err = util.PreapareSocketClientWithPort(targetWorker.Addr, CONTROLLER_FORWORD_PORT)
 		conn, err = util.PreapareSocketClient(targetWorker.Addr)
 		if err != nil {
-			tLog.Err(err).Msg(err.Error())
+			l.Err(err).Msg(err.Error())
 			return resp.ErrorResponse(errors.New(resp.RES_CONN_RESET))
 		}
 		tcpMap[targetWorker.Id] = conn
@@ -51,16 +51,16 @@ func Forward(key string, msg []byte) []byte {
 	// Send
 	_, err = conn.Write(msg)
 	if err != nil {
-		tLog.Err(err).Msg(err.Error())
+		l.Err(err).Msg(err.Error())
 		if _, ok = tcpMap[targetWorker.Id]; ok {
-			tLog.Warn().Msgf("forward::Forward remove tcp cache of worker %s", targetWorker.Id)
+			l.Warn().Msgf("forward::Forward remove tcp cache of worker %s", targetWorker.Id)
 			delete(tcpMap, targetWorker.Id)
 		}
 		// try reconnect
 		targetWorker := getWorker(key) // the worker may changed because of Worker Leader fail
 		conn, err = util.PreapareSocketClient(targetWorker.Addr)
 		if err != nil {
-			tLog.Err(err).Msg(err.Error())
+			l.Err(err).Msg(err.Error())
 			return resp.ErrorResponse(errors.New(resp.RES_CONN_RESET))
 		}
 		conn.Write(msg)
@@ -100,7 +100,7 @@ func ForwardByWorker(targetWorker Worker, msg []byte) []byte {
 	if !ok {
 		conn, err = util.PreapareSocketClient(targetWorker.Addr)
 		if err != nil {
-			tLog.Err(err).Msg(err.Error())
+			l.Err(err).Msg(err.Error())
 			return resp.ErrorResponse(errors.New(resp.RES_CONN_RESET))
 		}
 		tcpMap[targetWorker.Id] = conn
@@ -108,16 +108,16 @@ func ForwardByWorker(targetWorker Worker, msg []byte) []byte {
 	// Send
 	_, err = conn.Write(msg)
 	if err != nil {
-		tLog.Err(err).Msg(err.Error())
+		l.Err(err).Msg(err.Error())
 		if _, ok = tcpMap[targetWorker.Id]; ok {
-			tLog.Warn().Msgf("forward::Forward remove tcp cache of worker %s", targetWorker.Id)
+			l.Warn().Msgf("forward::Forward remove tcp cache of worker %s", targetWorker.Id)
 			delete(tcpMap, targetWorker.Id)
 		}
 		// try reconnect
 		//targetWorker := getWorker(key) // the worker may changed because of Worker Leader fail
 		conn, err = util.PreapareSocketClient(targetWorker.Addr)
 		if err != nil {
-			tLog.Err(err).Msg(err.Error())
+			l.Err(err).Msg(err.Error())
 			return resp.ErrorResponse(errors.New(resp.RES_CONN_RESET))
 		}
 		conn.Write(msg)

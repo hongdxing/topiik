@@ -1,10 +1,13 @@
-/***
-** author: duan hongxing
-** data: 3 Jul 2024
-** desc:
-**	The interal server run on port: configured port + 10000,
-**	The server is for Raft rpc
-**/
+/*
+* author: duan hongxing
+* data: 3 Jul 2024
+* desc:
+*	The interal server run on port: configured port + 10000,
+*	The server accept:
+*	- Raft rpc
+*	- Cluster add node
+*	- Worker request for information
+ */
 
 package cluster
 
@@ -15,10 +18,7 @@ import (
 	"net"
 	"topiik/internal/config"
 	"topiik/internal/proto"
-	"topiik/logger"
 )
-
-var tLog = logger.Get()
 
 func StartServer(address string, serverConfig *config.ServerConfig) {
 	// Listen for incoming connections

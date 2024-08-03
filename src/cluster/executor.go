@@ -76,6 +76,13 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringResponse("")
+	} else if icmd == RPC_GET_PL { // worker rpc to get partition leader addr2
+		pieces := strings.Split(string(dataBytes), consts.SPACE)
+		res, err := getPartitionLeader(pieces)
+		if err != nil {
+			return resp.ErrorResponse(err)
+		}
+		return resp.StringResponse(res)
 	}
 	return resp.ErrorResponse(errors.New(consts.RES_INVALID_CMD))
 }

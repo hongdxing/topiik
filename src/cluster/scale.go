@@ -60,12 +60,12 @@ func Scale(p int, r int) (result string, err error) {
 	filePath := GetPatitionFilePath()
 	data, err := json.Marshal(partitionInfo)
 	if err != nil {
-		tLog.Err(err).Msgf("scale: %s", err.Error())
+		l.Err(err).Msgf("scale: %s", err.Error())
 		return "", err
 	}
 	err = util.WriteBinaryFile(filePath, data)
 	if err != nil {
-		tLog.Err(err).Msgf("scale: %s", err.Error())
+		l.Err(err).Msgf("scale: %s", err.Error())
 		return "", err
 	}
 
@@ -75,11 +75,14 @@ func Scale(p int, r int) (result string, err error) {
 	UpdatePendingAppend()
 
 	// sync partition info to controllers
-	for _, v := range clusterInfo.Ctls {
-		if v.Id != nodeInfo.Id {
-			partitionMetadataPendingAppend[v.Id] = v.Id
+	/*
+		for _, v := range clusterInfo.Ctls {
+			if v.Id != nodeInfo.Id {
+				partitionMetadataPendingAppend[v.Id] = v.Id
+			}
 		}
-	}
+	*/
+	ptnUpdCh <- struct{}{}
 
 	return resp.RES_OK, nil
 }

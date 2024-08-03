@@ -20,13 +20,14 @@ import (
 )
 
 var ticker *time.Ticker
-var quit chan struct{}
+var cluUpdCh chan struct{}
+var ptnUpdCh chan struct{}
 
 //var wgAppend sync.WaitGroup
 
 // indicate metadata changed on controller Leader, need to sync to Follower(s)
-var clusterMetadataPendingAppend = make(map[string]string)   // the controller id, id
-var partitionMetadataPendingAppend = make(map[string]string) // the controller id, id
+//var clusterMetadataPendingAppend = make(map[string]string)   // the controller id, id
+//var partitionMetadataPendingAppend = make(map[string]string) // the controller id, id
 
 var connCache = make(map[string]*net.TCPConn)
 
@@ -37,21 +38,78 @@ var connCache = make(map[string]*net.TCPConn)
 **/
 func AppendEntries() {
 	ticker = time.NewTicker(200 * time.Millisecond)
-	quit = make(chan struct{})
+	cluUpdCh = make(chan struct{})
+	ptnUpdCh = make(chan struct{})
 
-	dialErrorCounter := 0 // this not 'thread' safe, but it's not important
+	//dialErrorCounter := 0 // this not 'thread' safe, but it's not important
 	for {
 		select {
 		case <-ticker.C:
-			go appendWorkers(&dialErrorCounter)
-			appendControllers(&dialErrorCounter)
-		case <-quit:
-			ticker.Stop()
-			return
+			//go appendWorkers(&dialErrorCounter)
+			//appendControllers(&dialErrorCounter)
+			appendHeartbeat()
+		case <-cluUpdCh:
+			appendClusterInfo()
+		case <-ptnUpdCh:
+			appendPartitionInfo()
 		}
 	}
 }
 
+func appendClusterInfo() {
+	var buf []byte
+	var byteBuf = new(bytes.Buffer)
+	data, err := json.Marshal(clusterInfo)
+	if err != nil {
+		l.Err(err).Msg(err.Error())
+	} else {
+		binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_METADATA)
+		buf = append(buf, byteBuf.Bytes()...)
+		buf = append(buf, data...)
+		for _, controller := range clusterInfo.Ctls {
+			if controller.Id == nodeInfo.Id {
+				continue
+			}
+			send(controller.Addr2, controller.Id, buf)
+		}
+	}
+}
+
+func appendPartitionInfo() {
+	var buf []byte
+	var byteBuf = new(bytes.Buffer)
+	data, err := json.Marshal(partitionInfo)
+	if err != nil {
+		l.Err(err).Msg(err.Error())
+	} else {
+		binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_PARTITION)
+		buf = append(buf, byteBuf.Bytes()...)
+		buf = append(buf, data...)
+		for _, controller := range clusterInfo.Ctls {
+			if controller.Id == nodeInfo.Id {
+				continue
+			}
+			send(controller.Addr2, controller.Id, buf)
+		}
+	}
+}
+
+func appendHeartbeat() {
+	for _, controller := range clusterInfo.Ctls {
+		if controller.Id == nodeInfo.Id {
+			continue
+		}
+		send(controller.Addr2, controller.Id, []byte{})
+	}
+	for _, worker := range clusterInfo.Wkrs {
+		if worker.Id == nodeInfo.Id {
+			continue
+		}
+		send(worker.Addr2, worker.Id, []byte{})
+	}
+}
+
+/*
 func appendControllers(dialErrorCounter *int) {
 	for _, controller := range clusterInfo.Ctls {
 		if controller.Id == nodeInfo.Id {
@@ -71,8 +129,73 @@ func appendWorkers(dialErrorCounter *int) {
 		//wgAppend.Wait()
 	}
 }
+*/
 
-func send(isController bool, destAddr string, nodeId string, dialErrorCounter *int) string {
+func send(destAddr string, nodeId string, data []byte) string {
+
+	var err error
+	var conn *net.TCPConn
+
+	if v, ok := connCache[nodeId]; ok {
+		conn = v
+	}
+	if conn == nil {
+		conn, err = util.PreapareSocketClient(destAddr)
+		if err != nil {
+			return ""
+		}
+		connCache[nodeId] = conn
+	}
+
+	var rpcBuf []byte
+	var byteBuf = new(bytes.Buffer) // int to byte byte buf
+	// 1 bytes of command + 1 byte of entry type + the entry
+	binary.Write(byteBuf, binary.LittleEndian, RPC_APPENDENTRY)
+	rpcBuf = append(rpcBuf, byteBuf.Bytes()...)
+
+	if len(data) > 0 {
+		rpcBuf = append(rpcBuf, data...)
+	}
+
+	if len(rpcBuf) == 1 { // means no data, then append controller's addr
+		byteBuf.Reset()
+		binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_DEFAULT)
+		rpcBuf = append(rpcBuf, byteBuf.Bytes()...)
+		rpcBuf = append(rpcBuf, []byte(nodeInfo.Addr)...)
+	}
+
+	// Enocde
+	req, err := proto.EncodeB(rpcBuf)
+	if err != nil {
+		l.Err(err)
+	}
+
+	// Send
+	_, err = conn.Write(req)
+	if err != nil {
+		l.Err(err)
+		if conn, ok := connCache[nodeId]; ok {
+			conn.Close()
+			conn = nil
+			l.Warn().Msg("raft_append_entries::send Delete connCache")
+			delete(connCache, nodeId)
+		}
+
+		return ""
+	}
+
+	reader := bufio.NewReader(conn)
+	buf, err := proto.Decode(reader)
+	if err != nil {
+		if err == io.EOF {
+			l.Err(err).Msgf("rpc_append_entries::send %s\n", err)
+		}
+	}
+	return string(buf)
+}
+
+/*
+func send1(isController bool, destAddr string, nodeId string, dialErrorCounter *int) string {
 	defer func() {
 		*dialErrorCounter++
 		if *dialErrorCounter >= 10000 {
@@ -91,7 +214,7 @@ func send(isController bool, destAddr string, nodeId string, dialErrorCounter *i
 		conn, err = util.PreapareSocketClient(destAddr)
 		if err != nil {
 			if *dialErrorCounter%50 == 0 {
-				tLog.Err(err)
+				l.Err(err)
 			}
 			return ""
 		}
@@ -109,7 +232,7 @@ func send(isController bool, destAddr string, nodeId string, dialErrorCounter *i
 			byteBuf.Reset()
 			buf, err := json.Marshal(clusterInfo)
 			if err != nil {
-				tLog.Err(err).Msg(err.Error())
+				l.Err(err).Msg(err.Error())
 			} else {
 				binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_METADATA)
 				cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
@@ -119,7 +242,7 @@ func send(isController bool, destAddr string, nodeId string, dialErrorCounter *i
 			byteBuf.Reset()
 			buf, err := json.Marshal(partitionInfo)
 			if err != nil {
-				tLog.Err(err).Msg(err.Error())
+				l.Err(err).Msg(err.Error())
 			} else {
 				binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_PARTITION)
 				cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
@@ -138,17 +261,17 @@ func send(isController bool, destAddr string, nodeId string, dialErrorCounter *i
 	// Enocde
 	data, err := proto.EncodeB(cmdBytes)
 	if err != nil {
-		tLog.Err(err)
+		l.Err(err)
 	}
 
 	// Send
 	_, err = conn.Write(data)
 	if err != nil {
-		tLog.Err(err)
+		l.Err(err)
 		if conn, ok := connCache[nodeId]; ok {
 			conn.Close()
 			conn = nil
-			tLog.Warn().Msg("raft_append_entries::send Delete connCache")
+			l.Warn().Msg("raft_append_entries::send Delete connCache")
 			delete(connCache, nodeId)
 		}
 
@@ -159,7 +282,7 @@ func send(isController bool, destAddr string, nodeId string, dialErrorCounter *i
 	buf, err := proto.Decode(reader)
 	if err != nil {
 		if err == io.EOF {
-			tLog.Err(err).Msgf("rpc_append_entries::send %s\n", err)
+			l.Err(err).Msgf("rpc_append_entries::send %s\n", err)
 		}
 	}
 	// remove the pending conroller id from Pending map
@@ -167,3 +290,4 @@ func send(isController bool, destAddr string, nodeId string, dialErrorCounter *i
 	delete(partitionMetadataPendingAppend, nodeId)
 	return string(buf)
 }
+*/

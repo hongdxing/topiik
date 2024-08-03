@@ -49,8 +49,6 @@ func SelfCheck() (err error) {
 		file.Close()
 	} else {
 		// need check node file exists or not ?
-		
-
 	}
 
 	if err != nil {

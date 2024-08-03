@@ -47,7 +47,7 @@ func vote(cTerm int) string {
 	}
 
 	// (lastTermV > lastTermC) || ((lastTermV == lastTermC) && (lastIndexV > lastIndexC))
-	if nodeStatus.Term > uint(cTerm) {
+	if clusterInfo.Ver > uint(cTerm) {
 		return VOTE_REJECTED + ":T"
 	} else {
 		return VOTE_ACCEPTED + ":A"

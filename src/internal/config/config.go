@@ -13,9 +13,12 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"topiik/logger"
 
 	"github.com/spf13/viper"
 )
+
+var l = logger.Get()
 
 type envConfig struct {
 	Listen     string
@@ -44,16 +47,16 @@ func ParseServerConfig(configPath string) (*ServerConfig, error) {
 	serverConfig := ServerConfig{}
 	theConfigPath := "server.env"
 	if configPath != "" {
-		_, error := os.Stat(configPath)
-		if error != nil {
-			fmt.Printf("config file %s not exists\n", configPath)
+		_, err := os.Stat(configPath)
+		if err != nil {
+			l.Err(err).Msgf("config file %s not exists\n", configPath)
 			return nil, errors.New("config file not exist: " + configPath)
 		}
 		theConfigPath = configPath
 	}
 	viper.SetConfigFile(theConfigPath)
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Printf("Error reading config file %s, %s\n", theConfigPath, err)
+		l.Err(err).Msgf("Error reading config file %s, %s", theConfigPath, err)
 	}
 
 	err := viper.Unmarshal(&config)
@@ -61,7 +64,7 @@ func ParseServerConfig(configPath string) (*ServerConfig, error) {
 		fmt.Println(err)
 	}
 
-	fmt.Printf("Using config file: %s\n", theConfigPath)
+	l.Info().Msgf("Using config file: %s", theConfigPath)
 
 	serverConfig.Listen = config.Listen
 	serverConfig.SaveMillis = config.SaveMillis

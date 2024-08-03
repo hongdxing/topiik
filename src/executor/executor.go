@@ -83,7 +83,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringResponse(result)
-	} else if icmd == command.GET_LEADER_ADDR_I {
+	} else if icmd == command.GET_LADDR_I {
 		l.Info().Msg("get controller address")
 		var address string
 		if cluster.GetNodeStatus().Role == cluster.RAFT_LEADER { // if is leader, then just return leader's address
