@@ -40,6 +40,12 @@ type Slot struct {
 	To   uint16
 }
 
+type PartitionInfo struct {
+	Ptns   uint16 // number of partitions, given parameter when INIT a cluster
+	Rpls   uint16 // number of replicas, recommend 3 relicas at most, given parameter when INIT a cluster
+	PtnMap map[string]Partition
+}
+
 type Partition struct {
 	Id           string          // Id of the partition, random 16 alphnum
 	LeaderNodeId string          // The Node Id where the Leader Partition located

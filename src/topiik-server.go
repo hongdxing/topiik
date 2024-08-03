@@ -10,6 +10,7 @@ import (
 	"topiik/cluster"
 	"topiik/executor"
 	"topiik/internal/config"
+	"topiik/internal/consts"
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/logger"
@@ -147,7 +148,7 @@ func initNode() (err error) {
 	if !exist {
 		l.Info().Msg("creating node file...")
 
-		node.Id = util.RandStringRunes(16)
+		node.Id = util.RandStringRunes(consts.NODE_ID_LEN)
 		buf, _ = json.Marshal(node)
 		err = os.WriteFile(nodeFile, buf, 0644)
 		if err != nil {

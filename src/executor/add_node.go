@@ -12,7 +12,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"regexp"
 	"strings"
 	"topiik/cluster"
@@ -52,7 +51,7 @@ func addNode(req datatype.Req) (result string, err error) {
 	nodeAddr2 := addrSplit[0] + ":" + addrSplit[2]
 	conn, err := util.PreapareSocketClient(nodeAddr2)
 	if err != nil {
-		return "", errors.New("failed, please check whether captial node still alive and try again")
+		return "", errors.New(resp.RES_NODE_NA)
 	}
 	defer conn.Close()
 
@@ -66,13 +65,13 @@ func addNode(req datatype.Req) (result string, err error) {
 
 	data, err := proto.EncodeB(cmdBytes)
 	if err != nil {
-		fmt.Println(err)
+		l.Err(err).Msg(err.Error())
 	}
 
 	// Send
 	_, err = conn.Write(data)
 	if err != nil {
-		fmt.Println(err)
+		l.Err(err).Msg(err.Error())
 	}
 
 	reader := bufio.NewReader(conn)
@@ -82,8 +81,8 @@ func addNode(req datatype.Req) (result string, err error) {
 	var flag int8
 	err = binary.Read(flagBuff, binary.LittleEndian, &flag)
 	if err != nil {
-		fmt.Println(err)
-		return "", errors.New("join to cluster failed")
+		l.Err(err).Msg(err.Error())
+		return "", errors.New("add node failed")
 	}
 	resp := string(buf[resp.RESPONSE_HEADER_SIZE:])
 

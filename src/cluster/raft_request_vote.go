@@ -80,7 +80,7 @@ func RequestVote() {
 			go voteMe(addr) // use address2 for Voting
 		}
 		wgRequestVote.Wait()
-		fmt.Println(voteMeResults)
+		//fmt.Println(voteMeResults)
 		for _, s := range voteMeResults {
 			strs := strings.Split(s, ":")
 			if len(strs) != 2 {

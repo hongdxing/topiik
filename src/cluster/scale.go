@@ -10,6 +10,8 @@ package cluster
 import (
 	"encoding/json"
 	"errors"
+	"os"
+	"topiik/internal/consts"
 	"topiik/internal/util"
 	"topiik/resp"
 )
@@ -19,7 +21,7 @@ func Scale(p int, r int) (result string, err error) {
 	if len(clusterInfo.Wkrs) < p*r || p > SLOTS {
 		return "", errors.New(resp.RES_NO_ENOUGH_WORKER)
 	}
-	if len(partitionInfo) == 0 { // new cluster
+	if len(partitionInfo.PtnMap) == 0 { // new cluster
 		keys := make([]string, 0, len(clusterInfo.Wkrs))
 		for k := range clusterInfo.Wkrs {
 			keys = append(keys, k)
@@ -27,7 +29,7 @@ func Scale(p int, r int) (result string, err error) {
 
 		for i := 0; i < int(p); i++ {
 			works := keys[i*r : (i+1)*r] // 2*2--> i==0: [0:2], i==1: [2:4]
-			pId := util.RandStringRunes(16)
+			pId := util.RandStringRunes(consts.PTN_ID_LEN)
 			partition := Partition{
 				Id:           pId,
 				LeaderNodeId: works[0],
@@ -49,20 +51,31 @@ func Scale(p int, r int) (result string, err error) {
 			}
 			slot := Slot{From: uint16(from), To: uint16(to)}
 			partition.Slots = []Slot{slot}
-			partitionInfo[pId] = partition
+			partitionInfo.Ptns = uint16(p)
+			partitionInfo.Rpls = uint16(r)
+			partitionInfo.PtnMap[pId] = partition
 		}
-	} else if p > len(partitionInfo) { // scale out
+	} else if p > len(partitionInfo.PtnMap) { // scale out
 		//
 	} else { // scale in
 		//
 	}
 	// persist
 	filePath := GetPatitionFilePath()
+	exist, err := util.PathExists(filePath)
+	if err != nil {
+		l.Err(err).Msgf("scale: %s", err.Error())
+		return "", err
+	}
+	if exist { // rename to old for backup
+		os.Rename(filePath, filePath+"old")
+	}
 	data, err := json.Marshal(partitionInfo)
 	if err != nil {
 		l.Err(err).Msgf("scale: %s", err.Error())
 		return "", err
 	}
+
 	err = util.WriteBinaryFile(filePath, data)
 	if err != nil {
 		l.Err(err).Msgf("scale: %s", err.Error())
@@ -70,19 +83,10 @@ func Scale(p int, r int) (result string, err error) {
 	}
 
 	// update cluster info
-	clusterInfo.Ptns = uint16(p)
-	clusterInfo.Rpls = uint16(r)
-	UpdatePendingAppend()
-
-	// sync partition info to controllers
-	/*
-		for _, v := range clusterInfo.Ctls {
-			if v.Id != nodeInfo.Id {
-				partitionMetadataPendingAppend[v.Id] = v.Id
-			}
-		}
-	*/
-	ptnUpdCh <- struct{}{}
+	//clusterInfo.Ptns = uint16(p)
+	//clusterInfo.Rpls = uint16(r)
+	//UpdatePendingAppend()  // sync cluster info to followers
+	ptnUpdCh <- struct{}{} // sync partition to followers
 
 	return resp.RES_OK, nil
 }

@@ -27,7 +27,7 @@ func Forward(key string, msg []byte) []byte {
 		//return res
 		return resp.ErrorResponse(errors.New(resp.RES_NO_ENOUGH_WORKER))
 	}
-	if len(partitionInfo) == 0 {
+	if len(partitionInfo.PtnMap) == 0 {
 		return resp.ErrorResponse(errors.New(resp.RES_NO_PARTITION))
 	}
 	var err error
@@ -80,7 +80,7 @@ func getWorker(key string) (worker Worker) {
 	var keyHash = crc32.Checksum([]byte(key), crc32.IEEETable)
 	keyHash = keyHash % SLOTS
 	//fmt.Printf("key hash %v\n", keyHash)
-	for _, partition := range partitionInfo {
+	for _, partition := range partitionInfo.PtnMap {
 		for _, slot := range partition.Slots {
 			if slot.From <= uint16(keyHash) && slot.To >= uint16(keyHash) {
 				worker = clusterInfo.Wkrs[partition.LeaderNodeId]

@@ -19,7 +19,9 @@ import (
 // var metadata = Metadata{}
 var nodeInfo *Node
 var clusterInfo = &Cluster{Ctls: make(map[string]NodeSlim), Wkrs: make(map[string]Worker)}
-var partitionInfo = make(map[string]Partition)
+
+// var partitionInfo = make(map[string]Partition)
+var partitionInfo = &PartitionInfo{PtnMap: make(map[string]Partition)}
 var nodeStatus = &NodeStatus{Role: RAFT_FOLLOWER, Term: 0}
 
 //var slots = make(map[uint16]string)
@@ -129,13 +131,6 @@ func UpdatePendingAppend() {
 	l.Info().Msg("metadata::UpdatePendingAppend begin")
 	cluUpdCh <- struct{}{}
 	l.Info().Msg("metadata::UpdatePendingAppend end")
-	/*
-		for _, v := range clusterInfo.Ctls {
-			if v.Id != nodeInfo.Id {
-				clusterMetadataPendingAppend[v.Id] = v.Id
-			}
-		}
-	*/
 }
 
 func IsNodeController() bool {
@@ -152,7 +147,7 @@ func GetClusterInfo() Cluster {
 }
 
 func GetWorkerLeaders() (workers []Worker) {
-	for _, ptn := range partitionInfo {
+	for _, ptn := range partitionInfo.PtnMap {
 		worker := clusterInfo.Wkrs[ptn.LeaderNodeId]
 		workers = append(workers, worker)
 	}
@@ -167,6 +162,7 @@ func GetNodeStatus() NodeStatus {
 func GetClusterFilePath() string {
 	return util.GetMainPath() + slash + dataDIR + slash + "__metadata_cluster__"
 }
+
 func GetNodeFilePath() string {
 	return util.GetMainPath() + slash + dataDIR + slash + "__metadata_node__"
 }

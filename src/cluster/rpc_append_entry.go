@@ -50,7 +50,7 @@ func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 			// log.Info().Msgf("appendEntry() Leader addr:%s", string(entry[1:]))
 			nodeStatus.LeaderControllerAddr = string(entry[1:])
 		} else if entryType == ENTRY_TYPE_METADATA { // append cluster metadata
-			l.Info().Msg("appendEntry: metadata")
+			l.Info().Msg("rpc_append_entry::appendEntry metadata begin")
 			var clusterData = &Cluster{}
 			err := json.Unmarshal(entry[1:], clusterData) // verify
 			if err != nil {
@@ -71,24 +71,27 @@ func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 				l.Err(err)
 				return err
 			}
+			l.Info().Msg("rpc_append_entry::appendEntry metadata end")
 		} else if entryType == ENTRY_TYPE_PARTITION {
-			l.Info().Msg("appendEntry: partittion")
-			var partitions = make(map[string]Partition)
-			err := json.Unmarshal(entry[1:], &partitions) // verify
+			l.Info().Msg("rpc_append_entry::appendEntry partittion begin")
+			var ptnInfo PartitionInfo
+			err := json.Unmarshal(entry[1:], &ptnInfo) // verify
 			if err != nil {
-				l.Err(err)
+				l.Err(err).Msg(err.Error())
 				return err
 			}
+			partitionInfo = &ptnInfo
 			filePath := GetPatitionFilePath()
 			exist, _ := util.PathExists(filePath)
 			if exist {
-				os.Remove(filePath) //TODO: move to archive
+				os.Rename(filePath, filePath+"old") // rename
 			}
 			err = util.WriteBinaryFile(filePath, entry[1:])
 			if err != nil {
-				l.Err(err)
+				l.Err(err).Msg(err.Error())
 				return err
 			}
+			l.Info().Msg("rpc_append_entry::appendEntry partittion end")
 		}
 	}
 

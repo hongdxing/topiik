@@ -27,11 +27,7 @@ const (
 
 // relate to Response
 const (
-	RES_INVALID_ADDR    = "INVALID_ADDR"
-	RES_INVALID_CMD     = "INVALID_CMD"
-	RES_CONNECT_REFUSED = "CONNECT_REFUSED"
-
-	RES_INVLID_OP_ON_WORKER = "INVLID_OP_ON_WORKER"
+	RES_INVALID_CMD = "INVALID_CMD"
 )
 
 const (
@@ -41,4 +37,9 @@ const (
 const (
 	SLASH    = string(os.PathSeparator)
 	DATA_DIR = "data"
+)
+
+const (
+	NODE_ID_LEN = 10
+	PTN_ID_LEN  = 10
 )

@@ -111,7 +111,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 
 	// node must be in a cluster
 	if len(cluster.GetNodeInfo().ClusterId) == 0 {
-		return resp.ErrorResponse(errors.New("current node not member of cluster"))
+		return resp.ErrorResponse(errors.New(resp.RES_NO_CLUSTER))
 	}
 	// allow cmd only from Controller Leader, and TODO: allow from Partition Leader
 	err = srcFilter(srcAddr)

@@ -19,7 +19,7 @@ func getPartitionLeader(pieces []string) (res string, err error) {
 	nodeId := pieces[0]
 	var ptnLeaderId string
 	// get partition leader id
-	for _, ptn := range partitionInfo {
+	for _, ptn := range partitionInfo.PtnMap {
 		if _, ok := ptn.NodeSet[nodeId]; ok {
 			ptnLeaderId = ptn.LeaderNodeId
 			break
@@ -30,8 +30,9 @@ func getPartitionLeader(pieces []string) (res string, err error) {
 	}
 	// get worker use the partition leader id
 	if worker, ok := clusterInfo.Wkrs[ptnLeaderId]; ok {
-		return worker.Addr2, nil
+		// return partition leader node id + addr2
+		// when the follow get this string, can use fix lenght worker node id to split it
+		return worker.Id + worker.Addr2, nil
 	}
 	return "", errors.New(resp.RES_NIL)
-
 }

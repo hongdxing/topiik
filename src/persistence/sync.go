@@ -11,8 +11,8 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"io"
+	"net"
 	"time"
 	"topiik/cluster"
 	"topiik/internal/proto"
@@ -21,14 +21,16 @@ import (
 )
 
 var ticker *time.Ticker
+var ptnLeaderId string
 var ptnLeaderAddr string
+var conn *net.TCPConn
 
 func Sync() {
 	ticker = time.NewTicker(1 * time.Second)
 
 	for {
 		<-ticker.C
-		if cluster.GetNodeInfo().Id == ptnLeaderAddr { // if current node is Leader, do nothing
+		if cluster.GetNodeInfo().Id == ptnLeaderId { // if current node is Leader, do nothing
 			break
 		}
 		doSync()
@@ -37,9 +39,22 @@ func Sync() {
 }
 
 func doSync() {
+	//l.Info().Msg("doSync")
 	if len(ptnLeaderAddr) == 0 {
 		getPartitionLeader()
 	}
+	var err error
+	if conn == nil {
+		conn, err = util.PreapareSocketClient(ptnLeaderAddr)
+		if err != nil {
+			l.Err(err).Msg(err.Error())
+			ptnLeaderId = ""
+			ptnLeaderAddr = ""
+			return
+		}
+	}
+	
+	
 }
 
 /*
@@ -101,10 +116,12 @@ func getPartitionLeader() {
 	var flag int8
 	err = binary.Read(byteBuf, binary.LittleEndian, &flag)
 	if err != nil {
-		fmt.Println("(err):")
+		l.Err(err).Msg(err.Error())
 	}
 	if flag == 1 {
-		ptnLeaderAddr = string(buf[resp.RESPONSE_HEADER_SIZE:])
+		idAndAddr2 := string(buf[resp.RESPONSE_HEADER_SIZE:])
+		ptnLeaderId = idAndAddr2[:10]
+		ptnLeaderAddr = idAndAddr2[10:]
 	}
-	l.Info().Msgf("sync::getPartitionLeader new ptnleaderAddr: %s", ptnLeaderAddr)
+	l.Info().Msgf("sync::getPartitionLeader id, addr2: %s, %s", ptnLeaderId, ptnLeaderAddr)
 }
