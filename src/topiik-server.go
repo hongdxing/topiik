@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -10,10 +9,9 @@ import (
 	"topiik/cluster"
 	"topiik/executor"
 	"topiik/internal/config"
-	"topiik/internal/consts"
 	"topiik/internal/proto"
-	"topiik/internal/util"
 	"topiik/logger"
+	"topiik/node"
 	"topiik/persistence"
 )
 
@@ -34,16 +32,22 @@ func main() {
 	}
 	// self check
 	//err = persistence.SelfCheck()
-	err = initNode()
+	// init node
+	err = node.InitNode(*serverConfig)
 	if err != nil {
 		return
+	}
+
+	// load controller metadata
+	err = cluster.LoadControllerMetadata()
+	if err != nil {
+		l.Panic().Msg(err.Error())
 	}
 
 	// Listen for incoming connections
 	ln, err := net.Listen("tcp", serverConfig.Listen)
 	if err != nil {
-		fmt.Println(err)
-		return
+		l.Panic().Msg(err.Error())
 	}
 
 	// Start routines
@@ -114,67 +118,4 @@ func readConfig() (*config.ServerConfig, error) {
 
 	// Get config
 	return config.ParseServerConfig(configFile)
-}
-
-func initNode() (err error) {
-	l.Info().Msg("[TOPIIK] self check start")
-
-	var exist bool
-	dataDir := "data"
-	nodeFile := cluster.GetNodeFilePath()
-
-	// data dir
-	exist, err = util.PathExists(dataDir)
-	if err != nil {
-		return err
-	}
-
-	if !exist {
-		l.Info().Msg("topiik-server::initNode Creating data dir...")
-		err = os.Mkdir(dataDir, os.ModeDir)
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-
-	// node file
-	exist, err = util.PathExists(nodeFile)
-	if err != nil {
-		return err
-	}
-
-	var buf []byte
-	var node cluster.Node
-	if !exist {
-		l.Info().Msg("creating node file...")
-
-		node.Id = util.RandStringRunes(consts.NODE_ID_LEN)
-		buf, _ = json.Marshal(node)
-		err = os.WriteFile(nodeFile, buf, 0644)
-		if err != nil {
-			panic("loading node failed")
-		}
-	} else {
-		l.Info().Msg("loading node...")
-
-		buf, err = os.ReadFile(nodeFile)
-		if err != nil {
-			panic("loading node failed")
-		}
-		err = json.Unmarshal(buf, &node)
-		if err != nil {
-			panic("loading node failed")
-		}
-		node.Addr = serverConfig.Listen
-		l.Info().Msgf("load node %s", node)
-	}
-
-	// load controller metadata
-	err = cluster.LoadControllerMetadata(&node)
-	if err != nil {
-		panic(err)
-	}
-
-	l.Info().Msg("[TOPIIK] self check done")
-	return nil
 }

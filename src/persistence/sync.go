@@ -11,12 +11,14 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"io"
 	"net"
 	"time"
 	"topiik/cluster"
 	"topiik/internal/proto"
 	"topiik/internal/util"
+	"topiik/node"
 	"topiik/resp"
 )
 
@@ -30,7 +32,7 @@ func Sync() {
 
 	for {
 		<-ticker.C
-		if cluster.GetNodeInfo().Id == ptnLeaderId { // if current node is Leader, do nothing
+		if node.GetNodeInfo().Id == ptnLeaderId { // if current node is Leader, do nothing
 			break
 		}
 		doSync()
@@ -41,7 +43,10 @@ func Sync() {
 func doSync() {
 	//l.Info().Msg("doSync")
 	if len(ptnLeaderAddr) == 0 {
-		getPartitionLeader()
+		err := getPartitionLeader()
+		if err != nil {
+			return
+		}
 	}
 	var err error
 	if conn == nil {
@@ -53,28 +58,27 @@ func doSync() {
 			return
 		}
 	}
-	
-	
+
 }
 
 /*
 * Get Partition Leader from Controller
  */
-func getPartitionLeader() {
+func getPartitionLeader() error {
 	clAddr := cluster.GetNodeStatus().LeaderControllerAddr
 	if len(clAddr) == 0 {
-		return
+		return errors.New("")
 	}
 
 	hostPort, err := util.SplitAddress(clAddr)
 	if err != nil {
 		l.Err(err).Msg(err.Error())
-		return
+		return err
 	}
 
 	conn, err := util.PreapareSocketClient(hostPort[0] + ":" + hostPort[2])
 	if err != nil {
-		return
+		return err
 	}
 	defer conn.Close()
 
@@ -83,19 +87,20 @@ func getPartitionLeader() {
 	// 1 bytes of command
 	binary.Write(byteBuf, binary.LittleEndian, cluster.RPC_GET_PL)
 	req = append(req, byteBuf.Bytes()...)
-	req = append(req, []byte(cluster.GetNodeInfo().Id)...) // send current worker node id to get leader id
+	req = append(req, []byte(node.GetNodeInfo().Id)...) // send current worker node id to get leader id
 
 	// enocde
 	req, err = proto.EncodeB(req)
 	if err != nil {
 		l.Err(err).Msg(err.Error())
+		return err
 	}
 
 	// send
 	_, err = conn.Write(req)
 	if err != nil {
 		l.Err(err).Msg(err.Error())
-		return
+		return err
 	}
 
 	reader := bufio.NewReader(conn)
@@ -104,9 +109,11 @@ func getPartitionLeader() {
 		if err == io.EOF {
 			l.Err(err).Msgf("sync::getPartitionLeader %s", err.Error())
 		}
+		return err
 	}
 	if len(buf) < resp.RESPONSE_HEADER_SIZE {
 		l.Warn().Msgf("sync::getPartitionLeader invalid response len%v", len(buf))
+		return errors.New("")
 	}
 
 	// read response flag
@@ -117,6 +124,7 @@ func getPartitionLeader() {
 	err = binary.Read(byteBuf, binary.LittleEndian, &flag)
 	if err != nil {
 		l.Err(err).Msg(err.Error())
+		return err
 	}
 	if flag == 1 {
 		idAndAddr2 := string(buf[resp.RESPONSE_HEADER_SIZE:])
@@ -124,4 +132,5 @@ func getPartitionLeader() {
 		ptnLeaderAddr = idAndAddr2[10:]
 	}
 	l.Info().Msgf("sync::getPartitionLeader id, addr2: %s, %s", ptnLeaderId, ptnLeaderAddr)
+	return nil
 }

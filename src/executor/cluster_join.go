@@ -19,6 +19,7 @@ import (
 	"topiik/internal/consts"
 	"topiik/internal/proto"
 	"topiik/internal/util"
+	"topiik/node"
 	"topiik/resp"
 )
 
@@ -40,7 +41,7 @@ func clusterJoin(myAddr string, controllerAddr string, role string) (result stri
 	if strings.ToUpper(role) != cluster.ROLE_CONTROLLER && strings.ToUpper(role) != cluster.ROLE_WORKER {
 		return "", errors.New("invalide role, must be either CONTROLLER or WORKER")
 	}
-	nodeId := cluster.GetNodeInfo().Id
+	nodeId := node.GetNodeInfo().Id
 
 	// get controller address2
 	addrSplit, _ := util.SplitAddress(controllerAddr)
@@ -87,7 +88,7 @@ func clusterJoin(myAddr string, controllerAddr string, role string) (result stri
 	if flag == 1 {
 
 		fmt.Printf("join cluster:%s\n", resp)
-		err = cluster.UpdateNodeClusterId(resp)
+		//err = cluster.UpdateNodeClusterId(resp)
 		if err != nil {
 			fmt.Println(err)
 			return "", errors.New("join cluster failed")

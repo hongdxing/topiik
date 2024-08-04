@@ -17,6 +17,7 @@ import (
 	"time"
 	"topiik/internal/proto"
 	"topiik/internal/util"
+	"topiik/node"
 )
 
 var ticker *time.Ticker
@@ -59,7 +60,7 @@ func appendClusterInfo() {
 		buf = append(buf, byteBuf.Bytes()...)
 		buf = append(buf, data...)
 		for _, controller := range clusterInfo.Ctls {
-			if controller.Id == nodeInfo.Id {
+			if controller.Id == node.GetNodeInfo().Id {
 				continue
 			}
 			send(controller.Addr2, controller.Id, buf)
@@ -78,7 +79,7 @@ func appendPartitionInfo() {
 		buf = append(buf, byteBuf.Bytes()...)
 		buf = append(buf, data...)
 		for _, controller := range clusterInfo.Ctls {
-			if controller.Id == nodeInfo.Id {
+			if controller.Id == node.GetNodeInfo().Id {
 				continue
 			}
 			send(controller.Addr2, controller.Id, buf)
@@ -88,13 +89,13 @@ func appendPartitionInfo() {
 
 func appendHeartbeat() {
 	for _, controller := range clusterInfo.Ctls {
-		if controller.Id == nodeInfo.Id {
+		if controller.Id == node.GetNodeInfo().Id {
 			continue
 		}
 		send(controller.Addr2, controller.Id, []byte{})
 	}
 	for _, worker := range clusterInfo.Wkrs {
-		if worker.Id == nodeInfo.Id {
+		if worker.Id == node.GetNodeInfo().Id {
 			continue
 		}
 		send(worker.Addr2, worker.Id, []byte{})
@@ -130,7 +131,7 @@ func send(destAddr string, nodeId string, data []byte) string {
 		byteBuf.Reset()
 		binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_DEFAULT)
 		rpcBuf = append(rpcBuf, byteBuf.Bytes()...)
-		rpcBuf = append(rpcBuf, []byte(nodeInfo.Addr)...)
+		rpcBuf = append(rpcBuf, []byte(node.GetNodeInfo().Addr)...)
 	}
 
 	// Enocde

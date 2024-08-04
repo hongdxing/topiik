@@ -17,7 +17,7 @@ import (
 )
 
 /***
-**
+** Obsoleted
 ** Parameter:
 **	- pieces: id[0] host:port[1] ROLE[2]
 **
@@ -43,7 +43,8 @@ func clusterJoin(pieces []string) (result string, err error) {
 
 		if exist, ok := clusterInfo.Ctls[id]; ok {
 			if exist.Addr == addr {
-				return nodeInfo.ClusterId, nil
+				//return nodeInfo.ClusterId, nil
+				return "", nil
 			} else {
 				exist.Addr = addr // update adddress
 			}
@@ -64,7 +65,8 @@ func clusterJoin(pieces []string) (result string, err error) {
 
 		if exist, ok := clusterInfo.Wkrs[id]; ok {
 			if exist.Addr == addr {
-				return nodeInfo.ClusterId, nil
+				//return nodeInfo.ClusterId, nil
+				return "", nil
 			} else {
 				exist.Addr = addr // update adddress
 			}
@@ -107,6 +109,7 @@ func clusterJoin(pieces []string) (result string, err error) {
 		}
 	*/
 	cluUpdCh <- struct{}{}
-	fmt.Println(nodeInfo.ClusterId)
-	return nodeInfo.ClusterId, nil
+	//fmt.Println(nodeInfo.ClusterId)
+	//return nodeInfo.ClusterId, nil
+	return "", nil
 }

@@ -9,8 +9,6 @@ package cluster
 
 type Cluster struct {
 	Id   string // auto generated when INIT a cluster
-	Ptns uint16 // number of partitions, given parameter when INIT a cluster
-	Rpls uint16 // number of replicas, recommend 3 relicas at most, given parameter when INIT a cluster
 	Ver  uint   // compare which is more lastest
 	Ctls map[string]NodeSlim
 	Wkrs map[string]Worker

@@ -16,6 +16,7 @@ import (
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/internal/proto"
+	"topiik/node"
 	"topiik/resp"
 )
 
@@ -94,7 +95,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 		// if not current not controller leader, nor in any cluster, i.e. LeaderControllerAddr is empty
 		// then use listen address
 		if address == "" {
-			if len(cluster.GetNodeInfo().ClusterId) == 0 {
+			if len(node.GetNodeInfo().ClusterId) == 0 {
 				address = serverConfig.Listen
 			} else {
 				return resp.ErrorResponse(errors.New(resp.RES_NO_LEADER))
@@ -110,7 +111,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 	}
 
 	// node must be in a cluster
-	if len(cluster.GetNodeInfo().ClusterId) == 0 {
+	if len(node.GetNodeInfo().ClusterId) == 0 {
 		return resp.ErrorResponse(errors.New(resp.RES_NO_CLUSTER))
 	}
 	// allow cmd only from Controller Leader, and TODO: allow from Partition Leader
@@ -244,7 +245,7 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 
 func srcFilter(srcAddr string) error {
 	// if node member of cluster
-	if len(cluster.GetNodeInfo().ClusterId) > 0 {
+	if len(node.GetNodeInfo().ClusterId) > 0 {
 		if !cluster.IsNodeController() {
 			//fmt.Printf("remote address: %s\n", srcAddr)
 

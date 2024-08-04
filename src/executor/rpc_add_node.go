@@ -19,6 +19,7 @@ import (
 	"topiik/internal/datatype"
 	"topiik/internal/proto"
 	"topiik/internal/util"
+	"topiik/node"
 	"topiik/resp"
 )
 
@@ -60,7 +61,7 @@ func addNode(req datatype.Req) (result string, err error) {
 	_ = binary.Write(byteBuf, binary.LittleEndian, cluster.RPC_ADD_NODE)
 	cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
 	//line = clusterid role
-	line := cluster.GetNodeInfo().ClusterId + consts.SPACE + role
+	line := node.GetNodeInfo().ClusterId + consts.SPACE + role
 	cmdBytes = append(cmdBytes, []byte(line)...)
 
 	data, err := proto.EncodeB(cmdBytes)
@@ -84,14 +85,11 @@ func addNode(req datatype.Req) (result string, err error) {
 		l.Err(err).Msg(err.Error())
 		return "", errors.New("add node failed")
 	}
-	resp := string(buf[resp.RESPONSE_HEADER_SIZE:])
+	resp := string(buf[resp.RESPONSE_HEADER_SIZE:]) // the node id
 
 	if flag == 1 {
 		l.Info().Msgf("Add node succeed:%s", resp)
 		cluster.AddNode(resp, nodeAddr, nodeAddr2, role)
-
-		// cluster meta changed, pending to sync to follower(s)
-		cluster.UpdatePendingAppend()
 
 	} else {
 		l.Err(nil).Msg("Add node failed")
