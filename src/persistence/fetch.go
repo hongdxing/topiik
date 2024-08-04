@@ -2,7 +2,7 @@
 * author: duan hongxing
 * date: 4 Aug, 2024
 * desc:
-* 	Fetch binary log for respose to sync request from follower
+* 	Fetch binary log for respose to Sync request from follower
  */
 
 package persistence
@@ -70,7 +70,7 @@ func Fetch(followerId string, lastSeq int64) (res []byte) {
 		file.Seek(0, io.SeekStart) //set to start
 		for {
 			if seq < lastSeq {
-				item, err := travelLog(file)
+				item, err := travelLog(file, &seq)
 				if err != nil && err != io.EOF {
 					l.Err(err).Msg(err.Error())
 					return
@@ -90,22 +90,26 @@ func Fetch(followerId string, lastSeq int64) (res []byte) {
 * Get a single log item
 *
  */
-func travelLog(file *os.File) (res []byte, err error) {
-	var seq int64
+func travelLog(file *os.File, seq *int64) (res []byte, err error) {
+	//var seq int64
 	var length int32
 
 	// 1: read seq
 	buf := make([]byte, 8)
 	_, err = io.ReadFull(file, buf)
 	if err != nil {
-		l.Err(err).Msg(err.Error())
+		if err != io.EOF {
+			l.Err(err).Msg(err.Error())
+		}
 		return nil, err
 	}
 
 	byteBuf := bytes.NewBuffer(buf)
-	err = binary.Read(byteBuf, binary.LittleEndian, &seq)
+	err = binary.Read(byteBuf, binary.LittleEndian, seq)
 	if err != nil {
-		l.Err(err).Msgf(err.Error())
+		if err != io.EOF {
+			l.Err(err).Msg(err.Error())
+		}
 		return
 	}
 	res = append(res, buf...)
@@ -114,7 +118,9 @@ func travelLog(file *os.File) (res []byte, err error) {
 	buf = make([]byte, 4)
 	_, err = io.ReadFull(file, buf)
 	if err != nil {
-		l.Err(err).Msg(err.Error())
+		if err != io.EOF {
+			l.Err(err).Msg(err.Error())
+		}
 		return nil, err
 	}
 	byteBuf = bytes.NewBuffer(buf)
@@ -125,7 +131,9 @@ func travelLog(file *os.File) (res []byte, err error) {
 	buf = make([]byte, length)
 	_, err = io.ReadFull(file, buf)
 	if err != nil {
-		l.Err(err).Msg(err.Error())
+		if err != io.EOF {
+			l.Err(err).Msg(err.Error())
+		}
 		return nil, err
 	}
 	res = append(res, buf...)

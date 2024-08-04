@@ -118,7 +118,7 @@ func doSync() {
 		return
 	}
 	if flag == 1 {
-		//buf := buf[resp.RESPONSE_HEADER_SIZE:]
+		buf := buf[resp.RESPONSE_HEADER_SIZE:]
 	}
 }
 
