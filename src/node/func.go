@@ -113,7 +113,7 @@ func InitCluster(clusterId string) (err error) {
 }
 
 /*
-* Initialized by command ADD-COMMAND
+* Initialized by command ADD-NODE
 * Update clusterId when Controller try to add current node to the cluster
  */
 func JoinCluster(clusterId string) (err error) {
