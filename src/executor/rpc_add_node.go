@@ -58,7 +58,7 @@ func addNode(req datatype.Req) (result string, err error) {
 
 	var cmdBytes []byte
 	var byteBuf = new(bytes.Buffer) // int to byte buf
-	_ = binary.Write(byteBuf, binary.LittleEndian, cluster.RPC_ADD_NODE)
+	_ = binary.Write(byteBuf, binary.LittleEndian, consts.RPC_ADD_NODE)
 	cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
 	//line = clusterid role
 	line := node.GetNodeInfo().ClusterId + consts.SPACE + role

@@ -14,14 +14,10 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"topiik/cluster"
 	"topiik/internal/config"
 	"topiik/internal/consts"
+	"topiik/persistence"
 	"topiik/resp"
-)
-
-const (
-	RES_SYNTAX_ERROR = "SYNTAX_ERR"
 )
 
 /*
@@ -46,13 +42,26 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 
 	dataBytes := msg[1:]
 
-	if icmd == cluster.RPC_SYNC_BINLOG {
+	if icmd == consts.RPC_SYNC_BINLOG {
 		/*
 		* RPC from worker slave to worker leader
 		* To fetching(sync) binary log
+		* The follow send it's binlogSeq to Leader
 		 */
-
-	} else if icmd == cluster.RPC_ADD_NODE {
+		if len(dataBytes) < consts.NODE_ID_LEN {
+			return resp.ErrorResponse(errors.New(resp.RES_SYNTAX_ERROR))
+		}
+		followerId := string(dataBytes[:consts.NODE_ID_LEN])
+		var seq int64
+		byteBuf := bytes.NewBuffer(dataBytes[consts.NODE_ID_LEN:])
+		err := binary.Read(byteBuf, binary.LittleEndian, &seq)
+		if err != nil {
+			l.Err(err).Msg(err.Error())
+			return resp.ErrorResponse(errors.New(resp.RES_SYNTAX_ERROR))
+		}
+		res := persistence.Fetch(followerId, seq)
+		return resp.StringResponse(string(res))
+	} else if icmd == consts.RPC_ADD_NODE {
 		/*
 		* Client connect to controller leader, and issue ADD-NODE command
 		* RPC from controller leader, to add current node to cluster
@@ -63,18 +72,18 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringResponse(result)
-	} else if icmd == cluster.RPC_VOTE {
+	} else if icmd == consts.RPC_VOTE {
 		/*
 		* RPC from controller leader by request vote
 		 */
 		cTerm, err := strconv.Atoi(string(dataBytes))
 		if err != nil {
-			return resp.ErrorResponse(errors.New(RES_SYNTAX_ERROR))
+			return resp.ErrorResponse(errors.New(resp.RES_SYNTAX_ERROR))
 		} else {
 			result := vote(cTerm)
 			return resp.StringResponse(result)
 		}
-	} else if icmd == cluster.RPC_APPENDENTRY {
+	} else if icmd == consts.RPC_APPENDENTRY {
 		/*
 		* RPC from controller leader by append entry periodic task
 		 */
@@ -83,7 +92,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringResponse("")
-	} else if icmd == cluster.RPC_GET_PL {
+	} else if icmd == consts.RPC_GET_PL {
 		/*
 		* RPC from workers, to get partition leader addr2
 		* for sync data from partition leader

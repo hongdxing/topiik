@@ -18,6 +18,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"topiik/internal/consts"
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/resp"
@@ -134,7 +135,7 @@ func voteMe(address string) {
 	//line := RPC_VOTE + " " + strconv.Itoa(int(clusterInfo.Ver))
 	var cmdBytes []byte
 	var byteBuf = new(bytes.Buffer) // int to byte buf
-	_ = binary.Write(byteBuf, binary.LittleEndian, RPC_VOTE)
+	_ = binary.Write(byteBuf, binary.LittleEndian, consts.RPC_VOTE)
 	cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
 	cmdBytes = append(cmdBytes, []byte(strconv.Itoa(int(clusterInfo.Ver)))...)
 

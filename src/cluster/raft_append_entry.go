@@ -15,6 +15,7 @@ import (
 	"io"
 	"net"
 	"time"
+	"topiik/internal/consts"
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/node"
@@ -120,7 +121,7 @@ func send(destAddr string, nodeId string, data []byte) string {
 	var rpcBuf []byte
 	var byteBuf = new(bytes.Buffer) // int to byte byte buf
 	// 1 bytes of command + 1 byte of entry type + the entry
-	binary.Write(byteBuf, binary.LittleEndian, RPC_APPENDENTRY)
+	binary.Write(byteBuf, binary.LittleEndian, consts.RPC_APPENDENTRY)
 	rpcBuf = append(rpcBuf, byteBuf.Bytes()...)
 
 	if len(data) > 0 {

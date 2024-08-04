@@ -16,6 +16,7 @@ import (
 	"net"
 	"time"
 	"topiik/cluster"
+	"topiik/internal/consts"
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/node"
@@ -53,6 +54,10 @@ func doSync() {
 			return
 		}
 	}
+	if node.GetNodeInfo().Id == ptnLeaderId { // if current node is Leader, do nothing
+		return
+	}
+
 	var err error
 	if conn == nil {
 		conn, err = util.PreapareSocketClient(ptnLeaderAddr)
@@ -63,8 +68,58 @@ func doSync() {
 			return
 		}
 	}
-	
+	var req []byte
+	var byteBuf = new(bytes.Buffer) // int to byte byte buf
+	// 1 bytes of command
+	binary.Write(byteBuf, binary.LittleEndian, consts.RPC_SYNC_BINLOG)
+	req = append(req, byteBuf.Bytes()...)
+	req = append(req, []byte(node.GetNodeInfo().Id)...)
 
+	byteBuf.Reset()
+	binary.Write(byteBuf, binary.LittleEndian, int64(2))
+	req = append(req, byteBuf.Bytes()...)
+
+	// enocde
+	req, err = proto.EncodeB(req)
+	if err != nil {
+		l.Err(err).Msg(err.Error())
+		return
+	}
+
+	// send
+	_, err = conn.Write(req)
+	if err != nil {
+		l.Err(err).Msg(err.Error())
+		conn = nil // clear the broken conn
+		return
+	}
+
+	reader := bufio.NewReader(conn)
+	buf, err := proto.Decode(reader)
+	if err != nil {
+		if err == io.EOF {
+			l.Err(err).Msgf("persistence::getPartitionLeader %s", err.Error())
+		}
+		return
+	}
+	if len(buf) < resp.RESPONSE_HEADER_SIZE {
+		l.Warn().Msgf("persistence::getPartitionLeader invalid response len%v", len(buf))
+		return
+	}
+
+	// read response flag
+	byteBuf.Reset()
+	bufSlice := buf[4:5]
+	byteBuf = bytes.NewBuffer(bufSlice)
+	var flag int8
+	err = binary.Read(byteBuf, binary.LittleEndian, &flag)
+	if err != nil {
+		l.Err(err).Msg(err.Error())
+		return
+	}
+	if flag == 1 {
+		//buf := buf[resp.RESPONSE_HEADER_SIZE:]
+	}
 }
 
 /*
@@ -91,7 +146,7 @@ func getPartitionLeader() error {
 	var req []byte
 	var byteBuf = new(bytes.Buffer) // int to byte byte buf
 	// 1 bytes of command
-	binary.Write(byteBuf, binary.LittleEndian, cluster.RPC_GET_PL)
+	binary.Write(byteBuf, binary.LittleEndian, consts.RPC_GET_PL)
 	req = append(req, byteBuf.Bytes()...)
 	req = append(req, []byte(node.GetNodeInfo().Id)...) // send current worker node id to get leader id
 

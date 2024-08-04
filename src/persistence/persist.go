@@ -22,11 +22,11 @@ import (
 
 //var lineFeed = byte('\n')
 
-var msgSeq int64 = 0
-
 /*
 * Binary format file, with each msg, 8 Sequence + msg
-*
+* |-----------------------------8 bytes Sequence---------------------------|--------4 bytes lenght---------------|------msg--------|
+* |00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 | 00000000 00000000 00000000 00000000 | xxxxxxxxxxxxxxxx|
+* |------------------------------------------------------------------------|-------------------------------------|-----------------|
 *
  */
 func Persist() {
@@ -41,11 +41,11 @@ func Persist() {
 		// msg
 		msg := <-executor.PersistenceCh
 		// msg sequence
-		msgSeq++
+		binLogSeq++
 
 		// 1: sequence
 		byteBuf := new(bytes.Buffer)
-		binary.Write(byteBuf, binary.LittleEndian, msgSeq)
+		binary.Write(byteBuf, binary.LittleEndian, binLogSeq)
 		buf := byteBuf.Bytes()
 
 		// 2: msg
@@ -79,12 +79,14 @@ func Load() {
 		if err != nil && err != io.EOF {
 			l.Panic().Msg(err.Error())
 		} else if err == io.EOF {
-			return
+			break
 		}
 
 		byteBuf := bytes.NewBuffer(buf)
-		binary.Read(byteBuf, binary.LittleEndian, &msgSeq)
-		l.Info().Msgf("sequence: %v", msgSeq)
+		err = binary.Read(byteBuf, binary.LittleEndian, &binLogSeq)
+		if err != nil {
+			l.Panic().Msg(err.Error())
+		}
 
 		// 2: read length
 		buf = make([]byte, 4)
@@ -106,20 +108,17 @@ func Load() {
 		// 4: replay msg(load from disk to memory)
 		icmd, _, err := proto.DecodeHeader(buf)
 		if err != nil {
-			l.Panic().Msgf("persist::Load %s", err.Error())
+			l.Panic().Msgf("persistence::Load %s", err.Error())
 		}
 
 		var req datatype.Req
 		err = json.Unmarshal(buf[2:], &req) // 2= 1 icmd and 1 ver
 		if err != nil {
-			l.Panic().Msgf("persist::Load %s", err.Error())
+			l.Panic().Msgf("persistence::Load %s", err.Error())
 		}
 		executor.Execute1(icmd, req)
-
-		if err != nil {
-			return
-		}
 	}
+	l.Info().Msgf("persistence::Load BINLOG SEQ: %v", binLogSeq)
 }
 
 /* One line for each command having problem of char LF can break line unintentionaly

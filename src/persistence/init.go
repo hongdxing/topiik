@@ -9,4 +9,5 @@ package persistence
 
 import "topiik/logger"
 
+var binLogSeq int64 = 0
 var l = logger.Get()
