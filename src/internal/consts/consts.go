@@ -40,6 +40,11 @@ const (
 )
 
 const (
+	VOTE_ACCEPTED = "A"
+	VOTE_REJECTED = "R"
+)
+
+const (
 	NODE_ID_LEN = 10
 	PTN_ID_LEN  = 10
 )

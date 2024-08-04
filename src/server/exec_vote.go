@@ -5,11 +5,13 @@
 **
 **/
 
-package cluster
+package server
 
 import (
 	"fmt"
 	"time"
+	"topiik/cluster"
+	"topiik/internal/consts"
 )
 
 /*
@@ -27,29 +29,29 @@ import (
 func vote(cTerm int) string {
 	//fmt.Printf("vote():: current node role: %v\n", nodeStatus.Role)
 
-	if IsNodeController() {
-		if nodeStatus.Role == RAFT_LEADER {
-			return VOTE_REJECTED + ":L"
+	if cluster.IsNodeController() {
+		if cluster.GetNodeStatus().Role == cluster.RAFT_LEADER {
+			return consts.VOTE_REJECTED + ":L"
 		}
-		if nodeStatus.Role != RAFT_FOLLOWER {
-			return VOTE_REJECTED + ":F"
+		if cluster.GetNodeStatus().Role != cluster.RAFT_FOLLOWER {
+			return consts.VOTE_REJECTED + ":F"
 		}
-		if clusterInfo.Ver > uint(cTerm) {
-			return VOTE_REJECTED + ":L" // if current node version greater than candidate's version, reject as Leader reject
+		if cluster.GetClusterInfo().Ver > uint(cTerm) {
+			return consts.VOTE_REJECTED + ":L" // if current node version greater than candidate's version, reject as Leader reject
 		}
 	} else {
 		fmt.Println("worker vote")
 		// if the woker still can sense the controller Leader, then reject
-		if time.Now().UTC().UnixMilli() < nodeStatus.HeartbeatAt+int64(nodeStatus.Heartbeat) {
-			return VOTE_REJECTED + ":W"
+		if time.Now().UTC().UnixMilli() < cluster.GetNodeStatus().HeartbeatAt+int64(cluster.GetNodeStatus().Heartbeat) {
+			return consts.VOTE_REJECTED + ":W"
 		}
-		return VOTE_ACCEPTED + ":W"
+		return consts.VOTE_ACCEPTED + ":W"
 	}
 
 	// (lastTermV > lastTermC) || ((lastTermV == lastTermC) && (lastIndexV > lastIndexC))
-	if clusterInfo.Ver > uint(cTerm) {
-		return VOTE_REJECTED + ":T"
+	if cluster.GetClusterInfo().Ver > uint(cTerm) {
+		return consts.VOTE_REJECTED + ":T"
 	} else {
-		return VOTE_ACCEPTED + ":A"
+		return consts.VOTE_ACCEPTED + ":A"
 	}
 }

@@ -9,7 +9,7 @@
 *	- Worker request for information
  */
 
-package cluster
+package server
 
 import (
 	"bufio"

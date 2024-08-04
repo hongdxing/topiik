@@ -11,7 +11,7 @@ import (
 * Client issue command ADD-NODE
 * After the target node accepted, Controller add node to metadata
 *
-*/
+ */
 func AddNode(nodeId string, addr string, addr2 string, role string) (err error) {
 	if strings.ToUpper(role) == ROLE_CONTROLLER {
 		clusterInfo.Ctls[nodeId] = NodeSlim{Id: nodeId, Addr: addr, Addr2: addr2}
@@ -36,4 +36,25 @@ func AddNode(nodeId string, addr string, addr2 string, role string) (err error) 
 	UpdatePendingAppend()
 
 	return nil
+}
+
+func GetPartitionInfo() PartitionInfo {
+	return *partitionInfo
+}
+
+func SetRole(role uint8) {
+	nodeStatus.Role = role
+}
+
+func SetLeaderCtlAddr(addr string) {
+	nodeStatus.LeaderControllerAddr = addr
+}
+
+func SetPtnInfo(ptnInfo *PartitionInfo) {
+	partitionInfo = ptnInfo
+}
+
+func SetHeartbeat(heartbeat uint16, heartbeatAt int64) {
+	nodeStatus.Heartbeat = heartbeat
+	nodeStatus.HeartbeatAt = heartbeatAt
 }

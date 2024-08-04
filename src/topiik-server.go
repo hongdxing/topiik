@@ -13,6 +13,7 @@ import (
 	"topiik/logger"
 	"topiik/node"
 	"topiik/persistence"
+	"topiik/server"
 )
 
 const (
@@ -57,7 +58,8 @@ func main() {
 		go persistence.Sync()    // sync from Partition Leader
 	}
 
-	go cluster.StartServer(serverConfig.Host+":"+serverConfig.PORT2, serverConfig)
+	//go cluster.StartServer(serverConfig.Host+":"+serverConfig.PORT2, serverConfig)
+	go server.StartServer(serverConfig.Host+":"+serverConfig.PORT2, serverConfig)
 
 	// Accept incoming connections and handle them
 	l.Info().Msgf("Listen to address %s", serverConfig.Listen)

@@ -14,6 +14,7 @@ import (
 	"os"
 	"strings"
 	"topiik/internal/util"
+	"topiik/resp"
 )
 
 /***
@@ -29,7 +30,7 @@ import (
 func clusterJoin(pieces []string) (result string, err error) {
 	fmt.Printf("%s\n", pieces)
 	if len(pieces) != 3 {
-		return "", errors.New(RES_SYNTAX_ERROR)
+		return "", errors.New(resp.RES_SYNTAX_ERROR)
 	}
 	id := pieces[0]
 	addr := pieces[1]
@@ -79,7 +80,7 @@ func clusterJoin(pieces []string) (result string, err error) {
 		}
 	} else {
 		fmt.Printf("err: %s\n", pieces)
-		return "", errors.New(RES_SYNTAX_ERROR)
+		return "", errors.New(resp.RES_SYNTAX_ERROR)
 	}
 
 	// increase version

@@ -29,6 +29,11 @@ var conn *net.TCPConn
 
 func Sync() {
 	ticker = time.NewTicker(1 * time.Second)
+	defer func() {
+		if conn != nil {
+			conn.Close()
+		}
+	}()
 
 	for {
 		<-ticker.C
@@ -58,6 +63,7 @@ func doSync() {
 			return
 		}
 	}
+	
 
 }
 

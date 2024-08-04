@@ -5,12 +5,14 @@
 **
 **/
 
-package cluster
+package server
 
 import (
 	"errors"
 	"strings"
+	"topiik/cluster"
 	"topiik/node"
+	"topiik/resp"
 )
 
 /*
@@ -21,7 +23,7 @@ import (
  */
 func addNode(pieces []string) (string, error) {
 	if len(pieces) != 2 {
-		return "", errors.New(RES_SYNTAX_ERROR)
+		return "", errors.New(resp.RES_SYNTAX_ERROR)
 	}
 	clusterId := pieces[0]
 	role := pieces[1]
@@ -29,8 +31,8 @@ func addNode(pieces []string) (string, error) {
 	node.JoinCluster(clusterId)
 
 	// if join controller succeed, will start to RequestVote
-	if strings.ToUpper(role) == ROLE_CONTROLLER {
-		go RequestVote()
+	if strings.ToUpper(role) == cluster.ROLE_CONTROLLER {
+		go cluster.RequestVote()
 	}
 	// return nodeId to controller
 	return node.GetNodeInfo().Id, nil
