@@ -53,9 +53,9 @@ func main() {
 
 	// Start routines
 	if !cluster.IsNodeController() {
-		persistence.Load()
-		go persistence.Persist() // persist
-		go persistence.Sync()    // sync from Partition Leader
+		persistence.Load(executor.Execute1)
+		//go persistence.PersistAsync() // persist
+		//go persistence.Sync()    // sync from Partition Leader
 	}
 
 	//go cluster.StartServer(serverConfig.Host+":"+serverConfig.PORT2, serverConfig)

@@ -1,9 +1,9 @@
-/***
-** author: duan hongxing
-** data: 3 Jul 2024
-** desc:
-**
-**/
+/*
+* author: duan hongxing
+* data: 3 Jul 2024
+* desc:
+*
+ */
 
 package cluster
 
@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"io"
 	"net"
+	"strings"
 	"time"
 	"topiik/internal/consts"
 	"topiik/internal/proto"
@@ -27,11 +28,13 @@ var ptnUpdCh chan struct{}
 
 var connCache = make(map[string]*net.TCPConn)
 
-/***
-** Controller issues AppendEntries RPCs to replicate metadata to follower,
-** or send heartbeats (AppendEntries RPCs that carry no data)
-**
-**/
+var iSwitch = 0
+
+/*
+* Controller issues AppendEntries RPCs to replicate metadata to follower,
+* or send heartbeats (AppendEntries RPCs that carry no data)
+*
+ */
 func AppendEntries() {
 	ticker = time.NewTicker(200 * time.Millisecond)
 	cluUpdCh = make(chan struct{})
@@ -95,11 +98,49 @@ func appendHeartbeat() {
 		}
 		send(controller.Addr2, controller.Id, []byte{})
 	}
+
 	for _, worker := range clusterInfo.Wkrs {
 		if worker.Id == node.GetNodeInfo().Id {
 			continue
 		}
-		send(worker.Addr2, worker.Id, []byte{})
+		var buf []byte
+		var isPtnLeader = false
+		var ptn Partition
+		for _, ptn = range partitionInfo.PtnMap {
+			if ptn.Id == worker.Id {
+				isPtnLeader = true
+				break
+			}
+		}
+
+		if iSwitch%2 == 0 && isPtnLeader { // append follower info to workers
+			var byteBuf = new(bytes.Buffer)
+			var followerIds []string
+			for k, _ := range ptn.NodeSet {
+				if k != worker.Id {
+					followerIds = append(followerIds, k)
+				}
+			}
+			if len(followerIds) > 0 {
+				var addrs []string
+				for _, follwerId := range followerIds {
+					if w, ok := clusterInfo.Wkrs[follwerId]; ok {
+						addrs = append(addrs, w.Addr2)
+					}
+				}
+				if len(addrs) > 0 {
+					binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_PTN_FOLLOWER)
+					buf = append(buf, byteBuf.Bytes()...)
+					var addrStr = strings.Join(addrs, ",")
+					buf = append(buf, []byte(addrStr)...)
+				}
+			}
+		}
+		send(worker.Addr2, worker.Id, buf)
+	}
+	iSwitch++
+	if iSwitch > 1_000_000 { // reset iSwitch
+		iSwitch = 0
 	}
 }
 

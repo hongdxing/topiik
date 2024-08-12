@@ -13,7 +13,6 @@ import (
 	"encoding/json"
 	"io"
 	"os"
-	"topiik/executor"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/internal/proto"
@@ -29,6 +28,7 @@ import (
 * |------------------------------------------------------------------------|-------------------------------------|-----------------|
 *
  */
+/*
 func Persist() {
 	filePath := getCurrentLogFile()
 	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE, 0644)
@@ -55,8 +55,90 @@ func Persist() {
 		binary.Write(file, binary.NativeEndian, buf)
 	}
 }
+*/
 
-func Load() {
+var activeDF *os.File
+
+/*
+* Append msg to bomary log
+*
+ */
+func Append(msg []byte) {
+	if activeDF == nil {
+		var err error
+		filePath := getCurrentLogFile()
+		activeDF, err = os.OpenFile(filePath, os.O_APPEND|os.O_CREATE, 0644)
+		if err != nil {
+			l.Panic().Msg(err.Error())
+		}
+	}
+	binLogSeq++
+
+	// 1: sequence
+	byteBuf := new(bytes.Buffer)
+	binary.Write(byteBuf, binary.LittleEndian, binLogSeq)
+	buf := byteBuf.Bytes()
+
+	// 2: msg
+	buf = append(buf, msg...)
+
+	// write to file
+	binary.Write(activeDF, binary.NativeEndian, buf)
+}
+
+func ReadOne(file *os.File, seq *int64) (res []byte, err error) {
+	//var seq int64
+	var length int32
+
+	// 1: read seq
+	buf := make([]byte, 8)
+	_, err = io.ReadFull(file, buf)
+	if err != nil {
+		if err != io.EOF {
+			l.Err(err).Msg(err.Error())
+		}
+		return nil, err
+	}
+
+	byteBuf := bytes.NewBuffer(buf)
+	err = binary.Read(byteBuf, binary.LittleEndian, seq)
+	if err != nil {
+		if err != io.EOF {
+			l.Err(err).Msg(err.Error())
+		}
+		return
+	}
+	res = append(res, buf...)
+
+	// 2: read length
+	buf = make([]byte, 4)
+	_, err = io.ReadFull(file, buf)
+	if err != nil {
+		if err != io.EOF {
+			l.Err(err).Msg(err.Error())
+		}
+		return nil, err
+	}
+	byteBuf = bytes.NewBuffer(buf)
+	binary.Read(byteBuf, binary.LittleEndian, &length)
+	res = append(res, buf...)
+
+	// 3: read msg
+	buf = make([]byte, length)
+	_, err = io.ReadFull(file, buf)
+	if err != nil {
+		if err != io.EOF {
+			l.Err(err).Msg(err.Error())
+		}
+		return nil, err
+	}
+	res = append(res, buf...)
+	return res, nil
+}
+
+type fn func(uint8, datatype.Req) []byte
+
+func Load(f fn) {
 	filePath := getCurrentLogFile()
 	exist, err := util.PathExists(filePath)
 	if err != nil {
@@ -71,146 +153,68 @@ func Load() {
 	}
 	defer file.Close()
 
-	var length int32
+	//var length int32
 	for {
-		// 1: read sequence
-		buf := make([]byte, 8)
-		_, err = io.ReadFull(file, buf)
-		if err != nil && err != io.EOF {
-			l.Panic().Msg(err.Error())
-		} else if err == io.EOF {
+		/*
+			// 1: read sequence
+			buf := make([]byte, 8)
+			_, err = io.ReadFull(file, buf)
+			if err != nil && err != io.EOF {
+				l.Panic().Msg(err.Error())
+			} else if err == io.EOF {
+				break
+			}
+
+			byteBuf := bytes.NewBuffer(buf)
+			err = binary.Read(byteBuf, binary.LittleEndian, &binLogSeq)
+			if err != nil {
+				l.Panic().Msg(err.Error())
+			}
+
+			// 2: read length
+			buf = make([]byte, 4)
+			_, err = io.ReadFull(file, buf)
+			if err != nil && err != io.EOF {
+				l.Panic().Msg(err.Error())
+			}
+
+			byteBuf = bytes.NewBuffer(buf)
+			binary.Read(byteBuf, binary.LittleEndian, &length)
+
+			// 3: read msg
+			buf = make([]byte, length)
+			_, err = io.ReadFull(file, buf)
+			if err != nil && err != io.EOF {
+				l.Panic().Msg(err.Error())
+			}
+		*/
+		buf, err := ReadOne(file, &binLogSeq)
+		if err != nil {
+			if err != io.EOF {
+				l.Panic().Msg(err.Error())
+			}
 			break
 		}
 
-		byteBuf := bytes.NewBuffer(buf)
-		err = binary.Read(byteBuf, binary.LittleEndian, &binLogSeq)
-		if err != nil {
-			l.Panic().Msg(err.Error())
-		}
-
-		// 2: read length
-		buf = make([]byte, 4)
-		_, err = io.ReadFull(file, buf)
-		if err != nil && err != io.EOF {
-			l.Panic().Msg(err.Error())
-		}
-
-		byteBuf = bytes.NewBuffer(buf)
-		binary.Read(byteBuf, binary.LittleEndian, &length)
-
-		// 3: read msg
-		buf = make([]byte, length)
-		_, err = io.ReadFull(file, buf)
-		if err != nil && err != io.EOF {
-			l.Panic().Msg(err.Error())
-		}
-
 		// 4: replay msg(load from disk to memory)
+		buf = buf[12:]
 		icmd, _, err := proto.DecodeHeader(buf)
 		if err != nil {
 			l.Panic().Msgf("persistence::Load %s", err.Error())
 		}
 
 		var req datatype.Req
-		err = json.Unmarshal(buf[2:], &req) // 2= 1 icmd and 1 ver
+		buf = buf[2:]
+		err = json.Unmarshal(buf, &req) // 2= 1 icmd and 1 ver
 		if err != nil {
 			l.Panic().Msgf("persistence::Load %s", err.Error())
 		}
-		executor.Execute1(icmd, req)
+		//executor.Execute1(icmd, req)
+		// execute the command so that load to memory
+		f(icmd, req)
 	}
 	l.Info().Msgf("persistence::Load BINLOG SEQ: %v", binLogSeq)
 }
-
-/* One line for each command having problem of char LF can break line unintentionaly
-func Persist() {
-	filePath := getCurrentLogFile()
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		l.Panic().Msg(err.Error())
-	}
-	defer file.Close()
-
-	for {
-		// msg
-		msgBytes := <-executor.PersistenceCh
-		msgBytes = append(msgBytes, lineFeed) // append line break in the end
-		// msg sequence
-		msgSeq++
-		byteBuf := new(bytes.Buffer)
-		binary.Write(byteBuf, binary.BigEndian, msgSeq)
-		buf := byteBuf.Bytes()
-		buf = append(buf, msgBytes...)
-		// write to file
-		binary.Write(file, binary.NativeEndian, buf)
-	}
-}
-
-func Load() {
-	filePath := getCurrentLogFile()
-	exist, err := util.PathExists(filePath)
-	if err != nil {
-		l.Panic().Msg("[X]load binlog failed")
-	}
-	if !exist {
-		return
-	}
-	file, err := os.OpenFile(filePath, os.O_RDONLY, 0644)
-	if err != nil {
-		l.Panic().Msg("[X]load binlog failed")
-	}
-	scanner := bufio.NewScanner(file)
-	// resize scanner's capacity for lines over 64K, see next example
-	buf := make([]byte, maxCapacity)
-	scanner.Buffer(buf, maxCapacity)
-
-	for scanner.Scan() {
-		msg := scanner.Bytes()
-
-		if len(msg) == 0 || (len(msg) == 1 && msg[0] == lineFeed) {
-			l.Warn().Msgf("persist::Load Empty at %v", msgSeq+1)
-			continue
-		}
-
-		// validate minium lenght
-		if len(msg) < 12 { // 8 bytes of seq, 4 bytes of length header
-			l.Panic().Msgf("persist::Load invalid msg %s", msg)
-		}
-
-		// get msg sequence
-		byteBuf := bytes.NewBuffer(msg[0:8])
-		binary.Read(byteBuf, binary.BigEndian, &msgSeq)
-		l.Info().Msgf("sequence: %v", msgSeq)
-
-		// remove msg seq
-		msg = msg[8:]
-
-		// remove line feed
-		last := msg[len(msg)-1]
-		if last == lineFeed { // remove last '\n'
-			msg = msg[:len(msg)-1]
-		}
-
-		// remove msg length header, the final msg to Execute
-		msg = msg[4:]
-
-		icmd, _, err := proto.DecodeHeader(msg)
-		if err != nil {
-			l.Panic().Msgf("persist::Load %s", err.Error())
-		}
-
-		var req datatype.Req
-		err = json.Unmarshal(msg[2:], &req) // 2= 1 icmd and 1 ver
-		if err != nil {
-			l.Panic().Msgf("persist::Load %s", err.Error())
-		}
-		executor.Execute1(icmd, req)
-	}
-
-	if err := scanner.Err(); err != nil {
-		l.Panic().Msg(err.Error())
-	}
-}
-*/
 
 func getCurrentLogFile() string {
 	return util.GetMainPath() + consts.SLASH + consts.DATA_DIR + consts.SLASH + "000001.bin"

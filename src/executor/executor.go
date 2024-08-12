@@ -17,6 +17,7 @@ import (
 	"topiik/internal/datatype"
 	"topiik/internal/proto"
 	"topiik/node"
+	"topiik/persistence"
 	"topiik/resp"
 )
 
@@ -123,7 +124,8 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 	finalRes = Execute1(icmd, req)
 
 	if slices.Contains(persistCmds, icmd) {
-		PersistenceCh <- msg
+		//PersistenceCh <- msg
+		persistence.Append(msg)
 	}
 	return finalRes
 }

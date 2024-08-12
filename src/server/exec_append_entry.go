@@ -12,10 +12,12 @@ import (
 	"encoding/json"
 	"math/rand/v2"
 	"os"
+	"strings"
 	"time"
 	"topiik/cluster"
 	"topiik/internal/config"
 	"topiik/internal/util"
+	"topiik/persistence"
 )
 
 /*
@@ -55,6 +57,9 @@ func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 			// log.Info().Msgf("appendEntry() Leader addr:%s", string(entry[1:]))
 			//nodeStatus.LeaderControllerAddr = string(entry[1:])
 			cluster.SetLeaderCtlAddr(string(entry[1:]))
+		} else if entryType == cluster.ENTRY_TYPE_PTN_FOLLOWER { // append worker followers
+			addr2Str := string(entry[1:])
+			persistence.SetPtnFlrAddr2Lst(strings.Split(addr2Str, ","))
 		} else if entryType == cluster.ENTRY_TYPE_METADATA { // append cluster metadata
 			l.Info().Msg("rpc_append_entry::appendEntry metadata begin")
 			var clusterData = &cluster.Cluster{}

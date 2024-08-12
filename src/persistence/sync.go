@@ -8,21 +8,11 @@
 package persistence
 
 import (
-	"bufio"
-	"bytes"
-	"encoding/binary"
-	"errors"
-	"io"
-	"net"
 	"time"
-	"topiik/cluster"
-	"topiik/internal/consts"
-	"topiik/internal/proto"
-	"topiik/internal/util"
-	"topiik/node"
-	"topiik/resp"
 )
 
+/*--------------Pull (obsoleted)-------------------*/
+/*
 var ticker *time.Ticker
 var ptnLeaderId string
 var ptnLeaderAddr string
@@ -121,10 +111,12 @@ func doSync() {
 		buf := buf[resp.RESPONSE_HEADER_SIZE:]
 	}
 }
-
+*/
 /*
 * Get Partition Leader from Controller
  */
+
+/*
 func getPartitionLeader() error {
 	clAddr := cluster.GetNodeStatus().LeaderControllerAddr
 	if len(clAddr) == 0 {
@@ -194,4 +186,30 @@ func getPartitionLeader() error {
 	}
 	l.Info().Msgf("sync::getPartitionLeader id, addr2: %s, %s", ptnLeaderId, ptnLeaderAddr)
 	return nil
+}*/
+/*---------------------End of Pull-----------------------*/
+
+var ticker *time.Ticker
+var syncCh = make(chan []byte)
+
+/*
+* Sync (push) to follower
+*
+*
+ */
+func Sync() {
+	ticker = time.NewTicker(1 * time.Second)
+
+	for {
+		select {
+		case <-ticker.C:
+			break
+			//case buf := <- syncCh:
+			//	break
+		}
+	}
+}
+
+func doSync() {
+
 }

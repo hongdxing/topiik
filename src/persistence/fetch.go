@@ -29,7 +29,7 @@ var cache = make(map[string]fetchingCache)
 *
  */
 func Fetch(followerId string, lastSeq int64) (res []byte) {
-	l.Info().Msgf("persistence::Fetch %s %v", followerId, lastSeq)
+	//l.Info().Msgf("persistence::Fetch %s %v", followerId, lastSeq)
 	var file *os.File
 	var seq int64 = 0
 	var pos int64 = 0
@@ -77,10 +77,24 @@ func Fetch(followerId string, lastSeq int64) (res []byte) {
 				}
 
 				pos += int64(len(item))
+				cacheVal := cache[followerId]
+				cacheVal.pos = pos
+				cacheVal.seq = seq
 			} else {
 				break
 			}
 		}
+	}
+
+	//
+	for i := 0; i < 10; i++ {
+		item, err := travelLog(file, &seq)
+		if err != nil && err != io.EOF {
+			
+			l.Err(err).Msg(err.Error())
+			return
+		}
+		res = append(res, item...)
 	}
 
 	return res
