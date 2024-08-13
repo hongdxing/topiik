@@ -59,6 +59,7 @@ func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 			cluster.SetLeaderCtlAddr(string(entry[1:]))
 		} else if entryType == cluster.ENTRY_TYPE_PTN_FOLLOWER { // append worker followers
 			addr2Str := string(entry[1:])
+			// l.Info().Msgf("followers's addrs: %s", addr2Str)
 			persistence.SetPtnFlrAddr2Lst(strings.Split(addr2Str, ","))
 		} else if entryType == cluster.ENTRY_TYPE_METADATA { // append cluster metadata
 			l.Info().Msg("rpc_append_entry::appendEntry metadata begin")

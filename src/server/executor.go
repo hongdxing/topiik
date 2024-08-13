@@ -48,7 +48,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 		* To fetching(sync) binary log
 		* The follow send it's binlogSeq to Leader
 		 */
-		if len(dataBytes) < consts.NODE_ID_LEN {
+		/*if len(dataBytes) < consts.NODE_ID_LEN {
 			return resp.ErrorResponse(errors.New(resp.RES_SYNTAX_ERROR))
 		}
 		followerId := string(dataBytes[:consts.NODE_ID_LEN])
@@ -60,6 +60,15 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 			return resp.ErrorResponse(errors.New(resp.RES_SYNTAX_ERROR))
 		}
 		res := persistence.Fetch(followerId, seq)
+		*/
+
+		/*
+		* RPC from Partition Leader sync binlog to follower
+		*/
+		res, err := persistence.ReceiveBinlog(dataBytes)
+		if err != nil{
+			return resp.ErrorResponse(err)
+		}
 		return resp.StringResponse(string(res))
 	} else if icmd == consts.RPC_ADD_NODE {
 		/*

@@ -107,7 +107,7 @@ func appendHeartbeat() {
 		var isPtnLeader = false
 		var ptn Partition
 		for _, ptn = range partitionInfo.PtnMap {
-			if ptn.Id == worker.Id {
+			if ptn.LeaderNodeId == worker.Id {
 				isPtnLeader = true
 				break
 			}
@@ -121,6 +121,7 @@ func appendHeartbeat() {
 					followerIds = append(followerIds, k)
 				}
 			}
+			// l.Info().Msgf("followerIds %s", followerIds)
 			if len(followerIds) > 0 {
 				var addrs []string
 				for _, follwerId := range followerIds {

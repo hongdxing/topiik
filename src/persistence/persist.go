@@ -12,6 +12,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"io"
+	"net"
 	"os"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
@@ -57,17 +58,20 @@ func Persist() {
 }
 */
 
-var activeDF *os.File
+// active log file
+var activeLF *os.File
+
+var connCache = make(map[string]*net.TCPConn)
 
 /*
-* Append msg to bomary log
+* Append msg to binary log
 *
  */
-func Append(msg []byte) {
-	if activeDF == nil {
+func Append(msg []byte) (err error) {
+	if activeLF == nil {
 		var err error
-		filePath := getCurrentLogFile()
-		activeDF, err = os.OpenFile(filePath, os.O_APPEND|os.O_CREATE, 0644)
+		filePath := getActiveBinlogFile()
+		activeLF, err = os.OpenFile(filePath, os.O_APPEND|os.O_CREATE, 0644)
 		if err != nil {
 			l.Panic().Msg(err.Error())
 		}
@@ -82,64 +86,39 @@ func Append(msg []byte) {
 	// 2: msg
 	buf = append(buf, msg...)
 
-	// write to file
-	binary.Write(activeDF, binary.NativeEndian, buf)
+	// 3: write to file
+	err = binary.Write(activeLF, binary.NativeEndian, buf)
+	if err != nil {
+		l.Err(err).Msgf("persist::Append %s", err.Error())
+		return err
+	}
+
+	// 4: sync to follower
+	if len(ptnFlrAddr2Lst) > 0 {
+		for _, addr2 := range ptnFlrAddr2Lst {
+			sync2Flr(addr2)
+		}
+	}
+	return nil
 }
 
-func ReadOne(file *os.File, seq *int64) (res []byte, err error) {
-	//var seq int64
-	var length int32
+/*
+*
+*
+*/
+func sync2Flr(addr2 string) {
 
-	// 1: read seq
-	buf := make([]byte, 8)
-	_, err = io.ReadFull(file, buf)
-	if err != nil {
-		if err != io.EOF {
-			l.Err(err).Msg(err.Error())
-		}
-		return nil, err
-	}
-
-	byteBuf := bytes.NewBuffer(buf)
-	err = binary.Read(byteBuf, binary.LittleEndian, seq)
-	if err != nil {
-		if err != io.EOF {
-			l.Err(err).Msg(err.Error())
-		}
-		return
-	}
-	res = append(res, buf...)
-
-	// 2: read length
-	buf = make([]byte, 4)
-	_, err = io.ReadFull(file, buf)
-	if err != nil {
-		if err != io.EOF {
-			l.Err(err).Msg(err.Error())
-		}
-		return nil, err
-	}
-	byteBuf = bytes.NewBuffer(buf)
-	binary.Read(byteBuf, binary.LittleEndian, &length)
-	res = append(res, buf...)
-
-	// 3: read msg
-	buf = make([]byte, length)
-	_, err = io.ReadFull(file, buf)
-	if err != nil {
-		if err != io.EOF {
-			l.Err(err).Msg(err.Error())
-		}
-		return nil, err
-	}
-	res = append(res, buf...)
-	return res, nil
 }
 
 type fn func(uint8, datatype.Req) []byte
 
+/*
+* Load binary log to memory when server start
+* Parameters:
+*	- f fn: the func that execute command, i.e: executor.Executer1
+ */
 func Load(f fn) {
-	filePath := getCurrentLogFile()
+	filePath := getActiveBinlogFile()
 	exist, err := util.PathExists(filePath)
 	if err != nil {
 		l.Panic().Msg("[X]load binlog failed")
@@ -188,7 +167,7 @@ func Load(f fn) {
 				l.Panic().Msg(err.Error())
 			}
 		*/
-		buf, err := ReadOne(file, &binLogSeq)
+		buf, err := parseOne(file, &binLogSeq)
 		if err != nil {
 			if err != io.EOF {
 				l.Panic().Msg(err.Error())
@@ -216,6 +195,7 @@ func Load(f fn) {
 	l.Info().Msgf("persistence::Load BINLOG SEQ: %v", binLogSeq)
 }
 
-func getCurrentLogFile() string {
+
+func getActiveBinlogFile() string {
 	return util.GetMainPath() + consts.SLASH + consts.DATA_DIR + consts.SLASH + "000001.bin"
 }

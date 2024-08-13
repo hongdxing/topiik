@@ -38,7 +38,7 @@ func Fetch(followerId string, lastSeq int64) (res []byte) {
 		seq = c.seq
 		pos = c.pos
 	} else {
-		filePath := getCurrentLogFile()
+		filePath := getActiveBinlogFile()
 		exist, err := util.PathExists(filePath)
 		if err != nil {
 			l.Err(err).Msg(err.Error())
