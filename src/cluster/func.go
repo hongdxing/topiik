@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"strings"
+	"topiik/node"
 )
 
 /*
@@ -14,7 +15,7 @@ import (
  */
 func AddNode(nodeId string, addr string, addr2 string, role string) (err error) {
 	if strings.ToUpper(role) == ROLE_CONTROLLER {
-		clusterInfo.Ctls[nodeId] = NodeSlim{Id: nodeId, Addr: addr, Addr2: addr2}
+		clusterInfo.Ctls[nodeId] = node.NodeSlim{Id: nodeId, Addr: addr, Addr2: addr2}
 	} else {
 		worker := Worker{Id: nodeId, Addr: addr, Addr2: addr2}
 		clusterInfo.Wkrs[nodeId] = worker

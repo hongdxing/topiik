@@ -13,6 +13,7 @@ import (
 	"os"
 	"topiik/internal/consts"
 	"topiik/internal/util"
+	"topiik/node"
 	"topiik/resp"
 )
 
@@ -30,13 +31,13 @@ func Scale(p int, r int) (result string, err error) {
 		for i := 0; i < int(p); i++ {
 			works := keys[i*r : (i+1)*r] // 2*2--> i==0: [0:2], i==1: [2:4]
 			pId := util.RandStringRunes(consts.PTN_ID_LEN)
-			partition := Partition{
+			partition := node.Partition{
 				Id:           pId,
 				LeaderNodeId: works[0],
 			}
-			nodeSet := make(map[string]byte)
+			nodeSet := make(map[string]node.NodeSlim)
 			for _, worker := range keys {
-				nodeSet[worker] = byte(0) // the value is not used, map just to make sure no duplicate
+				nodeSet[worker] = node.NodeSlim{} //
 			}
 			partition.NodeSet = nodeSet
 
@@ -49,8 +50,8 @@ func Scale(p int, r int) (result string, err error) {
 			} else {
 				to = (i+1)*(SLOTS/p) - 1 // p=2--> i=0: 511, i=1: 1024
 			}
-			slot := Slot{From: uint16(from), To: uint16(to)}
-			partition.Slots = []Slot{slot}
+			slot := node.Slot{From: uint16(from), To: uint16(to)}
+			partition.Slots = []node.Slot{slot}
 			partitionInfo.Ptns = uint16(p)
 			partitionInfo.Rpls = uint16(r)
 			partitionInfo.PtnMap[pId] = partition

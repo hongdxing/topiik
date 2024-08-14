@@ -16,11 +16,11 @@ const (
 )
 
 const (
-	ENTRY_TYPE_DEFAULT      int8 = 1
-	ENTRY_TYPE_METADATA     int8 = 2
-	ENTRY_TYPE_PARTITION    int8 = 3
-	ENTRY_TYPE_PTN_LEADER   int8 = 4
-	ENTRY_TYPE_PTN_FOLLOWER int8 = 5
+	ENTRY_TYPE_DEFAULT    int8 = 1
+	ENTRY_TYPE_METADATA   int8 = 2
+	ENTRY_TYPE_PTNS       int8 = 3
+	ENTRY_TYPE_PTN_LEADER int8 = 4
+	ENTRY_TYPE_PTN        int8 = 5
 )
 
 const (

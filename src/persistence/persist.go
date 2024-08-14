@@ -18,6 +18,7 @@ import (
 	"topiik/internal/datatype"
 	"topiik/internal/proto"
 	"topiik/internal/util"
+	"topiik/node"
 )
 
 //var lineFeed = byte('\n')
@@ -94,20 +95,19 @@ func Append(msg []byte) (err error) {
 	}
 
 	// 4: sync to follower
-	if len(ptnFlrAddr2Lst) > 0 {
-		for _, addr2 := range ptnFlrAddr2Lst {
-			sync2Flr(addr2)
-		}
-	}
+	sync()
 	return nil
 }
 
 /*
 *
 *
-*/
-func sync2Flr(addr2 string) {
+ */
+func sync() {
 
+	for _, nd := range node.GetPnt().NodeSet {
+		l.Info().Msg(nd.Addr2)
+	}
 }
 
 type fn func(uint8, datatype.Req) []byte
@@ -194,7 +194,6 @@ func Load(f fn) {
 	}
 	l.Info().Msgf("persistence::Load BINLOG SEQ: %v", binLogSeq)
 }
-
 
 func getActiveBinlogFile() string {
 	return util.GetMainPath() + consts.SLASH + consts.DATA_DIR + consts.SLASH + "000001.bin"

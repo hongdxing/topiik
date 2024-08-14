@@ -7,13 +7,12 @@
 
 package persistence
 
-import "topiik/logger"
+import (
+	"topiik/logger"
+)
 
 // current partition binlog seq
 var binLogSeq int64 = 0
-
-// partition follower address2 list
-var ptnFlrAddr2Lst []string
 
 // log
 var l = logger.Get()

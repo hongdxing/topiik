@@ -12,13 +12,12 @@ import (
 	"fmt"
 	"os"
 	"topiik/internal/util"
+	"topiik/node"
 )
 
-
-var clusterInfo = &Cluster{Ctls: make(map[string]NodeSlim), Wkrs: make(map[string]Worker)}
-var partitionInfo = &PartitionInfo{PtnMap: make(map[string]Partition)}
+var clusterInfo = &Cluster{Ctls: make(map[string]node.NodeSlim), Wkrs: make(map[string]Worker)}
+var partitionInfo = &PartitionInfo{PtnMap: make(map[string]node.Partition)}
 var nodeStatus = &NodeStatus{Role: RAFT_FOLLOWER, Term: 0}
-
 
 const (
 	slash   = string(os.PathSeparator)
@@ -89,7 +88,6 @@ func IsNodeController() bool {
 	// if current node controllerMap has value
 	return len(clusterInfo.Ctls) > 0
 }
-
 
 func GetClusterInfo() Cluster {
 	return *clusterInfo

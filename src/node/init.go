@@ -1,7 +1,11 @@
 package node
 
-import "topiik/logger"
+import (
+	"topiik/logger"
+)
 
 var nodeInfo *Node
+
+var partition Partition
 
 var l = logger.Get()

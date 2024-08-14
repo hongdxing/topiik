@@ -22,7 +22,7 @@ const cluster_init_failed = "cluster init failed"
 * Initialzied by command INIT-CLUSTER
 *
  */
-func InitCluster(serverConfig *config.ServerConfig) ( error) {
+func InitCluster(serverConfig *config.ServerConfig) error {
 	l.Info().Msg("cluster::ClusterInit start")
 
 	// 0. init cluster
@@ -54,7 +54,7 @@ func doInit(serverConfig *config.ServerConfig) error {
 	if err != nil {
 		l.Panic().Msg(err.Error())
 	}
-	clusterInfo.Ctls[nodeId] = NodeSlim{
+	clusterInfo.Ctls[nodeId] = node.NodeSlim{
 		Id:    nodeId,
 		Addr:  serverConfig.Listen,
 		Addr2: addrSplit[0] + ":" + addrSplit[2]}

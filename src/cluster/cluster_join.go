@@ -14,6 +14,7 @@ import (
 	"os"
 	"strings"
 	"topiik/internal/util"
+	"topiik/node"
 	"topiik/resp"
 )
 
@@ -50,7 +51,7 @@ func clusterJoin(pieces []string) (result string, err error) {
 				exist.Addr = addr // update adddress
 			}
 		} else {
-			clusterInfo.Ctls[id] = NodeSlim{
+			clusterInfo.Ctls[id] = node.NodeSlim{
 				Id:    id,
 				Addr:  addr,
 				Addr2: addrSplit[0] + ":" + addrSplit[2],

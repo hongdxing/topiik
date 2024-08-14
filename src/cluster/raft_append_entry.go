@@ -14,7 +14,6 @@ import (
 	"encoding/json"
 	"io"
 	"net"
-	"strings"
 	"time"
 	"topiik/internal/consts"
 	"topiik/internal/proto"
@@ -79,7 +78,7 @@ func appendPartitionInfo() {
 	if err != nil {
 		l.Err(err).Msg(err.Error())
 	} else {
-		binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_PARTITION)
+		binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_PTNS)
 		buf = append(buf, byteBuf.Bytes()...)
 		buf = append(buf, data...)
 		for _, controller := range clusterInfo.Ctls {
@@ -104,38 +103,42 @@ func appendHeartbeat() {
 			continue
 		}
 		var buf []byte
-		var isPtnLeader = false
-		var ptn Partition
-		for _, ptn = range partitionInfo.PtnMap {
-			if ptn.LeaderNodeId == worker.Id {
-				isPtnLeader = true
-				break
-			}
-		}
 
-		if iSwitch%2 == 0 && isPtnLeader { // append follower info to workers
+		if iSwitch%2 == 0 { // append partition info or node
 			var byteBuf = new(bytes.Buffer)
-			var followerIds []string
-			for k, _ := range ptn.NodeSet {
-				if k != worker.Id {
-					followerIds = append(followerIds, k)
-				}
-			}
-			// l.Info().Msgf("followerIds %s", followerIds)
-			if len(followerIds) > 0 {
-				var addrs []string
-				for _, follwerId := range followerIds {
-					if w, ok := clusterInfo.Wkrs[follwerId]; ok {
-						addrs = append(addrs, w.Addr2)
+			var ptn node.Partition
+
+			// get the partition
+			for _, v := range partitionInfo.PtnMap {
+				for w := range v.NodeSet {
+					if w == worker.Id {
+						ptn = v
+						break
 					}
 				}
-				if len(addrs) > 0 {
-					binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_PTN_FOLLOWER)
-					buf = append(buf, byteBuf.Bytes()...)
-					var addrStr = strings.Join(addrs, ",")
-					buf = append(buf, []byte(addrStr)...)
+				if len(ptn.Id) > 0 {
+					break
 				}
 			}
+
+			//set nodeset
+			for ndId, nd := range ptn.NodeSet {
+				if theWrk, ok := clusterInfo.Wkrs[ndId]; ok {
+					nd.Id = ndId
+					nd.Addr = theWrk.Addr
+					nd.Addr2 = theWrk.Addr2
+				}
+			}
+
+			ptnBytes, err := json.Marshal(ptn)
+			if err != nil {
+				l.Err(err).Msgf("cluster::appendHeartbeat %s", err.Error())
+				continue
+			}
+
+			binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_PTN)
+			buf = append(buf, byteBuf.Bytes()...)
+			buf = append(buf, ptnBytes...)
 		}
 		send(worker.Addr2, worker.Id, buf)
 	}

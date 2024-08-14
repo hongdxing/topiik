@@ -136,6 +136,18 @@ func JoinCluster(clusterId string) (err error) {
 	return nil
 }
 
+func SetPtn(buf []byte) {
+	err := json.Unmarshal(buf, &partition)
+	if err != nil {
+		l.Err(err).Msg(err.Error())
+	}
+	l.Info().Msg(string(buf))
+}
+
+func GetPnt() Partition {
+	return partition
+}
+
 func GetNodeInfo() Node {
 	return *nodeInfo
 }

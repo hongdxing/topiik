@@ -7,24 +7,15 @@
 
 package cluster
 
+import (
+	"topiik/node"
+)
+
 type Cluster struct {
 	Id   string // auto generated when INIT a cluster
 	Ver  uint   // compare which is more lastest
-	Ctls map[string]NodeSlim
+	Ctls map[string]node.NodeSlim
 	Wkrs map[string]Worker
-}
-
-type Node struct {
-	Id        string
-	ClusterId string
-	Addr      string
-	Addr2     string
-}
-
-type NodeSlim struct {
-	Id    string
-	Addr  string
-	Addr2 string
 }
 
 type Worker struct {
@@ -33,23 +24,10 @@ type Worker struct {
 	Addr2 string
 }
 
-type Slot struct {
-	From uint16
-	To   uint16
-}
-
 type PartitionInfo struct {
 	Ptns   uint16 // number of partitions, given parameter when INIT a cluster
 	Rpls   uint16 // number of replicas, recommend 3 relicas at most, given parameter when INIT a cluster
-	PtnMap map[string]Partition
-}
-
-type Partition struct {
-	Id           string          // Id of the partition, random 16 alphnum
-	LeaderNodeId string          // The Node Id where the Leader Partition located
-	NodeSet      map[string]byte // the byte value is not important
-	Slots        []Slot
-	//NodeIds      []string // The Nodes where the Partition located
+	PtnMap map[string]node.Partition
 }
 
 // store dynamic node status in runtime
