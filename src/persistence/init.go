@@ -12,7 +12,7 @@ import (
 )
 
 // current partition binlog seq
-var binLogSeq int64 = 0
+var binlogSeq int64 = 0
 
 // log
 var l = logger.Get()

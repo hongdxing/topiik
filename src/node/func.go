@@ -141,7 +141,7 @@ func SetPtn(buf []byte) {
 	if err != nil {
 		l.Err(err).Msg(err.Error())
 	}
-	l.Info().Msg(string(buf))
+	//l.Info().Msg(string(buf))
 }
 
 func GetPnt() Partition {

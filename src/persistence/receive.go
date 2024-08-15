@@ -40,14 +40,20 @@ func ReceiveBinlog(binlogs []byte) (res []byte, err error) {
 			}
 			break
 		}
+		if (seq - 1) != binlogSeq {
+			l.Warn().Msgf("persistence::ReceiveBinlog binlog lag %v", seq-binlogSeq)
+			break
+		}
+
 		err = binary.Write(flrActiveBLF, binary.LittleEndian, buf)
 		if err != nil {
 			seq-- // parse ok, but write failed, return pre seq
 			break
 		}
+		binlogSeq = seq
 	}
-	byteBuf := new(bytes.Buffer)
-	binary.Write(byteBuf, binary.LittleEndian, seq)
-	res = byteBuf.Bytes()
+	bbuf := new(bytes.Buffer)
+	binary.Write(bbuf, binary.LittleEndian, seq)
+	res = bbuf.Bytes()
 	return res, nil
 }

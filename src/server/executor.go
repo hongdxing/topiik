@@ -22,8 +22,8 @@ import (
 
 /*
 ** msg:
-**	- msg[:2] 	= command
-**	- msg[2:]	= data
+**	- msg[:1] 	= command
+**	- msg[1:]	= data
 **
  */
 func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
@@ -64,9 +64,9 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 
 		/*
 		* RPC from Partition Leader sync binlog to follower
-		*/
+		 */
 		res, err := persistence.ReceiveBinlog(dataBytes)
-		if err != nil{
+		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringResponse(string(res))

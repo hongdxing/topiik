@@ -77,12 +77,12 @@ func Append(msg []byte) (err error) {
 			l.Panic().Msg(err.Error())
 		}
 	}
-	binLogSeq++
+	binlogSeq++
 
 	// 1: sequence
-	byteBuf := new(bytes.Buffer)
-	binary.Write(byteBuf, binary.LittleEndian, binLogSeq)
-	buf := byteBuf.Bytes()
+	bbuf := new(bytes.Buffer)
+	binary.Write(bbuf, binary.LittleEndian, binlogSeq)
+	buf := bbuf.Bytes()
 
 	// 2: msg
 	buf = append(buf, msg...)
@@ -95,19 +95,51 @@ func Append(msg []byte) (err error) {
 	}
 
 	// 4: sync to follower
-	sync()
+	sync(buf)
 	return nil
 }
 
 /*
-*
+* Sync to follower(s)
 *
  */
-func sync() {
-
+func sync(logitem []byte) (err error) {
+	var conn *net.TCPConn
 	for _, nd := range node.GetPnt().NodeSet {
-		l.Info().Msg(nd.Addr2)
+		if nd.Id == node.GetNodeInfo().Id { // not sync current node
+			continue
+		}
+		if _, ok := connCache[nd.Id]; ok {
+			conn = connCache[nd.Id]
+		} else {
+			conn, err = util.PreapareSocketClient(nd.Addr2)
+			if err != nil {
+				l.Err(err).Msgf("persistence::sync %s", err.Error())
+			}
+		}
+		// icmd
+		bbuf := new(bytes.Buffer)
+		binary.Write(bbuf, binary.LittleEndian, consts.RPC_SYNC_BINLOG)
+
+		// binlog
+		buf := bbuf.Bytes()
+		buf = append(buf, logitem...)
+
+		// encode
+		msg, err := proto.EncodeB(buf)
+		if err != nil {
+			l.Err(err).Msgf("persistence::sync %s", err.Error())
+			continue
+		}
+
+		// send
+		_, err = conn.Write(msg)
+		if err != nil {
+			l.Err(err).Msgf("persistence::sync %s", err.Error())
+			continue
+		}
 	}
+	return nil
 }
 
 type fn func(uint8, datatype.Req) []byte
@@ -123,76 +155,41 @@ func Load(f fn) {
 	if err != nil {
 		l.Panic().Msg("[X]load binlog failed")
 	}
-	if !exist {
-		return
-	}
-	file, err := os.OpenFile(filePath, os.O_RDONLY, 0644)
-	if err != nil {
-		l.Panic().Msg("[X]load binlog failed")
-	}
-	defer file.Close()
+	if exist {
+		file, err := os.OpenFile(filePath, os.O_RDONLY, 0644)
+		if err != nil {
+			l.Panic().Msg("[X]load binlog failed")
+		}
+		defer file.Close()
 
-	//var length int32
-	for {
-		/*
-			// 1: read sequence
-			buf := make([]byte, 8)
-			_, err = io.ReadFull(file, buf)
-			if err != nil && err != io.EOF {
-				l.Panic().Msg(err.Error())
-			} else if err == io.EOF {
+		for {
+			buf, err := parseOne(file, &binlogSeq)
+			if err != nil {
+				if err != io.EOF {
+					l.Panic().Msg(err.Error())
+				}
 				break
 			}
 
-			byteBuf := bytes.NewBuffer(buf)
-			err = binary.Read(byteBuf, binary.LittleEndian, &binLogSeq)
+			// 4: replay msg(load from disk to memory)
+			buf = buf[12:]
+			icmd, _, err := proto.DecodeHeader(buf)
 			if err != nil {
-				l.Panic().Msg(err.Error())
+				l.Panic().Msgf("persistence::Load %s", err.Error())
 			}
 
-			// 2: read length
-			buf = make([]byte, 4)
-			_, err = io.ReadFull(file, buf)
-			if err != nil && err != io.EOF {
-				l.Panic().Msg(err.Error())
+			var req datatype.Req
+			buf = buf[2:]
+			err = json.Unmarshal(buf, &req) // 2= 1 icmd and 1 ver
+			if err != nil {
+				l.Panic().Msgf("persistence::Load %s", err.Error())
 			}
 
-			byteBuf = bytes.NewBuffer(buf)
-			binary.Read(byteBuf, binary.LittleEndian, &length)
-
-			// 3: read msg
-			buf = make([]byte, length)
-			_, err = io.ReadFull(file, buf)
-			if err != nil && err != io.EOF {
-				l.Panic().Msg(err.Error())
-			}
-		*/
-		buf, err := parseOne(file, &binLogSeq)
-		if err != nil {
-			if err != io.EOF {
-				l.Panic().Msg(err.Error())
-			}
-			break
+			// replay to load to RAM
+			f(icmd, req)
 		}
-
-		// 4: replay msg(load from disk to memory)
-		buf = buf[12:]
-		icmd, _, err := proto.DecodeHeader(buf)
-		if err != nil {
-			l.Panic().Msgf("persistence::Load %s", err.Error())
-		}
-
-		var req datatype.Req
-		buf = buf[2:]
-		err = json.Unmarshal(buf, &req) // 2= 1 icmd and 1 ver
-		if err != nil {
-			l.Panic().Msgf("persistence::Load %s", err.Error())
-		}
-		//executor.Execute1(icmd, req)
-		// execute the command so that load to memory
-		f(icmd, req)
 	}
-	l.Info().Msgf("persistence::Load BINLOG SEQ: %v", binLogSeq)
+	l.Info().Msgf("persistence::Load BINLOG SEQ: %v", binlogSeq)
 }
 
 func getActiveBinlogFile() string {
