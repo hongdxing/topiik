@@ -22,7 +22,7 @@ var flrActiveBLF *os.File
 *	- binlogs: one or more logs
 *
  */
-func ReceiveBinlog(binlogs []byte) (res []byte, err error) {
+func ReceiveBinlog(binlogs []byte) (seq int64, err error) {
 	if flrActiveBLF == nil {
 		path := getActiveBinlogFile()
 		flrActiveBLF, err = os.OpenFile(path, os.O_CREATE|os.O_APPEND, 0664)
@@ -30,7 +30,7 @@ func ReceiveBinlog(binlogs []byte) (res []byte, err error) {
 			l.Err(err).Msgf("persistence::ReceiveBinlog %s", err.Error())
 		}
 	}
-	var seq int64
+	//var seq int64
 	reader := bytes.NewReader(binlogs)
 	for {
 		buf, err := parseOne(reader, &seq)
@@ -52,8 +52,8 @@ func ReceiveBinlog(binlogs []byte) (res []byte, err error) {
 		}
 		binlogSeq = seq
 	}
-	bbuf := new(bytes.Buffer)
-	binary.Write(bbuf, binary.LittleEndian, seq)
-	res = bbuf.Bytes()
-	return res, nil
+	//bbuf := new(bytes.Buffer)
+	//binary.Write(bbuf, binary.LittleEndian, seq)
+	//res = bbuf.Bytes()
+	return binlogSeq, nil
 }

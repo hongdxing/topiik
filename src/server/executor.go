@@ -69,7 +69,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
-		return resp.StringResponse(string(res))
+		return resp.IntegerResponse(res)
 	} else if icmd == consts.RPC_ADD_NODE {
 		/*
 		* Client connect to controller leader, and issue ADD-NODE command

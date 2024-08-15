@@ -8,6 +8,7 @@
 package persistence
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
@@ -19,6 +20,7 @@ import (
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/node"
+	"topiik/resp"
 )
 
 //var lineFeed = byte('\n')
@@ -62,6 +64,7 @@ func Persist() {
 // active log file
 var activeLF *os.File
 
+// cache tcp conn to follower
 var connCache = make(map[string]*net.TCPConn)
 
 /*
@@ -95,6 +98,7 @@ func Append(msg []byte) (err error) {
 	}
 
 	// 4: sync to follower
+	// TODO: optimize to half nodes in-sync
 	sync(buf)
 	return nil
 }
@@ -103,7 +107,7 @@ func Append(msg []byte) (err error) {
 * Sync to follower(s)
 *
  */
-func sync(logitem []byte) (err error) {
+func sync(binlogs []byte) (err error) {
 	var conn *net.TCPConn
 	for _, nd := range node.GetPnt().NodeSet {
 		if nd.Id == node.GetNodeInfo().Id { // not sync current node
@@ -114,7 +118,7 @@ func sync(logitem []byte) (err error) {
 		} else {
 			conn, err = util.PreapareSocketClient(nd.Addr2)
 			if err != nil {
-				l.Err(err).Msgf("persistence::sync %s", err.Error())
+				l.Err(err).Msgf("persistence::sync conn: %s", err.Error())
 			}
 		}
 		// icmd
@@ -123,32 +127,62 @@ func sync(logitem []byte) (err error) {
 
 		// binlog
 		buf := bbuf.Bytes()
-		buf = append(buf, logitem...)
+		buf = append(buf, binlogs...)
 
 		// encode
 		msg, err := proto.EncodeB(buf)
 		if err != nil {
-			l.Err(err).Msgf("persistence::sync %s", err.Error())
+			l.Err(err).Msgf("persistence::sync encode: %s", err.Error())
 			continue
 		}
 
 		// send
 		_, err = conn.Write(msg)
 		if err != nil {
-			l.Err(err).Msgf("persistence::sync %s", err.Error())
+			l.Err(err).Msgf("persistence::sync send: %s", err.Error())
+			continue
+		}
+
+		// get follower's seq
+		reader := bufio.NewReader(conn)
+		res, err := proto.Decode(reader)
+		if err != nil {
+			if err != io.EOF {
+				l.Err(err).Msgf("persistence::sync res: %s", err.Error())
+			}
+			continue
+		}
+
+		if len(res) < resp.RESPONSE_HEADER_SIZE {
+			continue
+		}
+
+		bbuf.Reset()
+
+		var flrSeq int64
+		bbuf = bytes.NewBuffer(res[resp.RESPONSE_HEADER_SIZE:])
+		err = binary.Read(bbuf, binary.LittleEndian, &flrSeq)
+		if err != nil {
+			l.Err(err).Msgf("persistence::sync read res: %s", err.Error())
+			continue
+		}
+
+		if flrSeq != binlogSeq {
+			l.Warn().Msgf("binlogSeq: %v, follower seq: %v", binlogSeq, flrSeq)
+			// TODO: go routine to batch sync to follower
 			continue
 		}
 	}
 	return nil
 }
 
-type fn func(uint8, datatype.Req) []byte
-
 /*
 * Load binary log to memory when server start
 * Parameters:
 *	- f fn: the func that execute command, i.e: executor.Executer1
  */
+type fn func(uint8, datatype.Req) []byte
+
 func Load(f fn) {
 	filePath := getActiveBinlogFile()
 	exist, err := util.PathExists(filePath)
