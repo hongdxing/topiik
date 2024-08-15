@@ -15,7 +15,7 @@ import (
 	"topiik/node"
 )
 
-var clusterInfo = &Cluster{Ctls: make(map[string]node.NodeSlim), Wkrs: make(map[string]Worker)}
+var clusterInfo = &Cluster{Ctls: make(map[string]node.NodeSlim), Wkrs: make(map[string]node.NodeSlim)}
 var partitionInfo = &PartitionInfo{PtnMap: make(map[string]node.Partition)}
 var nodeStatus = &NodeStatus{Role: RAFT_FOLLOWER, Term: 0}
 
@@ -93,7 +93,7 @@ func GetClusterInfo() Cluster {
 	return *clusterInfo
 }
 
-func GetWorkerLeaders() (workers []Worker) {
+func GetWorkerLeaders() (workers []node.NodeSlim) {
 	for _, ptn := range partitionInfo.PtnMap {
 		worker := clusterInfo.Wkrs[ptn.LeaderNodeId]
 		workers = append(workers, worker)

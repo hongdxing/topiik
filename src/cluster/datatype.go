@@ -15,14 +15,9 @@ type Cluster struct {
 	Id   string // auto generated when INIT a cluster
 	Ver  uint   // compare which is more lastest
 	Ctls map[string]node.NodeSlim
-	Wkrs map[string]Worker
+	Wkrs map[string]node.NodeSlim
 }
 
-type Worker struct {
-	Id    string
-	Addr  string
-	Addr2 string
-}
 
 type PartitionInfo struct {
 	Ptns   uint16 // number of partitions, given parameter when INIT a cluster

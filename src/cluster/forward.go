@@ -15,6 +15,7 @@ import (
 	"net"
 	"topiik/internal/proto"
 	"topiik/internal/util"
+	"topiik/node"
 	"topiik/resp"
 )
 
@@ -76,7 +77,7 @@ func Forward(key string, msg []byte) []byte {
 	return responseBytes
 }
 
-func getWorker(key string) (worker Worker) {
+func getWorker(key string) (worker node.NodeSlim) {
 	var keyHash = crc32.Checksum([]byte(key), crc32.IEEETable)
 	keyHash = keyHash % SLOTS
 	//fmt.Printf("key hash %v\n", keyHash)
@@ -94,7 +95,7 @@ func getWorker(key string) (worker Worker) {
 	return worker
 }
 
-func ForwardByWorker(targetWorker Worker, msg []byte) []byte {
+func ForwardByWorker(targetWorker node.NodeSlim, msg []byte) []byte {
 	var err error
 	conn, ok := tcpMap[targetWorker.Id]
 	if !ok {

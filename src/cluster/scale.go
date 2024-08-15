@@ -35,9 +35,9 @@ func Scale(p int, r int) (result string, err error) {
 				Id:           pId,
 				LeaderNodeId: works[0],
 			}
-			nodeSet := make(map[string]node.NodeSlim)
+			nodeSet := make(map[string]*node.NodeSlim)
 			for _, worker := range keys {
-				nodeSet[worker] = node.NodeSlim{} //
+				nodeSet[worker] = &node.NodeSlim{} //
 			}
 			partition.NodeSet = nodeSet
 

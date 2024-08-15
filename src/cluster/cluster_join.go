@@ -73,7 +73,7 @@ func clusterJoin(pieces []string) (result string, err error) {
 				exist.Addr = addr // update adddress
 			}
 		} else {
-			clusterInfo.Wkrs[id] = Worker{
+			clusterInfo.Wkrs[id] = node.NodeSlim{
 				Id:    id,
 				Addr:  addr,
 				Addr2: addrSplit[0] + ":" + addrSplit[2],
