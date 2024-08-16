@@ -119,6 +119,7 @@ func syncOne(binlogs []byte) {
 			conn, err = util.PreapareSocketClient(nd.Addr2)
 			if err != nil {
 				l.Err(err).Msgf("persistence::sync conn: %s", err.Error())
+				continue
 			}
 		}
 		flrSeq, err := doSync(conn, binlogs)
@@ -131,7 +132,7 @@ func syncOne(binlogs []byte) {
 	}
 }
 
-const batchSyncSize = 64 * 1024
+const batchSyncSize = 1024 * 1024
 
 /*
 * if follower is fall behind, then try to send binlog in batch to folower(s)
