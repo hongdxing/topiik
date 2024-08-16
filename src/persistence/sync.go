@@ -209,7 +209,3 @@ func Sync() {
 		}
 	}
 }
-
-func doSync() {
-
-}
