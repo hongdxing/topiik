@@ -19,8 +19,8 @@ type Slot struct {
 }
 
 type Partition struct {
-	Id           string               // Id of the partition, random 16 alphnum
-	LeaderNodeId string               // The Node Id where the Leader Partition located
-	NodeSet      map[string]*NodeSlim // the byte value is not important
+	Id           string               // partition id
+	LeaderNodeId string               // partition leader node id
+	NodeSet      map[string]*NodeSlim // member nodes
 	Slots        []Slot
 }

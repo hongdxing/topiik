@@ -7,10 +7,6 @@
 
 package persistence
 
-import (
-	"time"
-)
-
 /*--------------Pull (obsoleted)-------------------*/
 /*
 var ticker *time.Ticker
@@ -188,24 +184,3 @@ func getPartitionLeader() error {
 	return nil
 }*/
 /*---------------------End of Pull-----------------------*/
-
-var ticker *time.Ticker
-var syncCh = make(chan []byte)
-
-/*
-* Sync (push) to follower
-*
-*
- */
-func Sync() {
-	ticker = time.NewTicker(1 * time.Second)
-
-	for {
-		select {
-		case <-ticker.C:
-			break
-			//case buf := <- syncCh:
-			//	break
-		}
-	}
-}

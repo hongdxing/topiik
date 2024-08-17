@@ -12,22 +12,27 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"io"
 	"net"
+	"sync"
 	"time"
 	"topiik/internal/consts"
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/node"
+	"topiik/resp"
 )
 
-var ticker *time.Ticker
+const ptnTickerDur int = 500
+const ptnLeaderDownMaxMills int = 3000
+
+var hbTicker *time.Ticker  // heartbeat ticker
+var ptnTicker *time.Ticker // partition ticker
 var cluUpdCh chan struct{}
 var ptnUpdCh chan struct{}
 
 var connCache = make(map[string]*net.TCPConn)
-
-var iSwitch = 0
 
 /*
 * Controller issues AppendEntries RPCs to replicate metadata to follower,
@@ -35,15 +40,20 @@ var iSwitch = 0
 *
  */
 func AppendEntries() {
-	ticker = time.NewTicker(200 * time.Millisecond)
+	hbTicker = time.NewTicker(200 * time.Millisecond)
+	ptnTicker = time.NewTicker(time.Duration(ptnTickerDur) * time.Millisecond)
 	cluUpdCh = make(chan struct{})
 	ptnUpdCh = make(chan struct{})
+	defer close(cluUpdCh)
+	defer close(ptnUpdCh)
 
 	//dialErrorCounter := 0 // this not 'thread' safe, but it's not important
 	for {
 		select {
-		case <-ticker.C:
+		case <-hbTicker.C:
 			appendHeartbeat()
+		case <-ptnTicker.C:
+			appendPtn()
 		case <-cluUpdCh:
 			appendClusterInfo()
 		case <-ptnUpdCh:
@@ -95,61 +105,99 @@ func appendHeartbeat() {
 		if controller.Id == node.GetNodeInfo().Id {
 			continue
 		}
-		send(controller.Addr2, controller.Id, []byte{})
+		go send(controller.Addr2, controller.Id, []byte{})
 	}
 
 	for _, worker := range clusterInfo.Wkrs {
 		if worker.Id == node.GetNodeInfo().Id {
 			continue
 		}
-		var buf []byte
-
-		if iSwitch%2 == 0 { // append partition info or node
-			var byteBuf = new(bytes.Buffer)
-			var ptn node.Partition
-
-			// get the partition
-			for _, v := range partitionInfo.PtnMap {
-				for w := range v.NodeSet {
-					if w == worker.Id {
-						ptn = v
-						break
-					}
-				}
-				if len(ptn.Id) > 0 {
-					break
-				}
-			}
-
-			//set nodeset
-			for ndId, nd := range ptn.NodeSet {
-				if theWrk, ok := clusterInfo.Wkrs[ndId]; ok {
-					nd.Id = ndId
-					nd.Addr = theWrk.Addr
-					nd.Addr2 = theWrk.Addr2
-				}
-			}
-
-			ptnBytes, err := json.Marshal(ptn)
-			if err != nil {
-				l.Err(err).Msgf("cluster::appendHeartbeat %s", err.Error())
-				continue
-			}
-
-			binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_PTN)
-			buf = append(buf, byteBuf.Bytes()...)
-			buf = append(buf, ptnBytes...)
-		}
-		send(worker.Addr2, worker.Id, buf)
-	}
-	iSwitch++
-	if iSwitch > 1_000_000 { // reset iSwitch
-		iSwitch = 0
+		go send(worker.Addr2, worker.Id, []byte{})
 	}
 }
 
-func send(destAddr string, nodeId string, data []byte) string {
-	var err error
+/* when partition leader not available, the accoumulated milli seconds retried */
+var ptnLeaderDownMills = make(map[string]int)
+
+/*
+* healthcheck partition leader, and sync follower(s) to leader
+*
+ */
+func appendPtn() {
+	for _, ptn := range partitionInfo.PtnMap {
+		if ptn.LeaderNodeId == "" { // no leader yet
+			electPtnLeader(ptn)
+		} else {
+			if ptnLeader, ok := clusterInfo.Wkrs[ptn.LeaderNodeId]; ok { // get the leader Worker
+				for ndId, nd := range ptn.NodeSet {
+					if wrk, ok := clusterInfo.Wkrs[ndId]; ok {
+						nd.Id = ndId
+						nd.Addr = wrk.Addr
+						nd.Addr2 = wrk.Addr2
+					}
+				}
+
+				var buf []byte
+				bbuf := new(bytes.Buffer)
+				binary.Write(bbuf, binary.LittleEndian, ENTRY_TYPE_PTN)
+				buf = append(buf, bbuf.Bytes()...)
+				//flrb, err := json.Marshal(followers)
+				ptnb, err := json.Marshal(ptn)
+				if err != nil {
+					l.Err(err).Msgf(err.Error())
+					continue
+				}
+				buf = append(buf, ptnb...)
+				err = send(ptnLeader.Addr2, ptnLeader.Id, buf)
+				if err != nil {
+					//l.Err(err).Msg(err.Error())
+					var ne net.Error
+					if errors.As(err, &ne) { // if the leader not available from controller
+						l.Info().Msgf("%s", ptnLeader.Addr2)
+						ptnLeaderDownMills[ptn.Id] += ptnTickerDur
+						if ptnLeaderDownMills[ptn.Id] >= ptnLeaderDownMaxMills { // to elect new partition leader
+							electPtnLeader(ptn)
+						}
+					}
+				} else {
+					ptnLeaderDownMills[ptn.Id] = 0
+				}
+			}
+		}
+	}
+}
+
+func electPtnLeader(ptn *node.Partition) {
+	seqMap := make(map[string]int64)
+	var wg sync.WaitGroup
+	/* notice here not execlude the leader, in case it's recovered and give it last chance */
+	for ndId := range ptn.NodeSet {
+		wg.Add(1)
+		if wrk, ok := clusterInfo.Wkrs[ndId]; ok {
+			go getWorkerBinlogSeq(wrk.Id, wrk.Addr2, &wg, &seqMap)
+		} else {
+			wg.Done()
+		}
+	}
+	wg.Wait()
+	/* get worker that have max seq */
+	var newLeaderId string
+	var maxSeq int64
+	for ndId, seq := range seqMap {
+		if seq > maxSeq {
+			newLeaderId = ndId
+			maxSeq = seq
+		}
+	}
+	l.Info().Msgf("new LeaderId: %s", newLeaderId)
+	if _, ok := clusterInfo.Wkrs[newLeaderId]; ok {
+		l.Info().Msgf("Partition %s has new leader: %s", ptn.Id, newLeaderId)
+		ptn.LeaderNodeId = newLeaderId
+		//ptnUpdCh <- struct{}{} // sync partition to followers
+	}
+}
+
+func send(destAddr string, nodeId string, data []byte) (err error) {
 	var conn *net.TCPConn
 
 	if v, ok := connCache[nodeId]; ok {
@@ -158,7 +206,8 @@ func send(destAddr string, nodeId string, data []byte) string {
 	if conn == nil {
 		conn, err = util.PreapareSocketClient(destAddr)
 		if err != nil {
-			return ""
+			//l.Err(err).Msgf("cluster::send %s", err.Error())
+			return err
 		}
 		connCache[nodeId] = conn
 	}
@@ -173,7 +222,8 @@ func send(destAddr string, nodeId string, data []byte) string {
 		rpcBuf = append(rpcBuf, data...)
 	}
 
-	if len(rpcBuf) == 1 { // means no data, then append controller's addr
+	/* means no data, then append controller's addr */
+	if len(rpcBuf) == 1 {
 		byteBuf.Reset()
 		binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_DEFAULT)
 		rpcBuf = append(rpcBuf, byteBuf.Bytes()...)
@@ -193,19 +243,71 @@ func send(destAddr string, nodeId string, data []byte) string {
 		if conn, ok := connCache[nodeId]; ok {
 			conn.Close()
 			conn = nil
-			l.Warn().Msg("raft_append_entries::send Delete connCache")
+			l.Warn().Msg("rpc_append_entries::send Delete connCache")
 			delete(connCache, nodeId)
 		}
 
-		return ""
+		return err
 	}
 
 	reader := bufio.NewReader(conn)
-	buf, err := proto.Decode(reader)
+	_, err = proto.Decode(reader)
 	if err != nil {
 		if err == io.EOF {
 			l.Err(err).Msgf("rpc_append_entries::send %s\n", err)
 		}
 	}
-	return string(buf)
+	return err
+}
+
+/*
+* get binlog seq from worker
+*
+ */
+func getWorkerBinlogSeq(ndId string, addr2 string, wg *sync.WaitGroup, seqMap *map[string]int64) {
+	defer wg.Done()
+	var conn *net.TCPConn
+	var err error
+	//var ok bool
+	if c, ok := connCache[ndId]; ok {
+		conn = c
+	} else {
+		conn, err = util.PreapareSocketClient(addr2)
+		if err != nil {
+			return
+		}
+		connCache[ndId] = conn
+	}
+	bbuf := new(bytes.Buffer)
+	binary.Write(bbuf, binary.LittleEndian, consts.RPC_GET_BLSEQ)
+	req := bbuf.Bytes()
+	req, err = proto.EncodeB(req)
+	if err != nil {
+		return
+	}
+	_, err = conn.Write(req)
+	if err != nil {
+		if err != io.EOF {
+			l.Err(err).Msgf("cluster::getWorkerBinlogSeq write %s", err.Error())
+			return
+		}
+	}
+	var seq int64
+	reader := bufio.NewReader(conn)
+	res, err := proto.Decode(reader)
+	if err != nil {
+		return
+	}
+	if len(res) > resp.RESPONSE_HEADER_SIZE {
+		bbuf = bytes.NewBuffer(res[resp.RESPONSE_HEADER_SIZE:])
+		err = binary.Read(bbuf, binary.LittleEndian, &seq)
+		if err != nil {
+			l.Err(err).Msgf("cluster::getWorkerBinlogSeq read %s", err.Error())
+			return
+		}
+		l.Info().Msgf("worker %s seq is: %v", ndId, seq)
+		(*seqMap)[ndId] = seq
+	} else {
+		l.Warn().Msgf("cluster::getWorkerBinlogSeq failed")
+	}
 }

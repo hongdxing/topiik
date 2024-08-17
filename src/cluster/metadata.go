@@ -16,7 +16,7 @@ import (
 )
 
 var clusterInfo = &Cluster{Ctls: make(map[string]node.NodeSlim), Wkrs: make(map[string]node.NodeSlim)}
-var partitionInfo = &PartitionInfo{PtnMap: make(map[string]node.Partition)}
+var partitionInfo = &PartitionInfo{PtnMap: make(map[string]*node.Partition)}
 var nodeStatus = &NodeStatus{Role: RAFT_FOLLOWER, Term: 0}
 
 const (

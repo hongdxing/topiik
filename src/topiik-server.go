@@ -1,3 +1,9 @@
+/*
+* author: duan hongxing
+* date: 19 Jun, 2024
+* desc:
+ */
+
 package main
 
 import (
@@ -58,7 +64,6 @@ func main() {
 		//go persistence.Sync()    // sync from Partition Leader
 	}
 
-	//go cluster.StartServer(serverConfig.Host+":"+serverConfig.PORT2, serverConfig)
 	go server.StartServer(serverConfig.Host+":"+serverConfig.PORT2, serverConfig)
 
 	// Accept incoming connections and handle them
@@ -76,8 +81,13 @@ func main() {
 }
 
 func handleConnection(conn net.Conn) {
-	// Close the connection when we're done
-	defer conn.Close()
+	// close the connection when we're done
+	defer func() {
+		if conn != nil {
+			conn.Close()
+		}
+	}()
+
 	reader := bufio.NewReader(conn)
 
 	for {
@@ -90,7 +100,6 @@ func handleConnection(conn net.Conn) {
 			fmt.Println(err)
 			return
 		}
-		//fmt.Printf("%s: %s\n", time.Now().Format(consts.DATA_FMT_MICRO_SECONDS), cmd)
 		result := executor.Execute(msg, conn.RemoteAddr().String(), serverConfig)
 		conn.Write(result)
 	}

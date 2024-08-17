@@ -18,11 +18,10 @@ type Cluster struct {
 	Wkrs map[string]node.NodeSlim
 }
 
-
 type PartitionInfo struct {
 	Ptns   uint16 // number of partitions, given parameter when INIT a cluster
 	Rpls   uint16 // number of replicas, recommend 3 relicas at most, given parameter when INIT a cluster
-	PtnMap map[string]node.Partition
+	PtnMap map[string]*node.Partition
 }
 
 // store dynamic node status in runtime

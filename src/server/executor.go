@@ -70,6 +70,12 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 			return resp.ErrorResponse(err)
 		}
 		return resp.IntegerResponse(res)
+	} else if icmd == consts.RPC_GET_BLSEQ {
+		/*
+		* controller get worker node binlog seq, to elect new partition leader
+		 */
+		seq := persistence.GetBLSeq()
+		return resp.IntegerResponse(seq)
 	} else if icmd == consts.RPC_ADD_NODE {
 		/*
 		* Client connect to controller leader, and issue ADD-NODE command
