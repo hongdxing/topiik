@@ -11,6 +11,8 @@ import (
 	"errors"
 	"slices"
 	"topiik/cluster"
+	"topiik/executor/list"
+	"topiik/executor/str"
 	"topiik/internal/command"
 	"topiik/internal/config"
 	"topiik/internal/consts"
@@ -178,50 +180,50 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 	pieces := []string{}
 	if icmd == command.GET_I { // STRING COMMANDS
-		result, err := get(req)
+		result, err := str.Get(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		finalRes = resp.StringResponse(result)
 	} else if icmd == command.SET_I {
-		result, err := set(req)
+		result, err := str.Set(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		finalRes = resp.StringResponse(result)
 	} else if icmd == command.GETM_I {
-		result, err := getM(req)
+		result, err := str.GetM(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		finalRes = resp.StringArrayResponse(result)
 	} else if icmd == command.SETM_I {
-		result, err := setM(req)
+		result, err := str.SetM(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		finalRes = resp.IntegerResponse(int64(result))
 	} else if icmd == command.INCR_I {
-		result, err := incr(req)
+		result, err := str.Incr(req)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		finalRes = resp.IntegerResponse(result)
 	} else if icmd == command.LPUSH_I || icmd == command.LPUSHR_I { // LIST COMMANDS
 		/***List LPUSH***/
-		result, err := pushList(pieces, icmd)
+		result, err := list.PushList(pieces, icmd)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		finalRes = resp.IntegerResponse(int64(result))
 	} else if icmd == command.LPOP_I || icmd == command.LPOPR_I {
-		result, err := popList(pieces, icmd)
+		result, err := list.PopList(pieces, icmd)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}
 		finalRes = resp.StringArrayResponse(result)
 	} else if icmd == command.LLEN_I {
-		result, err := llen(pieces)
+		result, err := list.Len(pieces)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}

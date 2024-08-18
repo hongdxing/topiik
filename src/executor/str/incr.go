@@ -5,7 +5,7 @@
 **
 **/
 
-package executor
+package str
 
 import (
 	"errors"
@@ -27,7 +27,7 @@ import (
 **
 ** Syntax: INCR KEY [num]
 **/
-func incr(req datatype.Req) (result int64, err error) {
+func Incr(req datatype.Req) (result int64, err error) {
 	if len(req.KEYS) == 0 {
 		return 0, errors.New(resp.RES_SYNTAX_ERROR)
 	}
@@ -46,7 +46,7 @@ func incr(req datatype.Req) (result int64, err error) {
 		var num int
 		num, err = strconv.Atoi(req.ARGS)
 		if err != nil {
-			return 0, errors.New(RES_SYNTAX_ERROR)
+			return 0, errors.New(resp.RES_SYNTAX_ERROR)
 		}
 		key := strings.TrimSpace(req.KEYS[0])
 		i, err = preINCR(key)
@@ -63,7 +63,7 @@ func preINCR(key string) (i int64, err error) {
 	if val, ok := memo.MemMap[key]; ok {
 		i, err = strconv.ParseInt(string(val.Str), 10, 0)
 		if err != nil {
-			return i, errors.New(RES_DATA_TYPE_NOT_MATCH)
+			return i, errors.New(resp.RES_DATA_TYPE_NOT_MATCH)
 		}
 	} else {
 		memo.MemMap[key] = &datatype.TValue{

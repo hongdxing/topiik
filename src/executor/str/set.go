@@ -4,7 +4,7 @@
 * desc:
 ***/
 
-package executor
+package str
 
 import (
 	"errors"
@@ -29,7 +29,7 @@ import (
 ** Syntax: SET KEY VALUE [GET] [TTL seconds] | [TTLAT unxix-time-seconds] | [EX|NX]
 **	- GET: Return old value of the key, or nil if key did not exist
 **/
-func set(req datatype.Req) (result string, err error) {
+func Set(req datatype.Req) (result string, err error) {
 
 	key := req.KEYS[0]
 	returnOld := false
@@ -61,14 +61,12 @@ func set(req datatype.Req) (result string, err error) {
 				}
 				i++
 			} else if piece == "EX" {
-				fmt.Println("EX")
 				if _, ok := memo.MemMap[key]; ok {
 					//
 				} else {
 					return "", errors.New(resp.RES_KEY_NOT_EXIST)
 				}
 			} else if piece == "NX" {
-				fmt.Println("NX")
 				if _, ok := memo.MemMap[key]; ok {
 					return "", errors.New(resp.RES_KEY_EXIST_ALREADY)
 				}

@@ -5,13 +5,15 @@
 **
 **/
 
-package executor
+package str
 
 import (
 	"errors"
 	"strings"
+	"topiik/executor/shared"
 	"topiik/internal/datatype"
 	"topiik/memo"
+	"topiik/resp"
 )
 
 /*
@@ -24,18 +26,18 @@ import (
 *
 * Syntax: GETM KEY1 KEY2 [... KEYn]
  */
-func getM(req datatype.Req) (result []string, err error) {
+func GetM(req datatype.Req) (result []string, err error) {
 	if len(req.KEYS) < 1 {
-		return nil, errors.New(RES_SYNTAX_ERROR)
+		return nil, errors.New(resp.RES_SYNTAX_ERROR)
 	}
 	for _, key := range req.KEYS {
 		key = strings.TrimSpace(key)
 		if val, ok := memo.MemMap[key]; ok {
-			if isKeyExpired(key, val.Exp) {
+			if shared.IsKeyExpired(key, val.Exp) {
 				result = append(result, "")
 			}
 			if val.Typ != datatype.V_TYPE_STRING {
-				return nil, errors.New(RES_DATA_TYPE_NOT_MATCH)
+				return nil, errors.New(resp.RES_DATA_TYPE_NOT_MATCH)
 			}
 			result = append(result, string(val.Str))
 		} else {

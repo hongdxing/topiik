@@ -5,7 +5,7 @@
 **
 **/
 
-package executor
+package list
 
 import (
 	"container/list"
@@ -14,6 +14,7 @@ import (
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/memo"
+	"topiik/resp"
 )
 
 /***
@@ -26,9 +27,9 @@ import (
 **
 ** Syntax: LPUSH|RPUSH key value1 [... valueN]
 **/
-func pushList(pieces []string, icmd uint8) (result int, err error) {
+func PushList(pieces []string, icmd uint8) (result int, err error) {
 	if len(pieces) < 2 { // except KEY, at least need one value
-		return 0, errors.New(RES_WRONG_NUMBER_OF_ARGS)
+		return 0, errors.New(resp.RES_WRONG_NUMBER_OF_ARGS)
 	}
 	/*pieces, err := util.SplitCommandLine(args[1])
 	if err != nil {
