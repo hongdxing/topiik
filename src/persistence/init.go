@@ -11,8 +11,11 @@ import (
 	"topiik/logger"
 )
 
-// current partition binlog seq
+/* binlog seq and cmd len */
+const preMsgLen int = 12
+
+/* current partition binlog seq */
 var binlogSeq int64 = 0
 
-// log
+/* log */
 var l = logger.Get()

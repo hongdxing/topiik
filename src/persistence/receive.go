@@ -22,7 +22,7 @@ var flrActiveBLF *os.File
 *	- binlogs: one or more logs
 *
  */
-func ReceiveBinlog(binlogs []byte) (seq int64, err error) {
+func ReceiveBinlog(binlogs []byte, f execute1) (seq int64, err error) {
 	if flrActiveBLF == nil {
 		path := getActiveBinlogFile()
 		flrActiveBLF, err = os.OpenFile(path, os.O_CREATE|os.O_APPEND, 0664)
@@ -50,10 +50,12 @@ func ReceiveBinlog(binlogs []byte) (seq int64, err error) {
 			seq-- // parse ok, but write failed, return pre seq
 			break
 		}
+
+		/* load to RAM */
+		replay(buf, f)
+
+		/* update global seq */
 		binlogSeq = seq
 	}
-	//bbuf := new(bytes.Buffer)
-	//binary.Write(bbuf, binary.LittleEndian, seq)
-	//res = bbuf.Bytes()
 	return binlogSeq, nil
 }

@@ -11,12 +11,10 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"io"
 	"net"
 	"os"
 	"topiik/internal/consts"
-	"topiik/internal/datatype"
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/node"
@@ -257,9 +255,8 @@ func doSync(conn *net.TCPConn, binlogs []byte) (flrSeq int64, err error) {
 * Parameters:
 *	- f fn: the func that execute command, i.e: executor.Executer1
  */
-type fn func(uint8, datatype.Req) []byte
 
-func Load(f fn) {
+func Load(f execute1) {
 	fpath := getActiveBinlogFile()
 	exist, err := util.PathExists(fpath)
 	if err != nil {
@@ -281,22 +278,8 @@ func Load(f fn) {
 				break
 			}
 
-			// 4: replay msg(load from disk to memory)
-			buf = buf[12:]
-			icmd, _, err := proto.DecodeHeader(buf)
-			if err != nil {
-				l.Panic().Msgf("persistence::Load %s", err.Error())
-			}
-
-			var req datatype.Req
-			buf = buf[2:]
-			err = json.Unmarshal(buf, &req) // 2= 1 icmd and 1 ver
-			if err != nil {
-				l.Panic().Msgf("persistence::Load %s", err.Error())
-			}
-
-			// replay to load to RAM
-			f(icmd, req)
+			/* load to RAM */
+			replay(buf, f)
 		}
 	}
 	l.Info().Msgf("persistence::Load BINLOG SEQ: %v", binlogSeq)

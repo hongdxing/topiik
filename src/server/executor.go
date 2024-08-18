@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"topiik/executor"
 	"topiik/internal/config"
 	"topiik/internal/consts"
 	"topiik/persistence"
@@ -65,7 +66,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 		/*
 		* RPC from Partition Leader sync binlog to follower
 		 */
-		res, err := persistence.ReceiveBinlog(dataBytes)
+		res, err := persistence.ReceiveBinlog(dataBytes, executor.Execute1)
 		if err != nil {
 			return resp.ErrorResponse(err)
 		}

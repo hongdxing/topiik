@@ -31,7 +31,7 @@ const (
 	RES_KEY_NOT_EXIST        = "KEY_NOT_EXIST"
 )
 
-var PersistenceCh = make(chan []byte)
+//var PersistenceCh = make(chan []byte)
 var persistCmds = []uint8{
 	// String
 	command.SET_I,
