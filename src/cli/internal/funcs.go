@@ -107,7 +107,7 @@ func EncodeCmd(input string) (result []byte, err error) {
 		icmd = command.LPUSHR_I
 	} else if cmd == command.LPOPB {
 		icmd = command.LPOPR_I
-	} else if cmd == command.GET_LADDR { /* Get Cluster Leader Addr for client to redirect */
+	} else if cmd == command.GET_CTLADDR { /* Get Cluster Leader Addr for client to redirect */
 		// no additional data
 	} else if cmd == command.KEYS { /* KEY COMMANDS START */
 		if len(pieces) != 2 {

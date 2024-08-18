@@ -31,7 +31,7 @@ const (
 	RES_KEY_NOT_EXIST        = "KEY_NOT_EXIST"
 )
 
-//var PersistenceCh = make(chan []byte)
+// var PersistenceCh = make(chan []byte)
 var persistCmds = []uint8{
 	// String
 	command.SET_I,
@@ -85,7 +85,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 			return resp.ErrorResponse(err)
 		}
 		return resp.StringResponse(result)
-	} else if icmd == command.GET_LADDR_I {
+	} else if icmd == command.GET_CTLADDR_I {
 		l.Info().Msg("get controller address")
 		var address string
 		if cluster.GetNodeStatus().Role == cluster.RAFT_LEADER { // if is leader, then just return leader's address
@@ -99,7 +99,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 			if len(node.GetNodeInfo().ClusterId) == 0 {
 				address = serverConfig.Listen
 			} else {
-				return resp.ErrorResponse(errors.New(resp.RES_NO_LEADER))
+				return resp.ErrorResponse(errors.New(resp.RES_NO_CTL))
 			}
 
 		}
@@ -143,7 +143,7 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 			msgN, _ := proto.EncodeHeader(command.SET_I, 1)                        // msg header
 			msgN = append(msgN, reqBytesN...)                                      // combine msg header and req bytes
 			msgN, _ = proto.EncodeB(msgN)                                          // encode msg
-			cluster.Forward(key, msgN)
+			forwardByKey(key, msgN)
 		}
 		return resp.StringResponse(resp.RES_OK)
 	} else if icmd == command.GETM_I {
@@ -155,7 +155,7 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 			msgN, _ := proto.EncodeHeader(command.GET_I, 1)             // msg header
 			msgN = append(msgN, reqBytesN...)                           // combine msg header and req bytes
 			msgN, _ = proto.EncodeB(msgN)                               // encode msg
-			resN := cluster.Forward(key, msgN)
+			resN := forwardByKey(key, msgN)
 			flag := resp.ParseResFlag(resN)
 			if flag != 1 {
 				res = append(res, "")
@@ -168,7 +168,7 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 		return resp.StringArrayResponse(res)
 	}
 	key := req.KEYS[0]
-	return cluster.Forward(key, msg)
+	return forwardByKey(key, msg)
 }
 
 /*

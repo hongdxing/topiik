@@ -222,7 +222,7 @@ func getControllerLeaderAddr(host string) (addr string, err error) {
 		if err != nil {
 			fmt.Printf("(err):%s\n", err)
 		}*/
-	msg, err := proto.EncodeHeader(command.GET_LADDR_I, 1)
+	msg, err := proto.EncodeHeader(command.GET_CTLADDR_I, 1)
 	if err != nil {
 		return "", errors.New("syntax error")
 	}

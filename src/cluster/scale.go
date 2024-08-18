@@ -19,7 +19,7 @@ import (
 
 func Scale(p int, r int) (result string, err error) {
 	// if no enough worker nodes
-	if len(clusterInfo.Wkrs) < p*r || p > SLOTS {
+	if len(clusterInfo.Wkrs) < p*r || p > consts.SLOTS {
 		return "", errors.New(resp.RES_NO_ENOUGH_WORKER)
 	}
 	if len(partitionInfo.PtnMap) == 0 { // new cluster
@@ -43,12 +43,12 @@ func Scale(p int, r int) (result string, err error) {
 
 			var from int
 			var to int
-			from = i * (SLOTS / p) // p=2--> i=0: 0, i=1: 512
+			from = i * (consts.SLOTS / p) // p=2--> i=0: 0, i=1: 512
 
 			if i == (p - 1) {
-				to = SLOTS - 1
+				to = consts.SLOTS - 1
 			} else {
-				to = (i+1)*(SLOTS/p) - 1 // p=2--> i=0: 511, i=1: 1024
+				to = (i+1)*(consts.SLOTS/p) - 1 // p=2--> i=0: 511, i=1: 1024
 			}
 			slot := node.Slot{From: uint16(from), To: uint16(to)}
 			partition.Slots = []node.Slot{slot}

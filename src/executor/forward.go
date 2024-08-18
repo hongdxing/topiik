@@ -5,7 +5,7 @@
 **
 **/
 
-package cluster
+package executor
 
 import (
 	"bufio"
@@ -13,22 +13,22 @@ import (
 	"hash/crc32"
 	"io"
 	"net"
+	"topiik/cluster"
+	"topiik/internal/consts"
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/node"
 	"topiik/resp"
 )
 
-// cache Tcp Conn from Controller to Workers
-var tcpMap = make(map[string]*net.TCPConn)
+/* Conn cache from Controller to Workers */
+var ctlwkrConnCache = make(map[string]*net.TCPConn)
 
-func Forward(key string, msg []byte) []byte {
-	if len(clusterInfo.Wkrs) == 0 {
-		//res, _ := proto.Encode("")
-		//return res
+func forwardByKey(key string, msg []byte) []byte {
+	if len(cluster.GetClusterInfo().Wkrs) == 0 {
 		return resp.ErrorResponse(errors.New(resp.RES_NO_ENOUGH_WORKER))
 	}
-	if len(partitionInfo.PtnMap) == 0 {
+	if len(cluster.GetPartitionInfo().PtnMap) == 0 {
 		return resp.ErrorResponse(errors.New(resp.RES_NO_PARTITION))
 	}
 	var err error
@@ -39,7 +39,7 @@ func Forward(key string, msg []byte) []byte {
 		return resp.ErrorResponse(errors.New(resp.RES_NO_PARTITION))
 	}
 
-	conn, ok := tcpMap[targetWorker.Id]
+	conn, ok := ctlwkrConnCache[targetWorker.Id]
 	if !ok {
 		//conn, err = util.PreapareSocketClientWithPort(targetWorker.Addr, CONTROLLER_FORWORD_PORT)
 		conn, err = util.PreapareSocketClient(targetWorker.Addr)
@@ -47,15 +47,15 @@ func Forward(key string, msg []byte) []byte {
 			l.Err(err).Msg(err.Error())
 			return resp.ErrorResponse(errors.New(resp.RES_CONN_RESET))
 		}
-		tcpMap[targetWorker.Id] = conn
+		ctlwkrConnCache[targetWorker.Id] = conn
 	}
 	// Send
 	_, err = conn.Write(msg)
 	if err != nil {
 		l.Err(err).Msg(err.Error())
-		if _, ok = tcpMap[targetWorker.Id]; ok {
+		if _, ok = ctlwkrConnCache[targetWorker.Id]; ok {
 			l.Warn().Msgf("forward::Forward remove tcp cache of worker %s", targetWorker.Id)
-			delete(tcpMap, targetWorker.Id)
+			delete(ctlwkrConnCache, targetWorker.Id)
 		}
 		// try reconnect
 		targetWorker := getWorker(key) // the worker may changed because of Worker Leader fail
@@ -79,12 +79,12 @@ func Forward(key string, msg []byte) []byte {
 
 func getWorker(key string) (worker node.NodeSlim) {
 	var keyHash = crc32.Checksum([]byte(key), crc32.IEEETable)
-	keyHash = keyHash % SLOTS
+	keyHash = keyHash % consts.SLOTS
 	//fmt.Printf("key hash %v\n", keyHash)
-	for _, partition := range partitionInfo.PtnMap {
+	for _, partition := range cluster.GetPartitionInfo().PtnMap {
 		for _, slot := range partition.Slots {
 			if slot.From <= uint16(keyHash) && slot.To >= uint16(keyHash) {
-				worker = clusterInfo.Wkrs[partition.LeaderNodeId]
+				worker = cluster.GetClusterInfo().Wkrs[partition.LeaderNodeId]
 				break
 			}
 		}
@@ -95,24 +95,24 @@ func getWorker(key string) (worker node.NodeSlim) {
 	return worker
 }
 
-func ForwardByWorker(targetWorker node.NodeSlim, msg []byte) []byte {
+func forwardByWorker(targetWorker node.NodeSlim, msg []byte) []byte {
 	var err error
-	conn, ok := tcpMap[targetWorker.Id]
+	conn, ok := ctlwkrConnCache[targetWorker.Id]
 	if !ok {
 		conn, err = util.PreapareSocketClient(targetWorker.Addr)
 		if err != nil {
 			l.Err(err).Msg(err.Error())
 			return resp.ErrorResponse(errors.New(resp.RES_CONN_RESET))
 		}
-		tcpMap[targetWorker.Id] = conn
+		ctlwkrConnCache[targetWorker.Id] = conn
 	}
 	// Send
 	_, err = conn.Write(msg)
 	if err != nil {
 		l.Err(err).Msg(err.Error())
-		if _, ok = tcpMap[targetWorker.Id]; ok {
+		if _, ok = ctlwkrConnCache[targetWorker.Id]; ok {
 			l.Warn().Msgf("forward::Forward remove tcp cache of worker %s", targetWorker.Id)
-			delete(tcpMap, targetWorker.Id)
+			delete(ctlwkrConnCache, targetWorker.Id)
 		}
 		// try reconnect
 		//targetWorker := getWorker(key) // the worker may changed because of Worker Leader fail

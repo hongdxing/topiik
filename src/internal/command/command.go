@@ -12,8 +12,8 @@ const (
 	RM_NODE_I      uint8 = 4
 	SCALE                = "SCALE"
 	SCALE_I        uint8 = 5
-	GET_LADDR            = "GET-LADDR"
-	GET_LADDR_I    uint8 = 15
+	GET_CTLADDR          = "GET-CTLADDR"
+	GET_CTLADDR_I  uint8 = 15
 
 	/*** String ***/
 	SET          = "SET"
