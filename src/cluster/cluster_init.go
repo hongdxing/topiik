@@ -1,9 +1,9 @@
-/***
-**
-**
-**
-**
-**/
+/*
+* author: duan hongxing
+* date: 6 July, 2024
+* desc:
+*
+ */
 
 package cluster
 
@@ -16,10 +16,10 @@ import (
 	"topiik/node"
 )
 
-const cluster_init_failed = "cluster init failed"
+const clusterInitFailed = "cluster init failed"
 
 /*
-* Initialzied by command INIT-CLUSTER
+* Execute command INIT-CLUSTER
 *
  */
 func InitCluster(serverConfig *config.ServerConfig) error {
@@ -44,29 +44,33 @@ func InitCluster(serverConfig *config.ServerConfig) error {
 
 func doInit(serverConfig *config.ServerConfig) error {
 	if len(clusterInfo.Id) > 0 {
-		return errors.New("current node already in cluster:" + clusterInfo.Id)
+		return errors.New("current node already in cluster: " + clusterInfo.Id)
 	}
 	// set clusterInfo
 	nodeId := node.GetNodeInfo().Id
-	clusterInfo.Id = util.RandStringRunes(16)
+	clusterInfo.Id = util.RandStringRunes(10)
 
-	addrSplit, err := util.SplitAddress(serverConfig.Listen)
+	hostPort, err := util.SplitAddress(serverConfig.Listen)
 	if err != nil {
 		l.Panic().Msg(err.Error())
 	}
 	clusterInfo.Ctls[nodeId] = node.NodeSlim{
 		Id:    nodeId,
 		Addr:  serverConfig.Listen,
-		Addr2: addrSplit[0] + ":" + addrSplit[2]}
+		Addr2: hostPort[0] + ":" + hostPort[2],
+	}
 
-	// persist cluster metadata
-	clusterPath := GetClusterFilePath()
-	_ = os.Remove(clusterPath) // just incase
+	// save cluster metadata
+	fpath := GetClusterFilePath()
+	_ = os.Remove(fpath) // just incase
 	data, err := json.Marshal(clusterInfo)
 	if err != nil {
-		return errors.New(cluster_init_failed)
+		return errors.New(clusterInitFailed)
 	}
-	os.WriteFile(clusterPath, data, 0644)
+	err = os.WriteFile(fpath, data, 0644)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

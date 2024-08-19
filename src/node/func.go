@@ -74,19 +74,18 @@ func InitNode(serverConfig config.ServerConfig) (err error) {
 }
 
 /*
-* Initialzied by command INIT-CLUSTER
 * Update Node clusterId when init cluster
 *
  */
 func InitCluster(clusterId string) (err error) {
 	// 1. open node file
-	nodePath := GetNodeFilePath()
+	fpath := GetNodeFilePath()
 
 	// 2. read from node file
 	var jsonStr string
 	var buf []byte
 
-	buf, err = os.ReadFile(nodePath)
+	buf, err = os.ReadFile(fpath)
 	if err != nil {
 		return errors.New(cluster_init_failed)
 	}
@@ -106,8 +105,8 @@ func InitCluster(clusterId string) (err error) {
 	buf2, _ := json.Marshal(nodeInfo)
 
 	// 5. write back to file
-	os.Truncate(nodePath, 0)
-	os.WriteFile(nodePath, buf2, 0644)
+	os.Truncate(fpath, 0)
+	os.WriteFile(fpath, buf2, 0644)
 
 	return nil
 }

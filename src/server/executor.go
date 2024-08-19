@@ -50,7 +50,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 		* The follow send it's binlogSeq to Leader
 		 */
 		/*if len(dataBytes) < consts.NODE_ID_LEN {
-			return resp.ErrorResponse(errors.New(resp.RES_SYNTAX_ERROR))
+			return resp.ErrResponse(errors.New(resp.RES_SYNTAX_ERROR))
 		}
 		followerId := string(dataBytes[:consts.NODE_ID_LEN])
 		var seq int64
@@ -58,7 +58,7 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 		err := binary.Read(byteBuf, binary.LittleEndian, &seq)
 		if err != nil {
 			l.Err(err).Msg(err.Error())
-			return resp.ErrorResponse(errors.New(resp.RES_SYNTAX_ERROR))
+			return resp.ErrResponse(errors.New(resp.RES_SYNTAX_ERROR))
 		}
 		res := persistence.Fetch(followerId, seq)
 		*/
@@ -68,15 +68,15 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 		 */
 		res, err := persistence.ReceiveBinlog(dataBytes, executor.Execute1)
 		if err != nil {
-			return resp.ErrorResponse(err)
+			return resp.ErrResponse(err)
 		}
-		return resp.IntegerResponse(res)
+		return resp.IntResponse(res)
 	} else if icmd == consts.RPC_GET_BLSEQ {
 		/*
 		* controller get worker node binlog seq, to elect new partition leader
 		 */
 		seq := persistence.GetBLSeq()
-		return resp.IntegerResponse(seq)
+		return resp.IntResponse(seq)
 	} else if icmd == consts.RPC_ADD_NODE {
 		/*
 		* Client connect to controller leader, and issue ADD-NODE command
@@ -85,19 +85,19 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 		pieces := strings.Split(string(dataBytes), consts.SPACE)
 		result, err := addNode(pieces)
 		if err != nil {
-			return resp.ErrorResponse(err)
+			return resp.ErrResponse(err)
 		}
-		return resp.StringResponse(result)
+		return resp.StrResponse(result)
 	} else if icmd == consts.RPC_VOTE {
 		/*
 		* RPC from controller leader by request vote
 		 */
 		cTerm, err := strconv.Atoi(string(dataBytes))
 		if err != nil {
-			return resp.ErrorResponse(errors.New(resp.RES_SYNTAX_ERROR))
+			return resp.ErrResponse(errors.New(resp.RES_SYNTAX_ERROR))
 		} else {
 			result := vote(cTerm)
-			return resp.StringResponse(result)
+			return resp.StrResponse(result)
 		}
 	} else if icmd == consts.RPC_APPENDENTRY {
 		/*
@@ -105,9 +105,9 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 		 */
 		err := appendEntry(dataBytes, serverConfig)
 		if err != nil {
-			return resp.ErrorResponse(err)
+			return resp.ErrResponse(err)
 		}
-		return resp.StringResponse("")
+		return resp.StrResponse("")
 	} else if icmd == consts.RPC_GET_PL {
 		/*
 		* RPC from workers, to get partition leader addr2
@@ -116,22 +116,22 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 		pieces := strings.Split(string(dataBytes), consts.SPACE)
 		res, err := getPartitionLeader(pieces)
 		if err != nil {
-			return resp.ErrorResponse(err)
+			return resp.ErrResponse(err)
 		}
-		return resp.StringResponse(res)
+		return resp.StrResponse(res)
 	}
 
 	/* Obsoleted CLUSTER JOIN
 	if icmd == CLUSTER_JOIN_ACK {
 		pieces := strings.Split(string(dataBytes), consts.SPACE)
 		if len(pieces) < 1 {
-			return resp.ErrorResponse(errors.New(RES_SYNTAX_ERROR))
+			return resp.ErrResponse(errors.New(RES_SYNTAX_ERROR))
 		}
 		result, err := clusterJoin(pieces)
 		if err != nil {
-			return resp.ErrorResponse(err)
+			return resp.ErrResponse(err)
 		}
-		return resp.StringResponse(result)
+		return resp.StrResponse(result)
 	}*/
-	return resp.ErrorResponse(errors.New(consts.RES_INVALID_CMD))
+	return resp.ErrResponse(errors.New(consts.RES_INVALID_CMD))
 }

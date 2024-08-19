@@ -26,7 +26,7 @@ import (
 **	- OK if success
 **	- SYNTAX_ERROR if syntax error
 **
-** Syntax: SET KEY VALUE [GET] [TTL seconds] | [TTLAT unxix-time-seconds] | [EX|NX]
+** Syntax: SET KEY VALUE [GET] [TTL seconds] [TTLAT unxix-time-seconds] [EX|NX]
 **	- GET: Return old value of the key, or nil if key did not exist
 **/
 func Set(req datatype.Req) (result string, err error) {

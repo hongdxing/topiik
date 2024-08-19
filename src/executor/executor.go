@@ -60,33 +60,33 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 	}
 
 	if len(msgBytes) < 2 {
-		return resp.ErrorResponse(errors.New(resp.RES_SYNTAX_ERROR))
+		return resp.ErrResponse(errors.New(resp.RES_SYNTAX_ERROR))
 	}
 	var req datatype.Req
 	err = json.Unmarshal(msgBytes[2:], &req) // 2= 1 icmd and 1 ver
 	if err != nil {
 		l.Err(err).Msg(err.Error())
-		return resp.ErrorResponse(err)
+		return resp.ErrResponse(err)
 	}
 
 	if icmd == command.INIT_CLUSTER_I {
-		err := clusterInit(req, serverConfig)
+		err := clusterInit(serverConfig)
 		if err != nil {
-			return resp.ErrorResponse(err)
+			return resp.ErrResponse(err)
 		}
-		return resp.StringResponse(RES_OK)
+		return resp.StrResponse(RES_OK)
 	} else if icmd == command.ADD_NODE_I {
 		result, err := addNode(req)
 		if err != nil {
-			return resp.ErrorResponse(err)
+			return resp.ErrResponse(err)
 		}
-		return resp.StringResponse(result)
+		return resp.StrResponse(result)
 	} else if icmd == command.SCALE_I {
 		result, err := scale(req)
 		if err != nil {
-			return resp.ErrorResponse(err)
+			return resp.ErrResponse(err)
 		}
-		return resp.StringResponse(result)
+		return resp.StrResponse(result)
 	} else if icmd == command.GET_CTLADDR_I {
 		l.Info().Msg("get controller address")
 		var address string
@@ -101,11 +101,11 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 			if len(node.GetNodeInfo().ClusterId) == 0 {
 				address = serverConfig.Listen
 			} else {
-				return resp.ErrorResponse(errors.New(resp.RES_NO_CTL))
+				return resp.ErrResponse(errors.New(resp.RES_NO_CTL))
 			}
 
 		}
-		return resp.StringResponse(address)
+		return resp.StrResponse(address)
 	}
 
 	// if is Controller, forward to worker(s)
@@ -115,12 +115,12 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 
 	// node must be in a cluster
 	if len(node.GetNodeInfo().ClusterId) == 0 {
-		return resp.ErrorResponse(errors.New(resp.RES_NO_CLUSTER))
+		return resp.ErrResponse(errors.New(resp.RES_NO_CLUSTER))
 	}
 	// allow cmd only from Controller Leader, and TODO: allow from Partition Leader
 	err = srcFilter(srcAddr)
 	if err != nil {
-		return resp.ErrorResponse(err)
+		return resp.ErrResponse(err)
 	}
 
 	finalRes = Execute1(icmd, req)
@@ -136,7 +136,7 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 	// special process SETM, because SETM has more than one keys
 	if icmd == command.SETM_I {
 		if len(req.KEYS) != len(req.VALS) {
-			return resp.ErrorResponse(errors.New(resp.RES_SYNTAX_ERROR))
+			return resp.ErrResponse(errors.New(resp.RES_SYNTAX_ERROR))
 		}
 		// split setm to multi set
 		for i, key := range req.KEYS {
@@ -147,7 +147,7 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 			msgN, _ = proto.EncodeB(msgN)                                          // encode msg
 			forwardByKey(key, msgN)
 		}
-		return resp.StringResponse(resp.RES_OK)
+		return resp.StrResponse(resp.RES_OK)
 	} else if icmd == command.GETM_I {
 		var res []string
 		// split setm to multi set
@@ -164,10 +164,10 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 			}
 			res = append(res, string(resN[resp.RESPONSE_HEADER_SIZE:]))
 		}
-		return resp.StringArrayResponse(res)
+		return resp.StrArrResponse(res)
 	} else if icmd == command.KEYS_I {
 		res := forwardKeys(msg)
-		return resp.StringArrayResponse(res)
+		return resp.StrArrResponse(res)
 	}
 	key := req.KEYS[0]
 	return forwardByKey(key, msg)
@@ -182,67 +182,67 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 	if icmd == command.GET_I { // STRING COMMANDS
 		result, err := str.Get(req)
 		if err != nil {
-			return resp.ErrorResponse(err)
+			return resp.ErrResponse(err)
 		}
-		finalRes = resp.StringResponse(result)
+		finalRes = resp.StrResponse(result)
 	} else if icmd == command.SET_I {
 		result, err := str.Set(req)
 		if err != nil {
-			return resp.ErrorResponse(err)
+			return resp.ErrResponse(err)
 		}
-		finalRes = resp.StringResponse(result)
+		finalRes = resp.StrResponse(result)
 	} else if icmd == command.GETM_I {
 		result, err := str.GetM(req)
 		if err != nil {
-			return resp.ErrorResponse(err)
+			return resp.ErrResponse(err)
 		}
-		finalRes = resp.StringArrayResponse(result)
+		finalRes = resp.StrArrResponse(result)
 	} else if icmd == command.SETM_I {
 		result, err := str.SetM(req)
 		if err != nil {
-			return resp.ErrorResponse(err)
+			return resp.ErrResponse(err)
 		}
-		finalRes = resp.IntegerResponse(int64(result))
+		finalRes = resp.IntResponse(int64(result))
 	} else if icmd == command.INCR_I {
 		result, err := str.Incr(req)
 		if err != nil {
-			return resp.ErrorResponse(err)
+			return resp.ErrResponse(err)
 		}
-		finalRes = resp.IntegerResponse(result)
+		finalRes = resp.IntResponse(result)
 	} else if icmd == command.LPUSH_I || icmd == command.LPUSHR_I { // LIST COMMANDS
 		/***List LPUSH***/
 		result, err := list.PushList(pieces, icmd)
 		if err != nil {
-			return resp.ErrorResponse(err)
+			return resp.ErrResponse(err)
 		}
-		finalRes = resp.IntegerResponse(int64(result))
+		finalRes = resp.IntResponse(int64(result))
 	} else if icmd == command.LPOP_I || icmd == command.LPOPR_I {
 		result, err := list.PopList(pieces, icmd)
 		if err != nil {
-			return resp.ErrorResponse(err)
+			return resp.ErrResponse(err)
 		}
-		finalRes = resp.StringArrayResponse(result)
+		finalRes = resp.StrArrResponse(result)
 	} else if icmd == command.LLEN_I {
 		result, err := list.Len(pieces)
 		if err != nil {
-			return resp.ErrorResponse(err)
+			return resp.ErrResponse(err)
 		}
-		finalRes = resp.IntegerResponse(int64(result))
+		finalRes = resp.IntResponse(int64(result))
 	} else if icmd == command.TTL_I { // KEY COMMANDS
 		result, err := ttl(pieces)
 		if err != nil {
-			return resp.ErrorResponse(err)
+			return resp.ErrResponse(err)
 		}
-		finalRes = resp.IntegerResponse(result)
+		finalRes = resp.IntResponse(result)
 	} else if icmd == command.KEYS_I {
 		result, err := keys(req)
 		if err != nil {
-			return resp.ErrorResponse(err)
+			return resp.ErrResponse(err)
 		}
-		finalRes = resp.StringArrayResponse(result)
+		finalRes = resp.StrArrResponse(result)
 	} else {
 		l.Err(errors.New("Invalid cmd:" + string(icmd)))
-		return resp.ErrorResponse(errors.New(consts.RES_INVALID_CMD))
+		return resp.ErrResponse(errors.New(consts.RES_INVALID_CMD))
 	}
 	return finalRes
 }

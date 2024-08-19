@@ -26,17 +26,17 @@ var ctlwkrConnCache = make(map[string]*net.TCPConn)
 
 func forwardByKey(key string, msg []byte) []byte {
 	if len(cluster.GetClusterInfo().Wkrs) == 0 {
-		return resp.ErrorResponse(errors.New(resp.RES_NO_ENOUGH_WORKER))
+		return resp.ErrResponse(errors.New(resp.RES_NO_ENOUGH_WORKER))
 	}
 	if len(cluster.GetPartitionInfo().PtnMap) == 0 {
-		return resp.ErrorResponse(errors.New(resp.RES_NO_PARTITION))
+		return resp.ErrResponse(errors.New(resp.RES_NO_PARTITION))
 	}
 	var err error
 	// find worker base on key partition, and get LeaderWorkerId
 	targetWorker := getWorker(key)
 	if len(targetWorker.Id) == 0 {
 		l.Warn().Msg("forward::Forward no slot available")
-		return resp.ErrorResponse(errors.New(resp.RES_NO_PARTITION))
+		return resp.ErrResponse(errors.New(resp.RES_NO_PARTITION))
 	}
 
 	conn, ok := ctlwkrConnCache[targetWorker.Id]
@@ -45,7 +45,7 @@ func forwardByKey(key string, msg []byte) []byte {
 		conn, err = util.PreapareSocketClient(targetWorker.Addr)
 		if err != nil {
 			l.Err(err).Msg(err.Error())
-			return resp.ErrorResponse(errors.New(resp.RES_CONN_RESET))
+			return resp.ErrResponse(errors.New(resp.RES_CONN_RESET))
 		}
 		ctlwkrConnCache[targetWorker.Id] = conn
 	}
@@ -62,7 +62,7 @@ func forwardByKey(key string, msg []byte) []byte {
 		conn, err = util.PreapareSocketClient(targetWorker.Addr)
 		if err != nil {
 			l.Err(err).Msg(err.Error())
-			return resp.ErrorResponse(errors.New(resp.RES_CONN_RESET))
+			return resp.ErrResponse(errors.New(resp.RES_CONN_RESET))
 		}
 		conn.Write(msg)
 	}
@@ -71,7 +71,7 @@ func forwardByKey(key string, msg []byte) []byte {
 	responseBytes, err := proto.Decode(reader)
 	if err != nil {
 		if err == io.EOF {
-			return resp.ErrorResponse(errors.New(resp.RES_CONN_RESET))
+			return resp.ErrResponse(errors.New(resp.RES_CONN_RESET))
 		}
 	}
 	return responseBytes
@@ -102,7 +102,7 @@ func forwardByWorker(targetWorker node.NodeSlim, msg []byte) []byte {
 		conn, err = util.PreapareSocketClient(targetWorker.Addr)
 		if err != nil {
 			l.Err(err).Msg(err.Error())
-			return resp.ErrorResponse(errors.New(resp.RES_CONN_RESET))
+			return resp.ErrResponse(errors.New(resp.RES_CONN_RESET))
 		}
 		ctlwkrConnCache[targetWorker.Id] = conn
 	}
@@ -119,7 +119,7 @@ func forwardByWorker(targetWorker node.NodeSlim, msg []byte) []byte {
 		conn, err = util.PreapareSocketClient(targetWorker.Addr)
 		if err != nil {
 			l.Err(err).Msg(err.Error())
-			return resp.ErrorResponse(errors.New(resp.RES_CONN_RESET))
+			return resp.ErrResponse(errors.New(resp.RES_CONN_RESET))
 		}
 		conn.Write(msg)
 	}
@@ -128,7 +128,7 @@ func forwardByWorker(targetWorker node.NodeSlim, msg []byte) []byte {
 	responseBytes, err := proto.Decode(reader)
 	if err != nil {
 		if err == io.EOF {
-			return resp.ErrorResponse(errors.New(resp.RES_CONN_RESET))
+			return resp.ErrResponse(errors.New(resp.RES_CONN_RESET))
 		}
 	}
 	return responseBytes

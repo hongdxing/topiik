@@ -71,10 +71,9 @@ func RandStringRunes(n int) string {
 	return string(b)
 }
 
-/***
-**
-** Return: [host, port, port2], err
-**/
+/*
+* Return: [host, port, port2], err
+ */
 func SplitAddress(address string) ([]string, error) {
 	reg := regexp.MustCompile(`(.*)((?::))((?:[0-9]+))$`)
 	pieces := reg.FindStringSubmatch(address)

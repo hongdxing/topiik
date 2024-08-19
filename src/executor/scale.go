@@ -17,25 +17,40 @@ import (
 )
 
 func scale(req datatype.Req) (result string, err error) {
-	l.Info().Msg("***scale start***")
-	pieces := strings.SplitN(req.ARGS, consts.SPACE, 2)
-	if len(pieces) != 2 {
-		return "", errors.New(resp.RES_SYNTAX_ERROR)
+	l.Info().Msg("executor::scale start")
+	var partition = 0
+	var replica = 0
+	pieces := strings.Split(req.ARGS, consts.SPACE)
+	for i := 0; i < len(pieces); i++ {
+		if strings.ToLower(pieces[i]) == "partition" {
+			if len(pieces) > i {
+				partition, err = strconv.Atoi(pieces[i+1])
+				if err != nil {
+					return "", errors.New(resp.RES_SYNTAX_ERROR)
+				}
+			}
+			i++
+		} else if strings.ToLower(pieces[i]) == "replica" {
+			if len(pieces) > i {
+				replica, err = strconv.Atoi(pieces[i+1])
+				if err != nil {
+					return "", errors.New(resp.RES_SYNTAX_ERROR)
+				}
+			}
+			i++
+		} else {
+			return "", errors.New(resp.RES_SYNTAX_ERROR)
+		}
 	}
-	partitions, err := strconv.ParseUint(pieces[0], 10, 16)
-	if err != nil {
+	if partition <= 0 || replica <= 0 {
 		return "", errors.New(resp.RES_SYNTAX_ERROR)
-	}
-	replicas, err := strconv.ParseUint(pieces[1], 10, 16)
-	if err != nil {
-		return "", errors.New(RES_SYNTAX_ERROR)
 	}
 
-	result, err = cluster.Scale(int(partitions), int(replicas))
+	result, err = cluster.Scale(partition, replica)
 	if err != nil {
 		return "", err
 	}
 
-	l.Info().Msg("***scale done***")
+	l.Info().Msg("executor::scale done")
 	return result, nil
 }

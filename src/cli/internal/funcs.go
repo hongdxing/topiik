@@ -54,7 +54,10 @@ func EncodeCmd(input string) (result []byte, err error) {
 		icmd = command.ADD_NODE_I
 		req.ARGS = strings.Join(pieces[1:], consts.SPACE)
 	} else if cmd == command.SCALE {
-		if len(pieces) != 3 {
+		/*
+		* Syntax: scale partition 1 replica 2
+		 */
+		if len(pieces) != 5 {
 			return syntaxErr()
 		}
 		icmd = command.SCALE_I

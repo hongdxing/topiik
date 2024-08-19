@@ -92,7 +92,7 @@ func Append(msg []byte) (err error) {
 	buf = append(buf, msg...)
 
 	// 3: write to file
-	err = binary.Write(activeLF, binary.NativeEndian, buf)
+	err = binary.Write(activeLF, binary.LittleEndian, buf)
 	if err != nil {
 		l.Err(err).Msgf("persist::Append %s", err.Error())
 		return err
