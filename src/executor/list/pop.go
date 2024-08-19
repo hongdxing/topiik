@@ -10,8 +10,8 @@ package list
 import (
 	"container/list"
 	"errors"
+	"fmt"
 	"strconv"
-	"strings"
 	"topiik/internal/command"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
@@ -29,22 +29,19 @@ import (
 **		-
 ** Syntax: LPOP|RPOP key [COUNT]
 **/
-func PopList(pieces []string, icmd uint8) (result []string, err error) {
+func PopList(req datatype.Req, icmd uint8) (result []string, err error) {
 	count := 1
-	if len(pieces) == 1 {
-		//
-	} else if len(pieces) == 2 {
-		count, err = strconv.Atoi(pieces[1])
+	if len(req.ARGS) != 0 { // if args has value, the only value should be the count
+		fmt.Printf("--%s--", req.ARGS)
+		count, err = strconv.Atoi(req.ARGS)
 		if err != nil {
 			return nil, errors.New(resp.RES_WRONG_ARG)
 		}
 		if count < 1 {
 			return nil, errors.New(resp.RES_WRONG_ARG)
 		}
-	} else {
-		return nil, errors.New(resp.RES_SYNTAX_ERROR)
 	}
-	key := strings.TrimSpace(pieces[0])
+	key := req.KEYS[0]
 	if val, ok := memo.MemMap[key]; ok {
 		if val.Typ != datatype.V_TYPE_LIST {
 			return result, errors.New(resp.RES_DATA_TYPE_NOT_MATCH)

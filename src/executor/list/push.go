@@ -14,7 +14,6 @@ import (
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/memo"
-	"topiik/resp"
 )
 
 /***
@@ -27,15 +26,8 @@ import (
 **
 ** Syntax: LPUSH|RPUSH key value1 [... valueN]
 **/
-func PushList(pieces []string, icmd uint8) (result int, err error) {
-	if len(pieces) < 2 { // except KEY, at least need one value
-		return 0, errors.New(resp.RES_WRONG_NUMBER_OF_ARGS)
-	}
-	/*pieces, err := util.SplitCommandLine(args[1])
-	if err != nil {
-		return 0, err
-	}*/
-	key := pieces[0]
+func PushList(req datatype.Req, icmd uint8) (result int, err error) {
+	key := req.KEYS[0]
 	if memo.MemMap[key] == nil {
 		memo.MemMap[key] = &datatype.TValue{
 			Typ: datatype.V_TYPE_LIST,
@@ -44,12 +36,12 @@ func PushList(pieces []string, icmd uint8) (result int, err error) {
 		}
 	}
 	if icmd == command.LPUSH_I {
-		for _, piece := range pieces[1:] {
-			memo.MemMap[key].Lst.PushFront(piece)
+		for _, val := range req.VALS {
+			memo.MemMap[key].Lst.PushFront(val)
 		}
 	} else if icmd == command.LPUSHR_I {
-		for _, piece := range pieces[1:] {
-			memo.MemMap[key].Lst.PushBack(piece)
+		for _, val := range req.VALS {
+			memo.MemMap[key].Lst.PushBack(val)
 		}
 	} else {
 		return 0, errors.New(consts.RES_INVALID_CMD)

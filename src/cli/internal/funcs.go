@@ -102,14 +102,45 @@ func EncodeCmd(input string) (result []byte, err error) {
 		req.KEYS = append(req.KEYS, pieces[0])
 		req.ARGS = strings.Join(pieces[1:], consts.SPACE)
 	} else if cmd == command.LPUSH { /* LIST COMMANDS START */
+		/*
+		* Syntax: LPUSH key v1 [v2 v3 ...]
+		 */
+		if len(pieces) < 3 {
+			return syntaxErr()
+		}
 		icmd = command.LPUSH_I
+		req.KEYS = append(req.KEYS, pieces[1])
+		req.VALS = append(req.VALS, pieces[2:]...)
 	} else if cmd == command.LPOP {
-
+		/*
+		* Syntax: LPOP key [count]
+		 */
+		if len(pieces) < 2 {
+			return syntaxErr()
+		}
 		icmd = command.LPOP_I
-	} else if cmd == command.LPUSHB {
+		req.KEYS = append(req.KEYS, pieces[1])
+		req.ARGS = strings.Join(pieces[2:], consts.SPACE)
+	} else if cmd == command.LPUSHR {
+		/*
+		* Syntax: LPUSHR key v1 [v2 v3 ...]
+		 */
+		if len(pieces) < 3 {
+			return syntaxErr()
+		}
 		icmd = command.LPUSHR_I
-	} else if cmd == command.LPOPB {
+		req.KEYS = append(req.KEYS, pieces[1])
+		req.VALS = append(req.VALS, pieces[2:]...)
+	} else if cmd == command.LPOPR {
+		/*
+		* Syntax: LPOP key [count]
+		 */
+		if len(pieces) < 2 {
+			return syntaxErr()
+		}
 		icmd = command.LPOPR_I
+		req.KEYS = append(req.KEYS, pieces[1])
+		req.ARGS = strings.Join(pieces[2:], consts.SPACE)
 	} else if cmd == command.GET_CTLADDR { /* Get Cluster Leader Addr for client to redirect */
 		// no additional data
 	} else if cmd == command.KEYS { /* KEY COMMANDS START */

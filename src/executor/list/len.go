@@ -9,7 +9,6 @@ package list
 
 import (
 	"errors"
-	"strings"
 	"topiik/internal/datatype"
 	"topiik/memo"
 	"topiik/resp"
@@ -25,11 +24,8 @@ import (
 **	- ERROR if KEY not exists
 ** Syntax: LLEN KEY
 **/
-func Len(pieces []string) (result int, err error) {
-	if len(pieces) != 1 {
-		return 0, errors.New(resp.RES_SYNTAX_ERROR)
-	}
-	key := strings.TrimSpace(pieces[0])
+func Len(req datatype.Req) (result int, err error) {
+	key := req.KEYS[0]
 	if val, ok := memo.MemMap[key]; ok {
 		if val.Typ != datatype.V_TYPE_LIST {
 			return 0, errors.New(resp.RES_DATA_TYPE_NOT_MATCH)

@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"slices"
+	"strings"
 	"topiik/cluster"
 	"topiik/executor/list"
 	"topiik/executor/str"
@@ -25,12 +26,11 @@ import (
 
 /***Command RESponse***/
 const (
-	RES_OK                   = "OK"
-	RES_WRONG_ARG            = "WRONG_ARG"
-	RES_WRONG_NUMBER_OF_ARGS = "WRONG_NUM_OF_ARGS"
-	RES_DATA_TYPE_NOT_MATCH  = "DATA_TYPE_NOT_MATCH"
-	RES_SYNTAX_ERROR         = "SYNTAX_ERR"
-	RES_KEY_NOT_EXIST        = "KEY_NOT_EXIST"
+	RES_OK                  = "OK"
+	RES_WRONG_ARG           = "WRONG_ARG"
+	RES_DATA_TYPE_NOT_MATCH = "DATA_TYPE_NOT_MATCH"
+	RES_SYNTAX_ERROR        = "SYNTAX_ERR"
+	RES_KEY_NOT_EXIST       = "KEY_NOT_EXIST"
 )
 
 // var PersistenceCh = make(chan []byte)
@@ -169,6 +169,11 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 		res := forwardKeys(msg)
 		return resp.StrArrResponse(res)
 	}
+
+	// the key should not empty or space
+	if len(req.KEYS) <= 0 || strings.TrimSpace(req.KEYS[0]) == "" {
+		return resp.ErrResponse(errors.New(resp.RES_EMPTY_KEY))
+	}
 	key := req.KEYS[0]
 	return forwardByKey(key, msg)
 }
@@ -211,19 +216,19 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 		finalRes = resp.IntResponse(result)
 	} else if icmd == command.LPUSH_I || icmd == command.LPUSHR_I { // LIST COMMANDS
 		/***List LPUSH***/
-		result, err := list.PushList(pieces, icmd)
+		result, err := list.PushList(req, icmd)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
 		finalRes = resp.IntResponse(int64(result))
 	} else if icmd == command.LPOP_I || icmd == command.LPOPR_I {
-		result, err := list.PopList(pieces, icmd)
+		result, err := list.PopList(req, icmd)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
 		finalRes = resp.StrArrResponse(result)
 	} else if icmd == command.LLEN_I {
-		result, err := list.Len(pieces)
+		result, err := list.Len(req)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
