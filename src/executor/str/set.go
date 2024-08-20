@@ -1,14 +1,13 @@
-/***
+/*
 * author: duan hongxing
 * date: 22 Jun 2024
 * desc:
-***/
+ */
 
 package str
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -18,17 +17,17 @@ import (
 	"topiik/resp"
 )
 
-/***
-** Set STRING key value, if key exists, value will be overrided, if TTL|TTLAT has value, TTL|TTLAT will also be overrided
-** Parameter:
-**	- pieces: command line that CMD(SET) stripped, the first piece is the KEY
-** Return:
-**	- OK if success
-**	- SYNTAX_ERROR if syntax error
-**
-** Syntax: SET KEY VALUE [GET] [TTL seconds] [TTLAT unxix-time-seconds] [EX|NX]
-**	- GET: Return old value of the key, or nil if key did not exist
-**/
+/*
+* Set STRING key value, if key exists, value will be overrided, if TTL|TTLAT has value, TTL|TTLAT will also be overrided
+* Parameter:
+*	- pieces: command line that CMD(SET) stripped, the first piece is the KEY
+* Return:
+*	- OK if success
+*	- SYNTAX_ERROR if syntax error
+*
+* Syntax: SET KEY VALUE [GET] [TTL seconds] [TTLAT unxix-time-seconds] [EX|NX]
+*	- GET: Return old value of the key, or nil if key did not exist
+ */
 func Set(req datatype.Req) (result string, err error) {
 
 	key := req.KEYS[0]
@@ -38,7 +37,6 @@ func Set(req datatype.Req) (result string, err error) {
 		pieces := strings.Split(req.ARGS, consts.SPACE)
 		for i := 0; i < len(pieces); i++ {
 			piece := strings.ToUpper(strings.TrimSpace(pieces[i]))
-			fmt.Printf("---%s---\n", piece)
 			if piece == "GET" {
 				returnOld = true
 			} else if strings.ToUpper(pieces[i]) == "TTL" {
