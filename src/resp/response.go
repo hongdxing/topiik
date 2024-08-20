@@ -71,10 +71,7 @@ func StrArrResponse(res []string) (result []byte) {
 	result = append(result, byte(int8(1)))
 	result = append(result, byte(int8(3))) // 3: string array type
 	result = append(result, buf...)
-	/*for _, str := range res {
-		result = append(result, []byte(str)...)
-	}*/
-	result, _ = proto.Encode(string(result))
+	result, _ = proto.EncodeB(result)
 	return result
 }
 

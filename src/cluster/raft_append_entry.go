@@ -153,7 +153,7 @@ func appendPtn() {
 					//l.Err(err).Msg(err.Error())
 					var ne net.Error
 					if errors.As(err, &ne) { // if the leader not available from controller
-						l.Info().Msgf("%s", ptnLeader.Addr2)
+						l.Warn().Msgf("worker %s not accessible", ptnLeader.Addr2)
 						ptnLeaderDownMills[ptn.Id] += ptnTickerDur
 						if ptnLeaderDownMills[ptn.Id] >= ptnLeaderDownMaxMills { // to elect new partition leader
 							electPtnLeader(ptn)
@@ -189,7 +189,7 @@ func electPtnLeader(ptn *node.Partition) {
 			maxSeq = seq
 		}
 	}
-	l.Info().Msgf("new LeaderId: %s", newLeaderId)
+	// l.Info().Msgf("new LeaderId: %s", newLeaderId)
 	if _, ok := clusterInfo.Wkrs[newLeaderId]; ok {
 		l.Info().Msgf("Partition %s has new leader: %s", ptn.Id, newLeaderId)
 		ptn.LeaderNodeId = newLeaderId
@@ -199,7 +199,9 @@ func electPtnLeader(ptn *node.Partition) {
 
 func send(destAddr string, nodeId string, data []byte) (err error) {
 	var conn *net.TCPConn
-
+	var mu sync.Mutex
+	mu.Lock()
+	defer mu.Unlock()
 	if v, ok := connCache[nodeId]; ok {
 		conn = v
 	}

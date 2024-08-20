@@ -1,9 +1,9 @@
-/***
-** author: duan hongxing
-** date: 23 Jun 2024
-** desc:
-**
-**/
+/*
+* author: duan hongxing
+* date: 23 Jun 2024
+* desc:
+*
+ */
 
 package list
 
@@ -16,17 +16,17 @@ import (
 	"topiik/memo"
 )
 
-/***
-** Push element(s) to left(header) of list
-** Parameter:
-** 	- args: the arguments, command line that CMD(LPUSH) stripped, the first piece is the KEY
-** Return:
-** 	- Lenght of the list after push
-**	- INVALID_OP if the key exists but data type is not list
-**
-** Syntax: LPUSH|RPUSH key value1 [... valueN]
-**/
-func PushList(req datatype.Req, icmd uint8) (result int, err error) {
+/*
+* Push element(s) to left(header) of list
+* Parameter:
+* 	- args: the arguments, command line that CMD(LPUSH) stripped, the first piece is the KEY
+* Return:
+* 	- Lenght of the list after push
+*	- INVALID_OP if the key exists but data type is not list
+*
+* Syntax: LPUSH|RPUSH key value1 [... valueN]
+ */
+func Push(req datatype.Req, icmd uint8) (result int, err error) {
 	key := req.KEYS[0]
 	if memo.MemMap[key] == nil {
 		memo.MemMap[key] = &datatype.TValue{

@@ -170,13 +170,7 @@ func response(conn *net.TCPConn) error {
 				fmt.Printf("%v\n", result)
 			} else if datatype == 3 {
 				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
-				//fmt.Println(bufSlice)
 				var result []string
-				/*byteBuf := bytes.NewBuffer(bufSlice)
-				err = binary.Read(byteBuf, binary.LittleEndian, &result)
-				if err != nil {
-					fmt.Println("(err):")
-				}*/
 
 				err = json.Unmarshal(bufSlice, &result)
 				if err != nil {
@@ -199,10 +193,10 @@ func response(conn *net.TCPConn) error {
 }
 
 /*
-** Desc: get controller leader address
-** Return:
-**	- leader address
-**
+* Desc: get controller leader address
+* Return:
+*	- leader address
+*
  */
 func getControllerLeaderAddr(host string) (addr string, err error) {
 	conn, err := util.PreapareSocketClient(host)

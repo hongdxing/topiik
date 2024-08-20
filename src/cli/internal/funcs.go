@@ -141,6 +141,12 @@ func EncodeCmd(input string) (result []byte, err error) {
 		icmd = command.LPOPR_I
 		req.KEYS = append(req.KEYS, pieces[1])
 		req.ARGS = strings.Join(pieces[2:], consts.SPACE)
+	} else if cmd == command.LLEN {
+		if len(pieces) != 2 {
+			return syntaxErr()
+		}
+		icmd = command.LLEN_I
+		req.KEYS = append(req.KEYS, pieces[1])
 	} else if cmd == command.GET_CTLADDR { /* Get Cluster Leader Addr for client to redirect */
 		// no additional data
 	} else if cmd == command.KEYS { /* KEY COMMANDS START */

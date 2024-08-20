@@ -216,16 +216,17 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 		finalRes = resp.IntResponse(result)
 	} else if icmd == command.LPUSH_I || icmd == command.LPUSHR_I { // LIST COMMANDS
 		/***List LPUSH***/
-		result, err := list.PushList(req, icmd)
+		result, err := list.Push(req, icmd)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
 		finalRes = resp.IntResponse(int64(result))
 	} else if icmd == command.LPOP_I || icmd == command.LPOPR_I {
-		result, err := list.PopList(req, icmd)
+		result, err := list.Pop(req, icmd)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
+		// finalRes = resp.StrArrResponse(result)
 		finalRes = resp.StrArrResponse(result)
 	} else if icmd == command.LLEN_I {
 		result, err := list.Len(req)

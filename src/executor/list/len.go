@@ -1,9 +1,9 @@
-/***
-** author: duan hongxing
-** date: 26 Jun 2024
-** desc:
-**
-**/
+/*
+* author: duan hongxing
+* date: 26 Jun 2024
+* desc:
+*
+ */
 
 package list
 
@@ -14,16 +14,16 @@ import (
 	"topiik/resp"
 )
 
-/***
-** Get lenght of the list
-** Parameters:
-**	- pieces: command line that CMD stripped, the first piece is the KEY
-** Return:
-**	- Length of the LIST
-**	- SYNTAX_ERROR if synctax error
-**	- ERROR if KEY not exists
-** Syntax: LLEN KEY
-**/
+/*
+* Get lenght of the list
+* Parameters:
+*	- pieces: command line that CMD stripped, the first piece is the KEY
+* Return:
+*	- Length of the LIST
+*	- SYNTAX_ERROR if synctax error
+*	- ERROR if KEY not exists
+* Syntax: LLEN KEY
+ */
 func Len(req datatype.Req) (result int, err error) {
 	key := req.KEYS[0]
 	if val, ok := memo.MemMap[key]; ok {
