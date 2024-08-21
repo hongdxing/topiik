@@ -65,24 +65,24 @@ func forwardKeys(msg []byte) (res []string) {
 		if len(buf) > 4 {
 			bufSlice := buf[4:5]
 			byteBuf := bytes.NewBuffer(bufSlice)
-			var flag int8
+			var flag resp.RespFlag
 			err = binary.Read(byteBuf, binary.LittleEndian, &flag)
 			if err != nil {
 				l.Warn().Msgf("keys::forwardKeys %s", err.Error())
 				continue
 			}
 
-			if flag == 1 {
+			if flag == resp.Success {
 				bufSlice = buf[5:6]
 				byteBuf = bytes.NewBuffer(bufSlice)
-				var datatype int8
+				var datatype resp.RespType
 				err = binary.Read(byteBuf, binary.LittleEndian, &datatype)
 				if err != nil {
 					l.Warn().Msgf("keys::forwardKeys %s", err.Error())
 					continue
 				}
 
-				if datatype == 3 {
+				if datatype == resp.StringArray {
 					bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
 					var partialRes []string
 

@@ -24,8 +24,8 @@ import (
 )
 
 func ErrResponse(err error) (result []byte) {
-	result = append(result, byte(int8(0)))
-	result = append(result, byte(int8(1))) // string type
+	result = append(result, byte(Fail))
+	result = append(result, byte(String)) // string type
 	result = append(result, []byte(err.Error())...)
 	result, _ = proto.Encode(string(result))
 	return result
@@ -33,8 +33,8 @@ func ErrResponse(err error) (result []byte) {
 
 func StrResponse(res string) (result []byte) {
 	buf := []byte(res)
-	result = append(result, byte(int8(1)))
-	result = append(result, byte(int8(1))) // 1: string type
+	result = append(result, byte(Success))
+	result = append(result, byte(String)) // 1: string type
 	result = append(result, buf...)
 	result, _ = proto.Encode(string(result))
 	return result
@@ -43,12 +43,12 @@ func StrResponse(res string) (result []byte) {
 func IntResponse(res int64) (result []byte) {
 	var buffer = new(bytes.Buffer)
 	// Write message HEADER
-	err := binary.Write(buffer, binary.LittleEndian, int8(1)) // one byte of success flag
+	err := binary.Write(buffer, binary.LittleEndian, Success) // one byte of success flag
 	if err != nil {
 		l.Err(err).Msgf("IntResponse() write flag:%s", err.Error())
 		return ErrResponse(err)
 	}
-	err = binary.Write(buffer, binary.LittleEndian, int8(2)) // 2: integer type
+	err = binary.Write(buffer, binary.LittleEndian, Integer) // 2: integer type
 	if err != nil {
 		l.Err(err).Msgf("IntResponse() write type:%s", err.Error())
 		return ErrResponse(err)
@@ -68,16 +68,16 @@ func IntResponse(res int64) (result []byte) {
 
 func StrArrResponse(res []string) (result []byte) {
 	buf, _ := json.Marshal(res)
-	result = append(result, byte(int8(1)))
-	result = append(result, byte(int8(3))) // 3: string array type
+	result = append(result, byte(Success))
+	result = append(result, byte(StringArray)) // 3: string array type
 	result = append(result, buf...)
 	result, _ = proto.EncodeB(result)
 	return result
 }
 
 func RedirectResponse(leaderAddr string) (result []byte) {
-	result = append(result, byte(int8(1)))
-	result = append(result, byte(int8(32))) // why 32? 302 = http redirect, but int8 not enough ~!~
+	result = append(result, byte(Success))
+	result = append(result, byte(Redirect)) // why 32? 302 = http redirect, but int8 not enough ~!~
 	result = append(result, []byte(leaderAddr)...)
 	result, _ = proto.Encode(string(result))
 	return result
@@ -97,10 +97,10 @@ func Response[T any](flag int8, res T) (result []byte) {
 * Return success/fail flag of response
 *
  */
-func ParseResFlag(res []byte) int8 {
+func ParseResFlag(res []byte) RespFlag {
 	flagByte := res[4:5]
 	bbuf := bytes.NewBuffer(flagByte)
-	var flag int8
+	var flag RespFlag
 	err := binary.Read(bbuf, binary.LittleEndian, &flag)
 	if err != nil {
 		return 0

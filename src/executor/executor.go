@@ -159,7 +159,7 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 			msgN, _ = proto.EncodeB(msgN)                               // encode msg
 			resN := forwardByKey(key, msgN)
 			flag := resp.ParseResFlag(resN)
-			if flag != 1 {
+			if flag != resp.Success {
 				res = append(res, "")
 			}
 			res = append(res, string(resN[resp.RESPONSE_HEADER_SIZE:]))

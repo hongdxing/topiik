@@ -79,21 +79,21 @@ func addNode(req datatype.Req) (result string, err error) {
 	buf, err := proto.Decode(reader)
 	flagByte := buf[4:5]
 	flagBuff := bytes.NewBuffer(flagByte)
-	var flag int8
+	var flag resp.RespFlag
 	err = binary.Read(flagBuff, binary.LittleEndian, &flag)
 	if err != nil {
 		l.Err(err).Msg(err.Error())
 		return "", errors.New("add node failed")
 	}
-	resp := string(buf[resp.RESPONSE_HEADER_SIZE:]) // the node id
+	res := string(buf[resp.RESPONSE_HEADER_SIZE:]) // the node id
 
-	if flag == 1 {
-		l.Info().Msgf("Add node succeed:%s", resp)
-		cluster.AddNode(resp, nodeAddr, nodeAddr2, role)
+	if flag == resp.Success {
+		l.Info().Msgf("Add node succeed:%s", res)
+		cluster.AddNode(res, nodeAddr, nodeAddr2, role)
 
 	} else {
 		l.Err(nil).Msg("Add node failed")
-		return "", errors.New(resp)
+		return "", errors.New(res)
 	}
 
 	return RES_OK, nil

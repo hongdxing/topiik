@@ -142,24 +142,24 @@ func response(conn *net.TCPConn) error {
 	if len(buf) > 4 {
 		bufSlice := buf[4:5]
 		byteBuf := bytes.NewBuffer(bufSlice)
-		var flag int8
+		var flag resp.RespFlag
 		err = binary.Read(byteBuf, binary.LittleEndian, &flag)
 		if err != nil {
 			fmt.Println("(err):")
 		}
 
-		if flag == 1 {
+		if flag == resp.Success {
 			bufSlice = buf[5:6]
 			byteBuf = bytes.NewBuffer(bufSlice)
-			var datatype int8
+			var datatype resp.RespType
 			err = binary.Read(byteBuf, binary.LittleEndian, &datatype)
 			if err != nil {
 				fmt.Println("(err):")
 			}
-			if datatype == 1 {
+			if datatype == resp.String {
 				res := buf[resp.RESPONSE_HEADER_SIZE:]
 				fmt.Printf("%s\n", string(res))
-			} else if datatype == 2 {
+			} else if datatype == resp.Integer {
 				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
 				byteBuf := bytes.NewBuffer(bufSlice)
 				var result int64
@@ -168,7 +168,7 @@ func response(conn *net.TCPConn) error {
 					fmt.Println("(err):")
 				}
 				fmt.Printf("%v\n", result)
-			} else if datatype == 3 {
+			} else if datatype == resp.StringArray {
 				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
 				var result []string
 
