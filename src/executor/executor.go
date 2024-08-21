@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"errors"
 	"slices"
-	"strings"
 	"topiik/cluster"
 	"topiik/executor/list"
 	"topiik/executor/str"
@@ -140,11 +139,11 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 		}
 		// split setm to multi set
 		for i, key := range req.KEYS {
-			reqN := datatype.Req{KEYS: []string{key}, VALS: []string{req.VALS[i]}} // req object
-			reqBytesN, _ := json.Marshal(reqN)                                     // req bytes
-			msgN, _ := proto.EncodeHeader(command.SET_I, 1)                        // msg header
-			msgN = append(msgN, reqBytesN...)                                      // combine msg header and req bytes
-			msgN, _ = proto.EncodeB(msgN)                                          // encode msg
+			reqN := datatype.Req{KEYS: datatype.Abytes{key}, VALS: datatype.Abytes{req.VALS[i]}} // req object
+			reqBytesN, _ := json.Marshal(reqN)                                                   // req bytes
+			msgN, _ := proto.EncodeHeader(command.SET_I, 1)                                      // msg header
+			msgN = append(msgN, reqBytesN...)                                                    // combine msg header and req bytes
+			msgN, _ = proto.EncodeB(msgN)                                                        // encode msg
 			forwardByKey(key, msgN)
 		}
 		return resp.StrResponse(resp.RES_OK)
@@ -152,11 +151,11 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 		var res []string
 		// split setm to multi set
 		for _, key := range req.KEYS {
-			reqN := datatype.Req{KEYS: []string{key}, VALS: []string{}} // req object
-			reqBytesN, _ := json.Marshal(reqN)                          // req bytes
-			msgN, _ := proto.EncodeHeader(command.GET_I, 1)             // msg header
-			msgN = append(msgN, reqBytesN...)                           // combine msg header and req bytes
-			msgN, _ = proto.EncodeB(msgN)                               // encode msg
+			reqN := datatype.Req{KEYS: datatype.Abytes{key}, VALS: datatype.Abytes{}} // req object
+			reqBytesN, _ := json.Marshal(reqN)                                        // req bytes
+			msgN, _ := proto.EncodeHeader(command.GET_I, 1)                           // msg header
+			msgN = append(msgN, reqBytesN...)                                         // combine msg header and req bytes
+			msgN, _ = proto.EncodeB(msgN)                                             // encode msg
 			resN := forwardByKey(key, msgN)
 			flag := resp.ParseResFlag(resN)
 			if flag != resp.Success {
@@ -171,7 +170,7 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 	}
 
 	// the key should not empty or space
-	if len(req.KEYS) <= 0 || strings.TrimSpace(req.KEYS[0]) == "" {
+	if len(req.KEYS) <= 0 || len(req.KEYS[0]) == 0 {
 		return resp.ErrResponse(errors.New(resp.RES_EMPTY_KEY))
 	}
 	key := req.KEYS[0]
@@ -227,7 +226,7 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 			return resp.ErrResponse(err)
 		}
 		// finalRes = resp.StrArrResponse(result)
-		finalRes = resp.StrArrResponse(result)
+		finalRes = resp.ByteArrResponse(result)
 	} else if icmd == command.LLEN_I {
 		result, err := list.Len(req)
 		if err != nil {

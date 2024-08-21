@@ -30,7 +30,7 @@ import (
  */
 func Set(req datatype.Req) (result string, err error) {
 
-	key := req.KEYS[0]
+	key := string(req.KEYS[0])
 	returnOld := false
 	ttl := consts.INT64_MAX
 	if len(req.ARGS) > 0 {

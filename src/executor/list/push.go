@@ -27,7 +27,7 @@ import (
 * Syntax: LPUSH|RPUSH key value1 [... valueN]
  */
 func Push(req datatype.Req, icmd uint8) (result int, err error) {
-	key := req.KEYS[0]
+	key := string(req.KEYS[0])
 	if memo.MemMap[key] == nil {
 		memo.MemMap[key] = &datatype.TValue{
 			Typ: datatype.V_TYPE_LIST,

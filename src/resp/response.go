@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
+	"topiik/internal/datatype"
 	"topiik/internal/proto"
 )
 
@@ -37,6 +38,15 @@ func StrResponse(res string) (result []byte) {
 	result = append(result, byte(String)) // 1: string type
 	result = append(result, buf...)
 	result, _ = proto.Encode(string(result))
+	return result
+}
+
+func StrArrResponse(res []string) (result []byte) {
+	buf, _ := json.Marshal(res)
+	result = append(result, byte(Success))
+	result = append(result, byte(StringArray)) // 3: string array type
+	result = append(result, buf...)
+	result, _ = proto.EncodeB(result)
 	return result
 }
 
@@ -66,10 +76,10 @@ func IntResponse(res int64) (result []byte) {
 	return result
 }
 
-func StrArrResponse(res []string) (result []byte) {
+func ByteArrResponse(res datatype.Abytes) (result []byte) {
 	buf, _ := json.Marshal(res)
 	result = append(result, byte(Success))
-	result = append(result, byte(StringArray)) // 3: string array type
+	result = append(result, byte(ByteArray))
 	result = append(result, buf...)
 	result, _ = proto.EncodeB(result)
 	return result

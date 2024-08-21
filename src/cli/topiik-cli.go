@@ -151,15 +151,15 @@ func response(conn *net.TCPConn) error {
 		if flag == resp.Success {
 			bufSlice = buf[5:6]
 			byteBuf = bytes.NewBuffer(bufSlice)
-			var datatype resp.RespType
-			err = binary.Read(byteBuf, binary.LittleEndian, &datatype)
+			var resType resp.RespType
+			err = binary.Read(byteBuf, binary.LittleEndian, &resType)
 			if err != nil {
 				fmt.Println("(err):")
 			}
-			if datatype == resp.String {
+			if resType == resp.String {
 				res := buf[resp.RESPONSE_HEADER_SIZE:]
 				fmt.Printf("%s\n", string(res))
-			} else if datatype == resp.Integer {
+			} else if resType == resp.Integer {
 				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
 				byteBuf := bytes.NewBuffer(bufSlice)
 				var result int64
@@ -168,7 +168,7 @@ func response(conn *net.TCPConn) error {
 					fmt.Println("(err):")
 				}
 				fmt.Printf("%v\n", result)
-			} else if datatype == resp.StringArray {
+			} else if resType == resp.StringArray {
 				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
 				var result []string
 
@@ -177,6 +177,18 @@ func response(conn *net.TCPConn) error {
 					fmt.Printf("(err):%s\n", err.Error())
 				}
 				fmt.Printf("%v\n", result)
+			} else if resType == resp.ByteArray {
+				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
+				var result datatype.Abytes
+
+				err = json.Unmarshal(bufSlice, &result)
+				if err != nil {
+					fmt.Printf("(err):%s\n", err.Error())
+				}
+				for i, v := range result {
+					fmt.Printf("%v: %s\n", i, string(v))
+				}
+				//fmt.Printf("%v\n", result)
 			} else {
 				fmt.Println("(err): invalid response type")
 			}
@@ -220,7 +232,7 @@ func getControllerLeaderAddr(host string) (addr string, err error) {
 	if err != nil {
 		return "", errors.New("syntax error")
 	}
-	req := datatype.Req{KEYS: []string{}, VALS: []string{}}
+	req := datatype.Req{KEYS: datatype.Abytes{}, VALS: datatype.Abytes{}}
 	reqBytes, err := json.Marshal(req)
 	if err != nil {
 		fmt.Println("error")

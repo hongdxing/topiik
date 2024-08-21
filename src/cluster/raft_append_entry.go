@@ -197,9 +197,10 @@ func electPtnLeader(ptn *node.Partition) {
 	}
 }
 
+var mu sync.Mutex
+
 func send(destAddr string, nodeId string, data []byte) (err error) {
 	var conn *net.TCPConn
-	var mu sync.Mutex
 	mu.Lock()
 	defer mu.Unlock()
 	if v, ok := connCache[nodeId]; ok {

@@ -29,7 +29,7 @@ import (
 *		-
 * Syntax: LPOP|RPOP key [COUNT]
  */
-func Pop(req datatype.Req, icmd uint8) (result []string, err error) {
+func Pop(req datatype.Req, icmd uint8) (result datatype.Abytes, err error) {
 	count := 1
 	if len(req.ARGS) != 0 { // if args has value, the only value should be the count
 		fmt.Printf("--%s--", req.ARGS)
@@ -41,7 +41,7 @@ func Pop(req datatype.Req, icmd uint8) (result []string, err error) {
 			return nil, errors.New(resp.RES_WRONG_ARG)
 		}
 	}
-	key := req.KEYS[0]
+	key := string(req.KEYS[0])
 	if val, ok := memo.MemMap[key]; ok {
 		if val.Typ != datatype.V_TYPE_LIST {
 			return result, errors.New(resp.RES_DATA_TYPE_NOT_MATCH)
@@ -52,14 +52,14 @@ func Pop(req datatype.Req, icmd uint8) (result []string, err error) {
 			looper := 0
 			for ele := val.Lst.Front(); ele != nil && looper < count; ele = ele.Next() {
 				looper++
-				result = append(result, ele.Value.(string))
+				result = append(result, ele.Value.([]byte))
 				eleToBeRemoved = append(eleToBeRemoved, ele)
 			}
 		} else if icmd == command.LPOPR_I { //RPOP
 			looper := 0
 			for ele := val.Lst.Back(); ele != nil && looper < count; ele = ele.Prev() {
 				looper++
-				result = append(result, ele.Value.(string))
+				result = append(result, ele.Value.([]byte))
 				eleToBeRemoved = append(eleToBeRemoved, ele)
 			}
 		} else {

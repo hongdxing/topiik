@@ -15,8 +15,19 @@
 
 package datatype
 
+/*
 type Req struct {
 	KEYS []string
 	VALS []string
+	ARGS string
+}
+*/
+
+/* Array of bytes */
+type Abytes [][]byte
+
+type Req struct {
+	KEYS Abytes
+	VALS Abytes
 	ARGS string
 }

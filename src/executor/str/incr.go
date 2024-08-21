@@ -10,7 +10,6 @@ package str
 import (
 	"errors"
 	"strconv"
-	"strings"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/memo"
@@ -33,7 +32,7 @@ func Incr(req datatype.Req) (result int64, err error) {
 	}
 	if req.ARGS == "" { // KEY
 		var i int64 = 0
-		key := strings.TrimSpace(req.KEYS[0])
+		key := string(req.KEYS[0])
 		i, err = preINCR(key)
 		if err != nil {
 			return 0, err
@@ -48,7 +47,7 @@ func Incr(req datatype.Req) (result int64, err error) {
 		if err != nil {
 			return 0, errors.New(resp.RES_SYNTAX_ERROR)
 		}
-		key := strings.TrimSpace(req.KEYS[0])
+		key := string(req.KEYS[0])
 		i, err = preINCR(key)
 		if err != nil {
 			return 0, err

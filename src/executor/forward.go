@@ -24,7 +24,7 @@ import (
 /* Conn cache from Controller to Workers */
 var ctlwkrConnCache = make(map[string]*net.TCPConn)
 
-func forwardByKey(key string, msg []byte) []byte {
+func forwardByKey(key []byte, msg []byte) []byte {
 	if len(cluster.GetClusterInfo().Wkrs) == 0 {
 		return resp.ErrResponse(errors.New(resp.RES_NO_ENOUGH_WORKER))
 	}
@@ -77,8 +77,8 @@ func forwardByKey(key string, msg []byte) []byte {
 	return responseBytes
 }
 
-func getWorker(key string) (worker node.NodeSlim) {
-	var keyHash = crc32.Checksum([]byte(key), crc32.IEEETable)
+func getWorker(key []byte) (worker node.NodeSlim) {
+	var keyHash = crc32.Checksum(key, crc32.IEEETable)
 	keyHash = keyHash % consts.SLOTS
 	//fmt.Printf("key hash %v\n", keyHash)
 	for _, partition := range cluster.GetPartitionInfo().PtnMap {

@@ -40,7 +40,7 @@ func EncodeCmd(input string) (result []byte, err error) {
 	cmd := strings.ToUpper(pieces[0])
 	var icmd uint8 = 0
 	var ver uint8 = 0
-	req := datatype.Req{KEYS: []string{}, VALS: []string{}}
+	req := datatype.Req{KEYS: datatype.Abytes{}, VALS: datatype.Abytes{}}
 	if cmd == command.INIT_CLUSTER { // INIT-CLUSTER
 		/*if len(pieces) != 3 {
 			return syntaxErr()
@@ -67,8 +67,8 @@ func EncodeCmd(input string) (result []byte, err error) {
 			return syntaxErr()
 		}
 		icmd = command.SET_I
-		req.KEYS = []string{pieces[1]} // key
-		req.VALS = []string{pieces[2]} // value
+		req.KEYS = datatype.Abytes{[]byte(pieces[1])} // key
+		req.VALS = datatype.Abytes{[]byte(pieces[2])} // value
 		// the rest as args
 		if len(pieces) > 3 {
 			req.ARGS = strings.Join(pieces[3:], consts.SPACE)
@@ -78,28 +78,31 @@ func EncodeCmd(input string) (result []byte, err error) {
 			return syntaxErr()
 		}
 		icmd = command.GET_I
-		req.KEYS = []string{pieces[1]} // key
+		req.KEYS = datatype.Abytes{[]byte(pieces[1])} // key
 	} else if cmd == command.SETM { // SETM k1 v1 k2 v2
 		if len(pieces) < 3 || (len(pieces)-1)%2 != 0 {
 			return syntaxErr()
 		}
 		icmd = command.SETM_I
 		for i := 1; i < len(pieces)-1; i += 2 {
-			req.KEYS = append(req.KEYS, pieces[i])
-			req.VALS = append(req.VALS, pieces[i+1])
+			req.KEYS = append(req.KEYS, []byte(pieces[i]))
+			req.VALS = append(req.VALS, []byte(pieces[i+1]))
 		}
 	} else if cmd == command.GETM { // GETM k1 k2
 		if len(pieces) < 2 {
 			return syntaxErr()
 		}
 		icmd = command.GETM_I
-		req.KEYS = append(req.KEYS, pieces[1:]...)
+		for _, piece := range pieces[1:] {
+			req.KEYS = append(req.KEYS, []byte(piece))
+		}
+		//req.KEYS = append(req.KEYS, pieces[1:]...)
 	} else if cmd == command.TTL {
 		if len(pieces) < 1 {
 			return syntaxErr()
 		}
 		icmd = command.TTL_I
-		req.KEYS = append(req.KEYS, pieces[0])
+		req.KEYS = append(req.KEYS, []byte(pieces[0]))
 		req.ARGS = strings.Join(pieces[1:], consts.SPACE)
 	} else if cmd == command.LPUSH { /* LIST COMMANDS START */
 		/*
@@ -109,8 +112,11 @@ func EncodeCmd(input string) (result []byte, err error) {
 			return syntaxErr()
 		}
 		icmd = command.LPUSH_I
-		req.KEYS = append(req.KEYS, pieces[1])
-		req.VALS = append(req.VALS, pieces[2:]...)
+		req.KEYS = append(req.KEYS, []byte(pieces[1]))
+		for _, piece := range pieces[2:] {
+			req.VALS = append(req.VALS, []byte(piece))
+		}
+		//req.VALS = append(req.VALS, pieces[2:]...)
 	} else if cmd == command.LPOP {
 		/*
 		* Syntax: LPOP key [count]
@@ -119,7 +125,7 @@ func EncodeCmd(input string) (result []byte, err error) {
 			return syntaxErr()
 		}
 		icmd = command.LPOP_I
-		req.KEYS = append(req.KEYS, pieces[1])
+		req.KEYS = append(req.KEYS, []byte(pieces[1]))
 		req.ARGS = strings.Join(pieces[2:], consts.SPACE)
 	} else if cmd == command.LPUSHR {
 		/*
@@ -129,8 +135,11 @@ func EncodeCmd(input string) (result []byte, err error) {
 			return syntaxErr()
 		}
 		icmd = command.LPUSHR_I
-		req.KEYS = append(req.KEYS, pieces[1])
-		req.VALS = append(req.VALS, pieces[2:]...)
+		req.KEYS = append(req.KEYS, []byte(pieces[1]))
+		for _, piece := range pieces[2:] {
+			req.VALS = append(req.VALS, []byte(piece))
+		}
+		//req.VALS = append(req.VALS, pieces[2:]...)
 	} else if cmd == command.LPOPR {
 		/*
 		* Syntax: LPOP key [count]
@@ -139,14 +148,14 @@ func EncodeCmd(input string) (result []byte, err error) {
 			return syntaxErr()
 		}
 		icmd = command.LPOPR_I
-		req.KEYS = append(req.KEYS, pieces[1])
+		req.KEYS = append(req.KEYS, []byte(pieces[1]))
 		req.ARGS = strings.Join(pieces[2:], consts.SPACE)
 	} else if cmd == command.LLEN {
 		if len(pieces) != 2 {
 			return syntaxErr()
 		}
 		icmd = command.LLEN_I
-		req.KEYS = append(req.KEYS, pieces[1])
+		req.KEYS = append(req.KEYS, []byte(pieces[1]))
 	} else if cmd == command.GET_CTLADDR { /* Get Cluster Leader Addr for client to redirect */
 		// no additional data
 	} else if cmd == command.KEYS { /* KEY COMMANDS START */

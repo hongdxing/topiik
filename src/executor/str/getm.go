@@ -9,7 +9,6 @@ package str
 
 import (
 	"errors"
-	"strings"
 	"topiik/executor/shared"
 	"topiik/internal/datatype"
 	"topiik/memo"
@@ -31,9 +30,9 @@ func GetM(req datatype.Req) (result []string, err error) {
 		return nil, errors.New(resp.RES_SYNTAX_ERROR)
 	}
 	for _, key := range req.KEYS {
-		key = strings.TrimSpace(key)
-		if val, ok := memo.MemMap[key]; ok {
-			if shared.IsKeyExpired(key, val.Exp) {
+		skey := string(key)
+		if val, ok := memo.MemMap[skey]; ok {
+			if shared.IsKeyExpired(skey, val.Exp) {
 				result = append(result, "")
 			}
 			if val.Typ != datatype.V_TYPE_STRING {

@@ -9,7 +9,6 @@ package str
 
 import (
 	"errors"
-	"strings"
 	"topiik/executor/shared"
 	"topiik/internal/datatype"
 	"topiik/memo"
@@ -28,7 +27,7 @@ import (
 * 	GET KEY
  */
 func Get(req datatype.Req) (result string, err error) {
-	key := strings.TrimSpace(req.KEYS[0])
+	key := string(req.KEYS[0])
 	if val, ok := memo.MemMap[key]; ok {
 		if shared.IsKeyExpired(key, val.Exp) {
 			return "", errors.New(resp.RES_KEY_NOT_EXIST)
