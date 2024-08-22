@@ -29,7 +29,8 @@ const (
 	RES_NO_CLUSTER       = "NO_CLUSTER" // if command run on node that not in cluster yet
 	RES_NODE_NA          = "NODE_NA"    // if node not accessible
 
-	RES_NO_CTL       = "NO_CONTROLLER"
-	RES_INVALID_ADDR = "INVALID_ADDR"
-	RES_CONN_RESET   = "CONN_RESET" // Client need to reconnect
+	RES_NO_CTL               = "NO_CONTROLLER"
+	RES_INVALID_ADDR         = "INVALID_ADDR"
+	RES_CONN_RESET           = "CONN_RESET" // Client need to reconnect
+	RES_INVALID_PARTITION_ID = "RES_INVALID_PARTITION_ID"
 )

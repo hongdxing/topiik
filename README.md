@@ -1,5 +1,5 @@
 # Topiik
-A midleware that for both Key/Value store and Message broker
+A middleware that for both Key/Value store and Message broker
 
 ## How Topiik works
 ### Controller Plane

@@ -19,9 +19,10 @@ type Cluster struct {
 }
 
 type PartitionInfo struct {
-	Ptns   uint16 // number of partitions, given parameter when INIT a cluster
-	Rpls   uint16 // number of replicas, recommend 3 relicas at most, given parameter when INIT a cluster
-	PtnMap map[string]*node.Partition
+	ClusterId string
+	Ptns      uint16 // number of partitions, given parameter when INIT a cluster
+	Rpls      uint16 // number of replicas, recommend 3 relicas at most, given parameter when INIT a cluster
+	PtnMap    map[string]*node.Partition
 }
 
 // store dynamic node status in runtime

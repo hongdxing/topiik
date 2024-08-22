@@ -1,9 +1,9 @@
-/***
-** author: duan hongxing
-** data: 3 Jul 2024
-** desc:
-**
-**/
+/*
+* author: duan hongxing
+* date: 3 Jul 2024
+* desc:
+*
+ */
 
 package server
 
@@ -22,10 +22,10 @@ import (
 )
 
 /*
-** msg:
-**	- msg[:1] 	= command
-**	- msg[1:]	= data
-**
+* msg:
+*	- msg[:1] 	= command
+*	- msg[1:]	= data
+*
  */
 func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 	// TODO: remove

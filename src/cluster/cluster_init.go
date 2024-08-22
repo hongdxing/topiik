@@ -22,24 +22,31 @@ const clusterInitFailed = "cluster init failed"
 * Execute command INIT-CLUSTER
 *
  */
-func InitCluster(serverConfig *config.ServerConfig) error {
+func InitCluster(ptnCount int, serverConfig *config.ServerConfig) (ptnIds []string, err error) {
 	l.Info().Msg("cluster::ClusterInit start")
 
 	// 0. init cluster
-	err := doInit(serverConfig)
+	err = doInit(serverConfig)
 	if err != nil {
-		return err
+		return ptnIds, err
 	}
 	node.InitCluster(GetClusterInfo().Id)
 	nodeStatus.Role = RAFT_LEADER
-	/*err = initControllerNode(nodeId, serverConfig)
+
+	/* create partition */
+	ptnIds, err = NewPartition(ptnCount)
+
 	if err != nil {
-		return err
-	}*/
+		l.Err(err).Msgf("executor::clusterInit %s", err.Error())
+		/* TODO: clean cluster info and partition */
+		return ptnIds, err
+	}
+
 	// after init, the node default is LEADER, and start to AppendEntries()
 	go AppendEntries()
+	//ptnUpdCh <- struct{}{} // sync partition to followers
 	l.Info().Msg("cluster::ClusterInit end")
-	return nil
+	return ptnIds, nil
 }
 
 func doInit(serverConfig *config.ServerConfig) error {
@@ -73,44 +80,3 @@ func doInit(serverConfig *config.ServerConfig) error {
 	}
 	return nil
 }
-
-/*
-func initControllerNode(nodeId string, serverConfig *config.ServerConfig) (err error) {
-	exist := false // whether the file exist
-
-	// the cluster metata file
-	clusterPath := GetClusterFilePath()
-	exist, err = util.PathExists(clusterPath)
-	if err != nil {
-		return err
-	}
-	if !exist {
-		fmt.Println("creating cluster metadata file...")
-		var file *os.File
-		file, err = os.Create(clusterPath)
-		if err != nil {
-			return errors.New(cluster_init_failed)
-		}
-		defer file.Close()
-
-		addrSplit, err := util.SplitAddress(serverConfig.Listen)
-		if err != nil {
-			panic(err)
-		}
-
-		clusterInfo.Ctls[nodeId] = NodeSlim{
-			Id:    nodeId,
-			Addr:  serverConfig.Listen,
-			Addr2: addrSplit[0] + ":" + addrSplit[2],
-		}
-		var jsonBytes []byte
-		jsonBytes, err = json.Marshal(clusterInfo)
-		if err != nil {
-			fmt.Printf("cluster_init::initControllerNode() %s\n", err.Error())
-			panic(err)
-		}
-		file.WriteString(string(jsonBytes))
-	}
-
-	return nil
-}*/

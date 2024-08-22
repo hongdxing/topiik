@@ -1,9 +1,9 @@
-/***
-** author: duan hongxing
-** date: 21 Jul 2024
-** desc:
-**
-**/
+/*
+* author: duan hongxing
+* date: 21 Jul 2024
+* desc:
+*
+ */
 
 package executor
 
@@ -13,7 +13,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"regexp"
-	"strings"
 	"topiik/cluster"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
@@ -24,32 +23,64 @@ import (
 )
 
 /*
-** Run from controller leader, to add new node to cluster
-** The target node must already stated, and not joined any cluster yet
-** Syntax: ADD-NODE host:port CONTROLLER|WORKER
-**
+* Add worker to cluster
+* Syntax: ADD-WORKER host:port partition {ptnId}
  */
-func addNode(req datatype.Req) (result string, err error) {
+func addWorker(req datatype.Req) (rslt string, err error) {
 	pieces, err := util.SplitCommandLine(req.ARGS)
-	if len(pieces) != 2 { // must have target address
+	if len(pieces) != 3 { // must have target address
 		return "", errors.New(RES_SYNTAX_ERROR)
 	}
 	nodeAddr := pieces[0]
-	role := strings.ToUpper(pieces[1])
 	// validate host
 	reg, _ := regexp.Compile(consts.HOST_PATTERN)
 	if !reg.MatchString(nodeAddr) {
 		return "", errors.New("invalide address")
 	}
 
-	// validate CONTROLLER|WORKER
-	if strings.ToUpper(role) != cluster.ROLE_CONTROLLER && strings.ToUpper(role) != cluster.ROLE_WORKER {
-		return "", errors.New("invalide role, must be either CONTROLLER or WORKER")
+	if pieces[1] != "partition" {
+		return rslt, errors.New(RES_SYNTAX_ERROR)
 	}
 
-	// get controller address2
-	addrSplit, _ := util.SplitAddress(nodeAddr)
-	nodeAddr2 := addrSplit[0] + ":" + addrSplit[2]
+	ptnId := pieces[3]
+	if _, ok := cluster.GetPartitionInfo().PtnMap[ptnId]; !ok {
+		return rslt, errors.New(resp.RES_INVALID_PARTITION_ID)
+	}
+
+	rslt, err = addNode(nodeAddr, cluster.ROLE_WORKER)
+
+	return rslt, err
+}
+
+/*
+* Add controller to cluster
+* Syntax: ADD-CONTROLLER host:port
+ */
+func addController(req datatype.Req) (rslt string, err error) {
+	pieces, err := util.SplitCommandLine(req.ARGS)
+	if len(pieces) != 1 { // must have target address
+		return "", errors.New(RES_SYNTAX_ERROR)
+	}
+	nodeAddr := pieces[0]
+	// validate host
+	reg, _ := regexp.Compile(consts.HOST_PATTERN)
+	if !reg.MatchString(nodeAddr) {
+		return "", errors.New("invalide address")
+	}
+	rslt, err = addNode(nodeAddr, cluster.ROLE_CONTROLLER)
+	return rslt, err
+}
+
+/*
+* Run from controller leader, to add new node to cluster
+* The target node must already stated, and not joined any cluster yet
+* Syntax: ADD-NODE host:port CONTROLLER|WORKER partition xxx
+*
+ */
+func addNode(nodeAddr string, role string) (result string, err error) {
+	/* get controller address2 */
+	hostPort, _ := util.SplitAddress(nodeAddr)
+	nodeAddr2 := hostPort[0] + ":" + hostPort[2]
 	conn, err := util.PreapareSocketClient(nodeAddr2)
 	if err != nil {
 		return "", errors.New(resp.RES_NODE_NA)
@@ -88,11 +119,11 @@ func addNode(req datatype.Req) (result string, err error) {
 	res := string(buf[resp.RESPONSE_HEADER_SIZE:]) // the node id
 
 	if flag == resp.Success {
-		l.Info().Msgf("Add node succeed:%s", res)
+		l.Info().Msgf("executor::addNode succeed:%s", res)
 		cluster.AddNode(res, nodeAddr, nodeAddr2, role)
 
 	} else {
-		l.Err(nil).Msg("Add node failed")
+		l.Err(nil).Msg("executor::addNode failed")
 		return "", errors.New(res)
 	}
 

@@ -12,8 +12,8 @@ import (
 )
 
 /*
-** Encode string command to byte array
-**
+* Encode string command to byte array
+*
  */
 /*
 func EncodeCmd(strCmd string) ([]byte, error) {
@@ -41,17 +41,26 @@ func EncodeCmd(input string) (result []byte, err error) {
 	var icmd uint8 = 0
 	var ver uint8 = 0
 	req := datatype.Req{KEYS: datatype.Abytes{}, VALS: datatype.Abytes{}}
-	if cmd == command.INIT_CLUSTER { // INIT-CLUSTER
-		/*if len(pieces) != 3 {
-			return syntaxErr()
-		}*/
-		icmd = command.INIT_CLUSTER_I
-		//req.ARGS = strings.Join(pieces[1:], consts.SPACE)
-	} else if cmd == command.ADD_NODE { // ADD-NODE host:port role
+	if cmd == command.INIT_CLUSTER { // INIT-CLUSTER partitions count
 		if len(pieces) != 3 {
 			return syntaxErr()
 		}
-		icmd = command.ADD_NODE_I
+		if strings.ToLower(pieces[1]) != "partition" {
+			return syntaxErr()
+		}
+		icmd = command.INIT_CLUSTER_I
+		req.ARGS = strings.Join(pieces[2:], consts.SPACE)
+	} else if cmd == command.ADD_CONTROLLER { // ADD-CONTROLLER host:port
+		if len(pieces) != 2 {
+			return syntaxErr()
+		}
+		icmd = command.ADD_WORKER_I
+		req.ARGS = strings.Join(pieces[1:], consts.SPACE)
+	} else if cmd == command.ADD_WORKER { // ADD-WORKER host:port [partition xxx]
+		if len(pieces) < 3 {
+			return syntaxErr()
+		}
+		icmd = command.ADD_WORKER_I
 		req.ARGS = strings.Join(pieces[1:], consts.SPACE)
 	} else if cmd == command.SCALE {
 		/*

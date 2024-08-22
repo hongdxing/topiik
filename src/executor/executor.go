@@ -69,17 +69,29 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 	}
 
 	if icmd == command.INIT_CLUSTER_I {
-		err := clusterInit(serverConfig)
+		ptnIds, err := clusterInit(req, serverConfig)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
-		return resp.StrResponse(RES_OK)
-	} else if icmd == command.ADD_NODE_I {
-		result, err := addNode(req)
+		return resp.StrArrResponse(ptnIds)
+	} else if icmd == command.ADD_CONTROLLER_I {
+		result, err := addController(req)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
 		return resp.StrResponse(result)
+	} else if icmd == command.ADD_WORKER_I {
+		result, err := addWorker(req)
+		if err != nil {
+			return resp.ErrResponse(err)
+		}
+		return resp.StrResponse(result)
+	} else if icmd == command.NEW_PARTITION_I {
+		ptnIds, err := newPartition(req)
+		if err != nil {
+			return resp.ErrResponse(err)
+		}
+		return resp.StrArrResponse(ptnIds)
 	} else if icmd == command.SCALE_I {
 		result, err := scale(req)
 		if err != nil {
