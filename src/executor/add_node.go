@@ -42,7 +42,7 @@ func addWorker(req datatype.Req) (rslt string, err error) {
 		return rslt, errors.New(RES_SYNTAX_ERROR)
 	}
 
-	ptnId := pieces[3]
+	ptnId := pieces[2]
 	if _, ok := cluster.GetPartitionInfo().PtnMap[ptnId]; !ok {
 		return rslt, errors.New(resp.RES_INVALID_PARTITION_ID)
 	}
