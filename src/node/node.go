@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"strings"
 	"topiik/internal/config"
 	"topiik/internal/consts"
 	"topiik/internal/util"
@@ -20,7 +21,7 @@ func InitNode(serverConfig config.ServerConfig) (err error) {
 	l.Info().Msg("node::InitNode start")
 
 	var exist bool
-	nodeFile := GetNodeFilePath()
+	fpath := GetNodeFilePath()
 
 	// data dir
 	exist, err = util.PathExists(dataDIR)
@@ -37,7 +38,7 @@ func InitNode(serverConfig config.ServerConfig) (err error) {
 	}
 
 	// node file
-	exist, err = util.PathExists(nodeFile)
+	exist, err = util.PathExists(fpath)
 	if err != nil {
 		return err
 	}
@@ -47,16 +48,18 @@ func InitNode(serverConfig config.ServerConfig) (err error) {
 	if !exist {
 		l.Info().Msg("node::InitNode creating node file...")
 
-		node.Id = util.RandStringRunes(consts.NODE_ID_LEN)
+		node.Id = strings.ToLower(util.RandStringRunes(consts.NODE_ID_LEN))
+		node.Addr = serverConfig.Listen
+		node.Addr2 = serverConfig.Host + ":" + serverConfig.Port2
 		buf, _ = json.Marshal(node)
-		err = os.WriteFile(nodeFile, buf, 0644)
+		err = os.WriteFile(fpath, buf, 0644)
 		if err != nil {
 			l.Panic().Msg("node::InitNode loading node failed")
 		}
 	} else {
 		l.Info().Msg("node::InitNode loading node...")
 
-		buf, err = os.ReadFile(nodeFile)
+		buf, err = os.ReadFile(fpath)
 		if err != nil {
 			l.Panic().Msg("node::InitNode loading node failed")
 		}
@@ -65,6 +68,7 @@ func InitNode(serverConfig config.ServerConfig) (err error) {
 			l.Panic().Msg("node::InitNode loading node failed")
 		}
 		node.Addr = serverConfig.Listen
+		node.Addr2 = serverConfig.Host + ":" + serverConfig.Port2
 		l.Info().Msgf("node::InitNode load node %s", node)
 	}
 	nodeInfo = &node

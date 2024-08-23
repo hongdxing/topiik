@@ -37,7 +37,7 @@ type ServerConfig struct {
 
 	Host  string
 	Port  string
-	PORT2 string // for Cluster use
+	Port2 string // for Cluster use
 }
 
 func ParseServerConfig(configPath string) (*ServerConfig, error) {
@@ -79,7 +79,7 @@ func ParseServerConfig(configPath string) (*ServerConfig, error) {
 	if err != nil {
 		return nil, errors.New("Invalid Listen format: " + serverConfig.Listen)
 	}
-	serverConfig.PORT2 = strconv.Itoa(10000 + iPort)
+	serverConfig.Port2 = strconv.Itoa(10000 + iPort)
 	serverConfig.Host = pieces[1]
 	serverConfig.Port = pieces[3] // pieces[1] is ":"
 

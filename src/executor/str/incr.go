@@ -1,9 +1,9 @@
-/***
-** author: duan hongxing
-** date: 26 Jun 2024
-** desc:
-**
-**/
+/*
+* author: duan hongxing
+* date: 26 Jun 2024
+* desc:
+*
+ */
 
 package str
 
@@ -16,16 +16,16 @@ import (
 	"topiik/resp"
 )
 
-/***
-** Increase a KEY, if KEY not exists, create the KEY first
-** Parameters
-** 	- req
-** Return
-**	- The value after increase if success
-**	- INVALID_OPT if the KEY is NOT STRING
-**
-** Syntax: INCR KEY [num]
-**/
+/*
+* Increase a KEY, if KEY not exists, create the KEY first
+* Parameters
+* 	- req
+* Return
+*	- The value after increase if success
+*	- INVALID_OPT if the KEY is NOT STRING
+*
+* Syntax: INCR KEY [num]
+ */
 func Incr(req datatype.Req) (result int64, err error) {
 	if len(req.KEYS) == 0 {
 		return 0, errors.New(resp.RES_SYNTAX_ERROR)

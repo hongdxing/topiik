@@ -13,6 +13,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"regexp"
+	"strings"
 	"topiik/cluster"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
@@ -26,30 +27,35 @@ import (
 * Add worker to cluster
 * Syntax: ADD-WORKER host:port partition {ptnId}
  */
-func addWorker(req datatype.Req) (rslt string, err error) {
+func addWorker(req datatype.Req) (ndId string, err error) {
 	pieces, err := util.SplitCommandLine(req.ARGS)
 	if len(pieces) != 3 { // must have target address
 		return "", errors.New(RES_SYNTAX_ERROR)
 	}
 	nodeAddr := pieces[0]
-	// validate host
+	/* validate address */
 	reg, _ := regexp.Compile(consts.HOST_PATTERN)
 	if !reg.MatchString(nodeAddr) {
 		return "", errors.New("invalide address")
 	}
 
-	if pieces[1] != "partition" {
-		return rslt, errors.New(RES_SYNTAX_ERROR)
+	if strings.ToUpper(pieces[1]) != "PARTITION" {
+		return ndId, errors.New(RES_SYNTAX_ERROR)
 	}
 
+	/* make sure the ptnId is valid */
 	ptnId := pieces[2]
 	if _, ok := cluster.GetPartitionInfo().PtnMap[ptnId]; !ok {
-		return rslt, errors.New(resp.RES_INVALID_PARTITION_ID)
+		return ndId, errors.New(resp.RES_INVALID_PARTITION_ID)
 	}
 
-	rslt, err = addNode(nodeAddr, cluster.ROLE_WORKER)
-
-	return rslt, err
+	ndId, err = addNode(nodeAddr, cluster.ROLE_WORKER)
+	if err != nil {
+		return ndId, err
+	}
+	/* add the new node to partition */
+	cluster.AddNode2Partition(ptnId, ndId)
+	return ndId, err
 }
 
 /*
@@ -116,16 +122,16 @@ func addNode(nodeAddr string, role string) (result string, err error) {
 		l.Err(err).Msg(err.Error())
 		return "", errors.New("add node failed")
 	}
-	res := string(buf[resp.RESPONSE_HEADER_SIZE:]) // the node id
+	ndId := string(buf[resp.RESPONSE_HEADER_SIZE:]) // the node id
 
 	if flag == resp.Success {
-		l.Info().Msgf("executor::addNode succeed:%s", res)
-		cluster.AddNode(res, nodeAddr, nodeAddr2, role)
+		l.Info().Msgf("executor::addNode succeed: %s", ndId)
+		cluster.AddNode(ndId, nodeAddr, nodeAddr2, role)
 
 	} else {
 		l.Err(nil).Msg("executor::addNode failed")
-		return "", errors.New(res)
+		return "", errors.New(ndId)
 	}
 
-	return RES_OK, nil
+	return ndId, nil
 }

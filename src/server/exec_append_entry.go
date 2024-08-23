@@ -53,7 +53,7 @@ func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 		}
 
 		if entryType == cluster.ENTRY_TYPE_DEFAULT { // append controller address
-			// log.Info().Msgf("appendEntry() Leader addr:%s", string(entry[1:]))
+			//l.Info().Msgf("appendEntry() Leader addr:%s", string(entry[1:]))
 			//nodeStatus.LeaderControllerAddr = string(entry[1:])
 			cluster.SetLeaderCtlAddr(string(entry[1:]))
 		} else if entryType == cluster.ENTRY_TYPE_PTN { // append worker followers

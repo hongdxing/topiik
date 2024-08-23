@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"strings"
 	"topiik/internal/config"
 	"topiik/internal/util"
 	"topiik/node"
@@ -55,7 +56,7 @@ func doInit(serverConfig *config.ServerConfig) error {
 	}
 	// set clusterInfo
 	nodeId := node.GetNodeInfo().Id
-	clusterInfo.Id = util.RandStringRunes(10)
+	clusterInfo.Id = strings.ToLower(util.RandStringRunes(10))
 
 	hostPort, err := util.SplitAddress(serverConfig.Listen)
 	if err != nil {

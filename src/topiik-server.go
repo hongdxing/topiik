@@ -64,7 +64,7 @@ func main() {
 		//go persistence.Sync()    // sync from Partition Leader
 	}
 
-	go server.StartServer(serverConfig.Host+":"+serverConfig.PORT2, serverConfig)
+	go server.StartServer(serverConfig.Host+":"+serverConfig.Port2, serverConfig)
 
 	// Accept incoming connections and handle them
 	l.Info().Msgf("Listen to address %s", serverConfig.Listen)

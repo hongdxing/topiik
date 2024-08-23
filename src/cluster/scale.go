@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"strings"
 	"topiik/internal/consts"
 	"topiik/internal/util"
 	"topiik/node"
@@ -30,7 +31,7 @@ func Scale(p int, r int) (result string, err error) {
 
 		for i := 0; i < int(p); i++ {
 			works := keys[i*r : (i+1)*r] // 2*2--> i==0: [0:2], i==1: [2:4]
-			pId := util.RandStringRunes(consts.PTN_ID_LEN)
+			pId := strings.ToLower(util.RandStringRunes(consts.PTN_ID_LEN))
 			partition := node.Partition{
 				Id:           pId,
 				LeaderNodeId: works[0],

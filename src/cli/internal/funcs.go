@@ -54,7 +54,7 @@ func EncodeCmd(input string) (result []byte, err error) {
 		if len(pieces) != 2 {
 			return syntaxErr()
 		}
-		icmd = command.ADD_WORKER_I
+		icmd = command.ADD_CONTROLLER_I
 		req.ARGS = strings.Join(pieces[1:], consts.SPACE)
 	} else if cmd == command.ADD_WORKER { // ADD-WORKER host:port [partition xxx]
 		if len(pieces) < 3 {
