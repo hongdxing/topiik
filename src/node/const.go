@@ -8,6 +8,6 @@
 package node
 
 const (
-	ROLE_CONTROLLER = "CONTROLLER"
-	ROLE_WORKER     = "WORKER"
+	ROLE_CONTROLLER string = "CONTROLLER"
+	ROLE_WORKER     string = "WORKER"
 )

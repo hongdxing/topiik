@@ -28,7 +28,7 @@ import (
 * Syntax: ADD-WORKER host:port partition {ptnId}
  */
 func AddWorker(req datatype.Req) (ndId string, err error) {
-	if !cluster.IsNodeController() {
+	if !node.IsController() {
 		return ndId, errors.New("add-worker can only run on controller node")
 	}
 	pieces, err := util.SplitCommandLine(req.ARGS)
@@ -69,7 +69,7 @@ func AddWorker(req datatype.Req) (ndId string, err error) {
 * Syntax: ADD-CONTROLLER host:port
  */
 func AddController(req datatype.Req) (rslt string, err error) {
-	if !cluster.IsNodeController() {
+	if !node.IsController() {
 		return rslt, errors.New("add-controller can only run on controller node")
 	}
 	pieces, err := util.SplitCommandLine(req.ARGS)

@@ -107,7 +107,8 @@ func main() {
 
 		// TODO: valid command
 		// Enocde
-		msg, err := internal.EncodeCmd(line)
+		var cmd string
+		msg, err := internal.EncodeCmd(line, &cmd)
 		data, err := proto.EncodeB(msg)
 		if err != nil {
 			fmt.Println()
@@ -122,14 +123,14 @@ func main() {
 			return
 		}
 
-		err = response(conn)
+		err = response(conn, cmd)
 		if err != nil {
 			break
 		}
 	}
 }
 
-func response(conn *net.TCPConn) error {
+func response(conn *net.TCPConn, cmd string) error {
 	reader := bufio.NewReader(conn)
 	buf, err := proto.Decode(reader)
 	if err != nil {
@@ -170,13 +171,18 @@ func response(conn *net.TCPConn) error {
 				fmt.Printf("%v\n", result)
 			} else if resType == resp.StringArray {
 				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
-				var result []string
+				var rslt []string
 
-				err = json.Unmarshal(bufSlice, &result)
+				err = json.Unmarshal(bufSlice, &rslt)
 				if err != nil {
 					fmt.Printf("(err):%s\n", err.Error())
 				}
-				fmt.Printf("%v\n", result)
+				if cmd == command.INIT_CLUSTER {
+					fmt.Println("Partitions:")
+				}
+				for i, v := range rslt {
+					fmt.Printf("%v: %s\n", i, v)
+				}
 			} else if resType == resp.ByteArray {
 				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
 				var result datatype.Abytes

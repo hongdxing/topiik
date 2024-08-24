@@ -12,6 +12,7 @@ import (
 	"errors"
 	"os"
 	"strings"
+	"topiik/internal/util"
 	"topiik/node"
 )
 
@@ -44,7 +45,30 @@ func AddNode(ndId string, addr string, addr2 string, role string) (err error) {
 	}
 
 	/* cluster meta changed, pending sync to follower(s) */
-	UpdatePendingAppend()
+	notifyMetadataChanged()
+	notifyPtnChanged()
 
+	return nil
+}
+
+func SetClusterInfo(cluster *Cluster) {
+	clusterInfo = cluster
+}
+
+func SaveClusterInfo(data []byte) (err error) {
+	fpath := GetClusterFilePath()
+	exist, _ := util.PathExists(fpath)
+	if exist {
+		err = os.Truncate(fpath, 0) // TODO: backup first
+		if err != nil {
+			l.Err(err)
+			return err
+		}
+	}
+	err = os.WriteFile(fpath, data, 0644)
+	if err != nil {
+		l.Err(err)
+		return err
+	}
 	return nil
 }

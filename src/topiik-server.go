@@ -58,7 +58,7 @@ func main() {
 	}
 
 	// Start routines
-	if !cluster.IsNodeController() {
+	if !node.IsController() {
 		persistence.Load(executor.Execute1)
 		//go persistence.PersistAsync() // persist
 		//go persistence.Sync()    // sync from Partition Leader

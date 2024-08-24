@@ -12,6 +12,7 @@ import (
 	"time"
 	"topiik/cluster"
 	"topiik/internal/consts"
+	"topiik/node"
 )
 
 /*
@@ -29,7 +30,7 @@ import (
 func vote(cTerm int) string {
 	//fmt.Printf("vote():: current node role: %v\n", nodeStatus.Role)
 
-	if cluster.IsNodeController() {
+	if node.IsController() {
 		if cluster.GetNodeStatus().Role == cluster.RAFT_LEADER {
 			return consts.VOTE_REJECTED + ":L"
 		}

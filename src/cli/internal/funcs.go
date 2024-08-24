@@ -28,7 +28,7 @@ func EncodeCmd(strCmd string) ([]byte, error) {
 
 const syntax_err = "syntax error"
 
-func EncodeCmd(input string) (result []byte, err error) {
+func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 	/*pieces := strings.SplitN(input, consts.SPACE, 2)
 	if len(pieces) != 2 {
 		return nil, errors.New("sytax error")
@@ -38,6 +38,7 @@ func EncodeCmd(input string) (result []byte, err error) {
 		return nil, err
 	}
 	cmd := strings.ToUpper(pieces[0])
+	theCMD = &cmd
 	var icmd uint8 = 0
 	var ver uint8 = 0
 	req := datatype.Req{KEYS: datatype.Abytes{}, VALS: datatype.Abytes{}}

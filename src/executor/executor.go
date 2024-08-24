@@ -73,17 +73,17 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 		}
 		return resp.StrArrResponse(ptnIds)
 	} else if icmd == command.ADD_CONTROLLER_I {
-		result, err := clus.AddController(req)
+		_, err := clus.AddController(req)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
-		return resp.StrResponse(result)
+		return resp.StrResponse(resp.RES_OK)
 	} else if icmd == command.ADD_WORKER_I {
-		result, err := clus.AddWorker(req)
+		_, err := clus.AddWorker(req)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
-		return resp.StrResponse(result)
+		return resp.StrResponse(resp.RES_OK)
 	} else if icmd == command.NEW_PARTITION_I {
 		ptnIds, err := clus.NewPartition(req)
 		if err != nil {
@@ -117,7 +117,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 	}
 
 	// if is Controller, forward to worker(s)
-	if cluster.IsNodeController() {
+	if node.IsController() {
 		return forward(icmd, req, msg)
 	}
 
@@ -264,7 +264,7 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 func srcFilter(srcAddr string) error {
 	// if node member of cluster
 	if len(node.GetNodeInfo().ClusterId) > 0 {
-		if !cluster.IsNodeController() {
+		if !node.IsController() {
 			//fmt.Printf("remote address: %s\n", srcAddr)
 
 			/*addrSplit, err := util.SplitAddress(srcAddr)

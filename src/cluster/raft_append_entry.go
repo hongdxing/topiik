@@ -42,8 +42,8 @@ var connCache = make(map[string]*net.TCPConn)
 func AppendEntries() {
 	hbTicker = time.NewTicker(200 * time.Millisecond)
 	ptnTicker = time.NewTicker(time.Duration(ptnTickerDur) * time.Millisecond)
-	cluUpdCh = make(chan struct{})
-	ptnUpdCh = make(chan struct{})
+	cluUpdCh = make(chan struct{}, 2)
+	ptnUpdCh = make(chan struct{}, 2)
 	defer close(cluUpdCh)
 	defer close(ptnUpdCh)
 

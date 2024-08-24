@@ -70,23 +70,24 @@ func LoadControllerMetadata() (err error) {
 	}
 
 	//
-	l.Info().Msgf("Current node role: %d", nodeStatus.Role)
-	if len(clusterInfo.Ctls) >= 1 {
+	l.Info().Msgf("Current node role: %s", node.GetNodeInfo().Role)
+	if node.GetNodeInfo().Role == node.ROLE_CONTROLLER {
 		go RequestVote()
 	}
 
 	return nil
 }
 
-func UpdatePendingAppend() {
-	l.Info().Msg("metadata::UpdatePendingAppend begin")
+func notifyMetadataChanged() {
+	l.Info().Msg("metadata::notifyMetadataChanged begin")
 	cluUpdCh <- struct{}{}
-	l.Info().Msg("metadata::UpdatePendingAppend end")
+	l.Info().Msg("metadata::notifyMetadataChanged end")
 }
 
-func IsNodeController() bool {
-	// if current node controllerMap has value
-	return len(clusterInfo.Ctls) > 0
+func notifyPtnChanged() {
+	l.Info().Msg("metadata::notifyPtnChange begin")
+	ptnUpdCh <- struct{}{}
+	l.Info().Msg("metadata::notifyPtnChange end")
 }
 
 func GetClusterInfo() Cluster {

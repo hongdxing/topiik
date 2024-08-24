@@ -43,9 +43,7 @@ func ClusterInit(req datatype.Req, serverConfig *config.ServerConfig) (ptnIds []
 	}
 
 	/* init cluster */
-	l.Info().Msg("before")
 	ptnIds, err = cluster.InitCluster(ptnCount, serverConfig)
-	l.Info().Msg("after")
 	if err != nil {
 		l.Err(err).Msgf("executor::clusterInit %s", err.Error())
 		/* TODO: clean cluster info if failed */

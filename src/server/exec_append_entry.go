@@ -30,7 +30,7 @@ import (
 func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 	// In case of multi Leader, if node can receive appendEntry,
 	// and role is RAFT_LEADER, then step back
-	if cluster.IsNodeController() && cluster.GetNodeStatus().Role == cluster.RAFT_LEADER {
+	if node.IsController() && cluster.GetNodeStatus().Role == cluster.RAFT_LEADER {
 		//cluster.GetNodeStatus().Role = cluster.RAFT_FOLLOWER
 		cluster.SetRole(cluster.RAFT_FOLLOWER)
 		go cluster.RequestVote()
@@ -60,29 +60,22 @@ func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 			node.SetPtn(entry[1:])
 		} else if entryType == cluster.ENTRY_TYPE_METADATA { // append cluster metadata
 			l.Info().Msg("rpc_append_entry::appendEntry metadata begin")
-			var clusterData = &cluster.Cluster{}
-			err := json.Unmarshal(entry[1:], clusterData) // verify
+			var clusterInfo = &cluster.Cluster{}
+			err := json.Unmarshal(entry[1:], clusterInfo) // verify
 			if err != nil {
 				l.Err(err)
 				return err
 			}
-			clusterPath := cluster.GetClusterFilePath()
-			exist, _ := util.PathExists(clusterPath)
-			if exist {
-				err = os.Truncate(clusterPath, 0) // TODO: backup first
-				if err != nil {
-					l.Err(err)
-					return err
-				}
-			}
-			err = os.WriteFile(clusterPath, entry[1:], 0644)
+			/* set cluster info in memory */
+			cluster.SetClusterInfo(clusterInfo)
+			/* save */
+			err = cluster.SaveClusterInfo(entry[1:])
 			if err != nil {
-				l.Err(err)
 				return err
 			}
 			l.Info().Msg("rpc_append_entry::appendEntry metadata end")
 		} else if entryType == cluster.ENTRY_TYPE_PTNS {
-			l.Info().Msg("rpc_append_entry::appendEntry partittion begin")
+			l.Info().Msg("rpc_append_entry::appendEntry partition begin")
 			var ptnInfo cluster.PartitionInfo
 			err := json.Unmarshal(entry[1:], &ptnInfo) // verify
 			if err != nil {
@@ -101,7 +94,7 @@ func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 				l.Err(err).Msg(err.Error())
 				return err
 			}
-			l.Info().Msg("rpc_append_entry::appendEntry partittion end")
+			l.Info().Msg("rpc_append_entry::appendEntry partition end")
 		}
 	}
 

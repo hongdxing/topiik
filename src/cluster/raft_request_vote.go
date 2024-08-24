@@ -21,6 +21,7 @@ import (
 	"topiik/internal/consts"
 	"topiik/internal/proto"
 	"topiik/internal/util"
+	"topiik/node"
 	"topiik/resp"
 )
 
@@ -30,18 +31,17 @@ var wgRequestVote sync.WaitGroup
 const requestVoteInterval = 100
 
 /*
+* Request vote self to controller leader
 * Parameters:
 *	-
 * Follower(s) issue RequestVote RPCs to Controller(s) and Worker(s) to request for votes.
  */
 func RequestVote() {
-	if nodeStatus.Role == RAFT_LEADER {
+	if nodeStatus.Role == RAFT_LEADER || !node.IsController() {
 		return
 	}
 
-	if len(clusterInfo.Ctls) == 0 {
-		return
-	} else if len(clusterInfo.Ctls) == 1 { // if this is the only Controller, then it alawys Leader
+	if len(clusterInfo.Ctls) == 1 { // if this is the only Controller, then it alawys Leader
 		nodeStatus.Role = RAFT_LEADER
 		go AppendEntries()
 		return
@@ -106,16 +106,22 @@ func RequestVote() {
 			}
 		}
 		if canPromote {
-			// promote to Controller
+			/* promote to Controller */
 			nodeStatus.Role = RAFT_LEADER
 
-			// Leader start to AppendEntries
+			/* Leader start to AppendEntries */
 			go AppendEntries()
-			// when new Leader selected, try to sync cluster meta data
-			UpdatePendingAppend()
-			// Print Selected Leader
+			/* make sure channel are ready */
+			time.Sleep(500 * time.Millisecond)
+
+			/* when new Leader selected, try to sync cluster meta data */
+			notifyMetadataChanged()
+			notifyPtnChanged()
+
+			/* Print Selected Leader */
 			l.Info().Msgf("[TOPIIK] ~!~ selected as new leader")
-			// Leader no RequestVote, quite RequestVote
+
+			/* Leader no RequestVote, quite RequestVote */
 			break
 		} else {
 			nodeStatus.Role = RAFT_FOLLOWER

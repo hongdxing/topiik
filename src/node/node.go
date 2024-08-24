@@ -117,12 +117,13 @@ func InitCluster(clusterId string) (err error) {
 }
 
 /*
-* Initialized by command ADD-NODE
+* Initialized by command ADD-WORKER|ADD-CONTROLLER
 * Update clusterId when Controller try to add current node to the cluster
  */
-func JoinCluster(clusterId string) (err error) {
-	// update node cluster id
+func JoinCluster(clusterId string, role string) (err error) {
+	/* update node cluster id and role */
 	nodeInfo.ClusterId = clusterId
+	nodeInfo.Role = role
 
 	nodePath := GetNodeFilePath()
 	buf, err := json.Marshal(nodeInfo)
@@ -158,4 +159,8 @@ func GetNodeInfo() Node {
 
 func GetNodeFilePath() string {
 	return util.GetMainPath() + slash + dataDIR + slash + "__metadata_node__"
+}
+
+func IsController() bool {
+	return nodeInfo.Role == ROLE_CONTROLLER
 }
