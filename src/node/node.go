@@ -104,6 +104,7 @@ func InitCluster(clusterId string) (err error) {
 		return errors.New("current node already in a cluster:" + nodeInfo.ClusterId)
 	}
 	nodeInfo.ClusterId = clusterId
+	nodeInfo.Role = ROLE_CONTROLLER
 
 	// 4. marshal
 	buf2, _ := json.Marshal(nodeInfo)

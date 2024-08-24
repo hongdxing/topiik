@@ -5,7 +5,7 @@
 *
  */
 
-package executor
+package clus
 
 import (
 	"bufio"
@@ -27,10 +27,16 @@ import (
 * Add worker to cluster
 * Syntax: ADD-WORKER host:port partition {ptnId}
  */
-func addWorker(req datatype.Req) (ndId string, err error) {
+func AddWorker(req datatype.Req) (ndId string, err error) {
+	if !cluster.IsNodeController() {
+		return ndId, errors.New("add-worker can only run on controller node")
+	}
 	pieces, err := util.SplitCommandLine(req.ARGS)
+	if err != nil {
+		return "", errors.New(resp.RES_SYNTAX_ERROR)
+	}
 	if len(pieces) != 3 { // must have target address
-		return "", errors.New(RES_SYNTAX_ERROR)
+		return "", errors.New(resp.RES_SYNTAX_ERROR)
 	}
 	nodeAddr := pieces[0]
 	/* validate address */
@@ -40,7 +46,7 @@ func addWorker(req datatype.Req) (ndId string, err error) {
 	}
 
 	if strings.ToUpper(pieces[1]) != "PARTITION" {
-		return ndId, errors.New(RES_SYNTAX_ERROR)
+		return ndId, errors.New(resp.RES_SYNTAX_ERROR)
 	}
 
 	/* make sure the ptnId is valid */
@@ -49,7 +55,7 @@ func addWorker(req datatype.Req) (ndId string, err error) {
 		return ndId, errors.New(resp.RES_INVALID_PARTITION_ID)
 	}
 
-	ndId, err = addNode(nodeAddr, cluster.ROLE_WORKER)
+	ndId, err = addNode(nodeAddr, node.ROLE_WORKER)
 	if err != nil {
 		return ndId, err
 	}
@@ -62,18 +68,24 @@ func addWorker(req datatype.Req) (ndId string, err error) {
 * Add controller to cluster
 * Syntax: ADD-CONTROLLER host:port
  */
-func addController(req datatype.Req) (rslt string, err error) {
+func AddController(req datatype.Req) (rslt string, err error) {
+	if !cluster.IsNodeController() {
+		return rslt, errors.New("add-controller can only run on controller node")
+	}
 	pieces, err := util.SplitCommandLine(req.ARGS)
+	if err != nil {
+		return "", errors.New(resp.RES_SYNTAX_ERROR)
+	}
 	if len(pieces) != 1 { // must have target address
-		return "", errors.New(RES_SYNTAX_ERROR)
+		return "", errors.New(resp.RES_SYNTAX_ERROR)
 	}
 	nodeAddr := pieces[0]
 	// validate host
 	reg, _ := regexp.Compile(consts.HOST_PATTERN)
 	if !reg.MatchString(nodeAddr) {
-		return "", errors.New("invalide address")
+		return "", errors.New("invalide address format")
 	}
-	rslt, err = addNode(nodeAddr, cluster.ROLE_CONTROLLER)
+	rslt, err = addNode(nodeAddr, node.ROLE_CONTROLLER)
 	return rslt, err
 }
 

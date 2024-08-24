@@ -11,6 +11,7 @@ import (
 	"errors"
 	"slices"
 	"topiik/cluster"
+	"topiik/executor/clus"
 	"topiik/executor/list"
 	"topiik/executor/str"
 	"topiik/internal/command"
@@ -25,11 +26,8 @@ import (
 
 /***Command RESponse***/
 const (
-	RES_OK                  = "OK"
-	RES_WRONG_ARG           = "WRONG_ARG"
-	RES_DATA_TYPE_NOT_MATCH = "DATA_TYPE_NOT_MATCH"
-	RES_SYNTAX_ERROR        = "SYNTAX_ERR"
-	RES_KEY_NOT_EXIST       = "KEY_NOT_EXIST"
+	RES_SYNTAX_ERROR  = "SYNTAX_ERR"
+	RES_KEY_NOT_EXIST = "KEY_NOT_EXIST"
 )
 
 // var PersistenceCh = make(chan []byte)
@@ -69,31 +67,31 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 	}
 
 	if icmd == command.INIT_CLUSTER_I {
-		ptnIds, err := clusterInit(req, serverConfig)
+		ptnIds, err := clus.ClusterInit(req, serverConfig)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
 		return resp.StrArrResponse(ptnIds)
 	} else if icmd == command.ADD_CONTROLLER_I {
-		result, err := addController(req)
+		result, err := clus.AddController(req)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
 		return resp.StrResponse(result)
 	} else if icmd == command.ADD_WORKER_I {
-		result, err := addWorker(req)
+		result, err := clus.AddWorker(req)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
 		return resp.StrResponse(result)
 	} else if icmd == command.NEW_PARTITION_I {
-		ptnIds, err := newPartition(req)
+		ptnIds, err := clus.NewPartition(req)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
 		return resp.StrArrResponse(ptnIds)
 	} else if icmd == command.SCALE_I {
-		result, err := scale(req)
+		result, err := clus.Scale(req)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
@@ -114,7 +112,6 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 			} else {
 				return resp.ErrResponse(errors.New(resp.RES_NO_CTL))
 			}
-
 		}
 		return resp.StrResponse(address)
 	}

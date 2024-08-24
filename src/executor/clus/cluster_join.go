@@ -1,11 +1,11 @@
-/***
-** author: duan hongxing
-** data: 4 Jul 2024
-** desc:
-**
-**/
+/*
+* author: duan hongxing
+* data: 4 Jul 2024
+* desc:
+*
+ */
 
-package executor
+package clus
 
 import (
 	"bufio"
@@ -23,14 +23,14 @@ import (
 	"topiik/resp"
 )
 
-/***
-** Join to CCSS cluster
-**
-**
-** Syntax:
-**	CLUSTER JOIN host:port CONTROLLER|WORKER
-**/
-func clusterJoin(myAddr string, controllerAddr string, role string) (result string, err error) {
+/*
+* Join to CCSS cluster
+*
+*
+* Syntax:
+*	CLUSTER JOIN host:port CONTROLLER|WORKER
+ */
+func ClusterJoin(myAddr string, controllerAddr string, role string) (result string, err error) {
 	// validate host
 	reg, _ := regexp.Compile(consts.HOST_PATTERN)
 	if !reg.MatchString(myAddr) || !reg.MatchString(controllerAddr) {
@@ -38,7 +38,7 @@ func clusterJoin(myAddr string, controllerAddr string, role string) (result stri
 	}
 
 	// validate CONTROLLER|WORKER
-	if strings.ToUpper(role) != cluster.ROLE_CONTROLLER && strings.ToUpper(role) != cluster.ROLE_WORKER {
+	if strings.ToUpper(role) != node.ROLE_CONTROLLER && strings.ToUpper(role) != node.ROLE_WORKER {
 		return "", errors.New("invalide role, must be either CONTROLLER or WORKER")
 	}
 	nodeId := node.GetNodeInfo().Id
@@ -83,24 +83,24 @@ func clusterJoin(myAddr string, controllerAddr string, role string) (result stri
 		fmt.Println(err)
 		return "", errors.New("join to cluster failed")
 	}
-	resp := string(buf[resp.RESPONSE_HEADER_SIZE:])
+	rslt := string(buf[resp.RESPONSE_HEADER_SIZE:])
 
 	if flag == 1 {
 
-		fmt.Printf("join cluster:%s\n", resp)
+		fmt.Printf("join cluster:%s\n", rslt)
 		//err = cluster.UpdateNodeClusterId(resp)
 		if err != nil {
 			fmt.Println(err)
 			return "", errors.New("join cluster failed")
 		}
 		// if join controller succeed, will start to RequestVote
-		if strings.ToUpper(role) == cluster.ROLE_CONTROLLER {
+		if strings.ToUpper(role) == node.ROLE_CONTROLLER {
 			go cluster.RequestVote()
 		}
 	} else {
 		fmt.Println("join cluster failed")
-		return "", errors.New(resp)
+		return "", errors.New(rslt)
 	}
 
-	return RES_OK, nil
+	return resp.RES_OK, nil
 }

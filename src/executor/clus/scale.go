@@ -4,7 +4,7 @@
 * desc:
  */
 
-package executor
+package clus
 
 import (
 	"errors"
@@ -16,7 +16,7 @@ import (
 	"topiik/resp"
 )
 
-func scale(req datatype.Req) (result string, err error) {
+func Scale(req datatype.Req) (result string, err error) {
 	l.Info().Msg("executor::scale start")
 	var partition = 0
 	var replica = 0

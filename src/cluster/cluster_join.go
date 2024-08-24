@@ -36,7 +36,7 @@ func clusterJoin(pieces []string) (result string, err error) {
 	id := pieces[0]
 	addr := pieces[1]
 	role := pieces[2]
-	if strings.ToUpper(role) == ROLE_CONTROLLER { // add controller
+	if strings.ToUpper(role) == node.ROLE_CONTROLLER { // add controller
 		var addrSplit []string
 		addrSplit, err = util.SplitAddress(addr)
 		if err != nil {
@@ -58,7 +58,7 @@ func clusterJoin(pieces []string) (result string, err error) {
 			}
 		}
 
-	} else if strings.ToUpper(role) == ROLE_WORKER { // add worker
+	} else if strings.ToUpper(role) == node.ROLE_WORKER { // add worker
 		var addrSplit []string
 		addrSplit, err = util.SplitAddress(addr)
 		if err != nil {

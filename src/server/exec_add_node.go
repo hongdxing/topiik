@@ -1,9 +1,9 @@
-/***
-** author: duan hongxing
-** date: 21 Jul 2024
-** desc:
-**
-**/
+/*
+* author: duan hongxing
+* date: 21 Jul 2024
+* desc:
+*
+ */
 
 package server
 
@@ -31,7 +31,7 @@ func addNode(pieces []string) (string, error) {
 	node.JoinCluster(clusterId)
 
 	// if join controller succeed, will start to RequestVote
-	if strings.ToUpper(role) == cluster.ROLE_CONTROLLER {
+	if strings.ToUpper(role) == node.ROLE_CONTROLLER {
 		go cluster.RequestVote()
 	}
 	// return nodeId to controller

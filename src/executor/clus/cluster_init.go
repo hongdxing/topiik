@@ -5,7 +5,7 @@
 *
  */
 
-package executor
+package clus
 
 import (
 	"errors"
@@ -23,7 +23,7 @@ import (
 *	- serverConfig
 * Syntax: INIT-CLUSTER partition count
  */
-func clusterInit(req datatype.Req, serverConfig *config.ServerConfig) (ptnIds []string, err error) {
+func ClusterInit(req datatype.Req, serverConfig *config.ServerConfig) (ptnIds []string, err error) {
 	/* if node already in a cluster, return error */
 	if len(node.GetNodeInfo().ClusterId) > 0 {
 		return nil, errors.New("current node already in cluster: " + node.GetNodeInfo().ClusterId)

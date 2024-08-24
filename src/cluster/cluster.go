@@ -1,7 +1,7 @@
 /*
-* @author: Duan Hongxing
-* @date: 23 Aug, 2024
-* @desc:
+* author: Duan Hongxing
+* date: 23 Aug, 2024
+* desc:
 *	Cluster info implementation
  */
 
@@ -21,7 +21,7 @@ import (
 *
  */
 func AddNode(ndId string, addr string, addr2 string, role string) (err error) {
-	if strings.ToUpper(role) == ROLE_CONTROLLER {
+	if strings.ToUpper(role) == node.ROLE_CONTROLLER {
 		clusterInfo.Ctls[ndId] = node.NodeSlim{Id: ndId, Addr: addr, Addr2: addr2}
 	} else {
 		worker := node.NodeSlim{Id: ndId, Addr: addr, Addr2: addr2}

@@ -11,11 +11,6 @@ const (
 )
 
 const (
-	ROLE_CONTROLLER = "CONTROLLER"
-	ROLE_WORKER     = "WORKER"
-)
-
-const (
 	ENTRY_TYPE_DEFAULT  int8 = 1
 	ENTRY_TYPE_METADATA int8 = 2
 	ENTRY_TYPE_PTN      int8 = 3

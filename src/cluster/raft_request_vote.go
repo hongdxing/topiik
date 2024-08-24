@@ -1,9 +1,9 @@
-/***
-** author: duan hongxing
-** data: 3 Jul 2024
-** desc:
-**
-**/
+/*
+* author: duan hongxing
+* data: 3 Jul 2024
+* desc:
+*
+ */
 
 package cluster
 
@@ -29,11 +29,11 @@ var wgRequestVote sync.WaitGroup
 
 const requestVoteInterval = 100
 
-/**
-** Parameters:
-**	-
-** Follower(s) issue RequestVote RPCs to Controller(s) and Worker(s) to request for votes.
-**/
+/*
+* Parameters:
+*	-
+* Follower(s) issue RequestVote RPCs to Controller(s) and Worker(s) to request for votes.
+ */
 func RequestVote() {
 	if nodeStatus.Role == RAFT_LEADER {
 		return
