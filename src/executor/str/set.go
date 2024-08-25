@@ -30,11 +30,11 @@ import (
  */
 func Set(req datatype.Req) (result string, err error) {
 
-	key := string(req.KEYS[0])
+	key := string(req.Keys[0])
 	returnOld := false
 	ttl := consts.INT64_MAX
-	if len(req.ARGS) > 0 {
-		pieces := strings.Split(req.ARGS, consts.SPACE)
+	if len(req.Args) > 0 {
+		pieces := strings.Split(req.Args, consts.SPACE)
 		for i := 0; i < len(pieces); i++ {
 			piece := strings.ToUpper(strings.TrimSpace(pieces[i]))
 			if piece == "GET" {
@@ -85,13 +85,14 @@ func Set(req datatype.Req) (result string, err error) {
 			oldValue = string(val.Str)
 		}
 
-		memo.MemMap[key].Str = []byte(req.VALS[0])
+		memo.MemMap[key].Str = []byte(req.Vals[0])
+		memo.MemMap[key].Typ = datatype.V_TYPE_STRING
 		memo.MemMap[key].Exp = ttl
 		return oldValue, nil
 	} else {
 		memo.MemMap[key] = &datatype.TValue{
 			Typ: datatype.V_TYPE_STRING,
-			Str: []byte(req.VALS[0]),
+			Str: []byte(req.Vals[0]),
 			Exp: ttl}
 		if returnOld {
 			return "", nil

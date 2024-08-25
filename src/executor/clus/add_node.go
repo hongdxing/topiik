@@ -31,7 +31,7 @@ func AddWorker(req datatype.Req) (ndId string, err error) {
 	if !node.IsController() {
 		return ndId, errors.New("add-worker can only run on controller node")
 	}
-	pieces, err := util.SplitCommandLine(req.ARGS)
+	pieces, err := util.SplitCommandLine(req.Args)
 	if err != nil {
 		return "", errors.New(resp.RES_SYNTAX_ERROR)
 	}
@@ -72,7 +72,7 @@ func AddController(req datatype.Req) (rslt string, err error) {
 	if !node.IsController() {
 		return rslt, errors.New("add-controller can only run on controller node")
 	}
-	pieces, err := util.SplitCommandLine(req.ARGS)
+	pieces, err := util.SplitCommandLine(req.Args)
 	if err != nil {
 		return "", errors.New(resp.RES_SYNTAX_ERROR)
 	}

@@ -59,6 +59,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 	if len(msgBytes) < 2 {
 		return resp.ErrResponse(errors.New(resp.RES_SYNTAX_ERROR))
 	}
+	//l.Info().Msgf("%s", string(msgBytes[2:]))
 	var req datatype.Req
 	err = json.Unmarshal(msgBytes[2:], &req) // 2= 1 icmd and 1 ver
 	if err != nil {
@@ -143,12 +144,12 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 	// special process SETM, because SETM has more than one keys
 	if icmd == command.SETM_I {
-		if len(req.KEYS) != len(req.VALS) {
+		if len(req.Keys) != len(req.Vals) {
 			return resp.ErrResponse(errors.New(resp.RES_SYNTAX_ERROR))
 		}
 		// split setm to multi set
-		for i, key := range req.KEYS {
-			reqN := datatype.Req{KEYS: datatype.Abytes{key}, VALS: datatype.Abytes{req.VALS[i]}} // req object
+		for i, key := range req.Keys {
+			reqN := datatype.Req{Keys: datatype.Abytes{key}, Vals: datatype.Abytes{req.Vals[i]}} // req object
 			reqBytesN, _ := json.Marshal(reqN)                                                   // req bytes
 			msgN, _ := proto.EncodeHeader(command.SET_I, 1)                                      // msg header
 			msgN = append(msgN, reqBytesN...)                                                    // combine msg header and req bytes
@@ -159,8 +160,8 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 	} else if icmd == command.GETM_I {
 		var res []string
 		// split setm to multi set
-		for _, key := range req.KEYS {
-			reqN := datatype.Req{KEYS: datatype.Abytes{key}, VALS: datatype.Abytes{}} // req object
+		for _, key := range req.Keys {
+			reqN := datatype.Req{Keys: datatype.Abytes{key}, Vals: datatype.Abytes{}} // req object
 			reqBytesN, _ := json.Marshal(reqN)                                        // req bytes
 			msgN, _ := proto.EncodeHeader(command.GET_I, 1)                           // msg header
 			msgN = append(msgN, reqBytesN...)                                         // combine msg header and req bytes
@@ -179,10 +180,10 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 	}
 
 	// the key should not empty or space
-	if len(req.KEYS) <= 0 || len(req.KEYS[0]) == 0 {
+	if len(req.Keys) <= 0 || len(req.Keys[0]) == 0 {
 		return resp.ErrResponse(errors.New(resp.RES_EMPTY_KEY))
 	}
-	key := req.KEYS[0]
+	key := req.Keys[0]
 	return forwardByKey(key, msg)
 }
 

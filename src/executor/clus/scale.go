@@ -20,7 +20,7 @@ func Scale(req datatype.Req) (result string, err error) {
 	l.Info().Msg("executor::scale start")
 	var partition = 0
 	var replica = 0
-	pieces := strings.Split(req.ARGS, consts.SPACE)
+	pieces := strings.Split(req.Args, consts.SPACE)
 	for i := 0; i < len(pieces); i++ {
 		if strings.ToLower(pieces[i]) == "partition" {
 			if len(pieces) > i {

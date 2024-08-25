@@ -24,18 +24,18 @@ import (
 ** Syntax: SETM KEY1 VALUE1 [... KEYn VALUEn]
 **/
 func SetM(req datatype.Req) (result int, err error) {
-	if len(req.KEYS) != len(req.VALS) || len(req.KEYS) == 0 {
+	if len(req.Keys) != len(req.Vals) || len(req.Keys) == 0 {
 		return 0, errors.New(resp.RES_SYNTAX_ERROR)
 	}
 	kv := make(map[string][]byte)
-	for i := 0; i < len(req.KEYS); i++ {
-		key := string(req.KEYS[i])
+	for i := 0; i < len(req.Keys); i++ {
+		key := string(req.Keys[i])
 		if val, ok := memo.MemMap[key]; ok { // if the key exists, but not String type, then error
 			if val.Typ != datatype.V_TYPE_STRING {
 				return 0, errors.New(resp.RES_DATA_TYPE_NOT_MATCH + ":" + key)
 			}
 		}
-		kv[key] = req.VALS[i]
+		kv[key] = req.Vals[i]
 	}
 	for k, v := range kv {
 		if val, ok := memo.MemMap[k]; ok {

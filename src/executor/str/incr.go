@@ -27,12 +27,12 @@ import (
 * Syntax: INCR KEY [num]
  */
 func Incr(req datatype.Req) (result int64, err error) {
-	if len(req.KEYS) == 0 {
+	if len(req.Keys) == 0 {
 		return 0, errors.New(resp.RES_SYNTAX_ERROR)
 	}
-	if req.ARGS == "" { // KEY
+	if req.Args == "" { // KEY
 		var i int64 = 0
-		key := string(req.KEYS[0])
+		key := string(req.Keys[0])
 		i, err = preINCR(key)
 		if err != nil {
 			return 0, err
@@ -43,11 +43,11 @@ func Incr(req datatype.Req) (result int64, err error) {
 	} else { // KEY num
 		var i int64
 		var num int
-		num, err = strconv.Atoi(req.ARGS)
+		num, err = strconv.Atoi(req.Args)
 		if err != nil {
 			return 0, errors.New(resp.RES_SYNTAX_ERROR)
 		}
-		key := string(req.KEYS[0])
+		key := string(req.Keys[0])
 		i, err = preINCR(key)
 		if err != nil {
 			return 0, err

@@ -13,7 +13,7 @@ import (
 )
 
 func pollb(req datatype.Req) (res []byte, err error) {
-	if len(req.KEYS) != 1 {
+	if len(req.Keys) != 1 {
 		return nil, errors.New(resp.RES_SYNTAX_ERROR)
 	}
 	return res, nil

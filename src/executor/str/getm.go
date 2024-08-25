@@ -26,10 +26,10 @@ import (
 * Syntax: GETM KEY1 KEY2 [... KEYn]
  */
 func GetM(req datatype.Req) (result []string, err error) {
-	if len(req.KEYS) < 1 {
+	if len(req.Keys) < 1 {
 		return nil, errors.New(resp.RES_SYNTAX_ERROR)
 	}
-	for _, key := range req.KEYS {
+	for _, key := range req.Keys {
 		skey := string(key)
 		if val, ok := memo.MemMap[skey]; ok {
 			if shared.IsKeyExpired(skey, val.Exp) {

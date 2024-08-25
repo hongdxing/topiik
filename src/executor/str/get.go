@@ -27,7 +27,7 @@ import (
 * 	GET KEY
  */
 func Get(req datatype.Req) (result string, err error) {
-	key := string(req.KEYS[0])
+	key := string(req.Keys[0])
 	if val, ok := memo.MemMap[key]; ok {
 		if shared.IsKeyExpired(key, val.Exp) {
 			return "", errors.New(resp.RES_KEY_NOT_EXIST)

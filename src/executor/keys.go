@@ -25,17 +25,17 @@ import (
 /*
 * Return keys
 * Parameters:
-*	- args: the arguments, command line that CMD(KEYS) stripped
+*	- args: the arguments, command line that CMD(Keys) stripped
 * Return:
 *	-
-* Synctax: KEYS pattern
+* Synctax: Keys pattern
 *	- pattern is a string to search keys, use astrisk(*) for pattern search
  */
 func keys(req datatype.Req) (result []string, err error) {
-	if len(req.ARGS) == 0 {
+	if len(req.Args) == 0 {
 		return nil, errors.New(RES_SYNTAX_ERROR)
 	}
-	pattern := req.ARGS
+	pattern := req.Args
 	if !strings.HasPrefix(pattern, "*") { // exactly match from beginning
 		pattern = "^" + pattern
 	}

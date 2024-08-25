@@ -27,7 +27,7 @@ import (
 * Syntax: LPUSH|RPUSH key value1 [... valueN]
  */
 func Push(req datatype.Req, icmd uint8) (result int, err error) {
-	key := string(req.KEYS[0])
+	key := string(req.Keys[0])
 	if memo.MemMap[key] == nil {
 		memo.MemMap[key] = &datatype.TValue{
 			Typ: datatype.V_TYPE_LIST,
@@ -36,11 +36,11 @@ func Push(req datatype.Req, icmd uint8) (result int, err error) {
 		}
 	}
 	if icmd == command.LPUSH_I {
-		for _, val := range req.VALS {
+		for _, val := range req.Vals {
 			memo.MemMap[key].Lst.PushFront(val)
 		}
 	} else if icmd == command.LPUSHR_I {
-		for _, val := range req.VALS {
+		for _, val := range req.Vals {
 			memo.MemMap[key].Lst.PushBack(val)
 		}
 	} else {

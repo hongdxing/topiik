@@ -1,7 +1,7 @@
 package resp
 
 type Req struct {
-	KEYS [][]byte
-	VALS [][]byte
-	ARGS string
+	Keys [][]byte
+	Vals [][]byte
+	Args string
 }

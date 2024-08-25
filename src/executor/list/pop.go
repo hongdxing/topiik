@@ -31,9 +31,9 @@ import (
  */
 func Pop(req datatype.Req, icmd uint8) (result datatype.Abytes, err error) {
 	count := 1
-	if len(req.ARGS) != 0 { // if args has value, the only value should be the count
-		fmt.Printf("--%s--", req.ARGS)
-		count, err = strconv.Atoi(req.ARGS)
+	if len(req.Args) != 0 { // if args has value, the only value should be the count
+		fmt.Printf("--%s--", req.Args)
+		count, err = strconv.Atoi(req.Args)
 		if err != nil {
 			return nil, errors.New(resp.RES_WRONG_ARG)
 		}
@@ -41,7 +41,7 @@ func Pop(req datatype.Req, icmd uint8) (result datatype.Abytes, err error) {
 			return nil, errors.New(resp.RES_WRONG_ARG)
 		}
 	}
-	key := string(req.KEYS[0])
+	key := string(req.Keys[0])
 	if val, ok := memo.MemMap[key]; ok {
 		if val.Typ != datatype.V_TYPE_LIST {
 			return result, errors.New(resp.RES_DATA_TYPE_NOT_MATCH)

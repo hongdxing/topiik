@@ -67,12 +67,12 @@ const (
 	POLLB   = "POLLB" // Poll Blocking
 	POLLB_I = 114
 
-	/*** KEYS 128 ***/
+	/*** Keys 128 ***/
 	TTL            = "TTL"
 	TTL_I    uint8 = 128
 	DEL            = "DEL"
 	DEL_I    uint8 = 129
-	KEYS           = "KEYS"
+	Keys           = "Keys"
 	KEYS_I   uint8 = 130
 	EXISTS         = "EXISTS"
 	EXISTS_I uint8 = 131
@@ -124,7 +124,7 @@ const (
 
 	// Key:
 	EXISTS int16 = 1001
-	KEYS   int16 = 1002
+	Keys   int16 = 1002
 	EXPIRE int16 = 1003
 	DEL    int16 = 1004
 	TTL    int16 = 1005

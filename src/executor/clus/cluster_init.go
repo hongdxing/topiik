@@ -30,11 +30,11 @@ func ClusterInit(req datatype.Req, serverConfig *config.ServerConfig) (ptnIds []
 	}
 
 	/* validate paritition */
-	if len(req.ARGS) == 0 {
+	if len(req.Args) == 0 {
 		return nil, errors.New(resp.RES_SYNTAX_ERROR)
 	}
 	var ptnCount int
-	ptnCount, err = strconv.Atoi(req.ARGS)
+	ptnCount, err = strconv.Atoi(req.Args)
 	if err != nil {
 		return nil, err
 	}

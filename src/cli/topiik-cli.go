@@ -238,7 +238,7 @@ func getControllerLeaderAddr(host string) (addr string, err error) {
 	if err != nil {
 		return "", errors.New("syntax error")
 	}
-	req := datatype.Req{KEYS: datatype.Abytes{}, VALS: datatype.Abytes{}}
+	req := datatype.Req{Keys: datatype.Abytes{}, Vals: datatype.Abytes{}}
 	reqBytes, err := json.Marshal(req)
 	if err != nil {
 		fmt.Println("error")
