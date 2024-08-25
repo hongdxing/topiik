@@ -72,23 +72,10 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 		}
 		icmd = command.SCALE_I
 		req.Args = strings.Join(pieces[1:], consts.SPACE)
-	} else if cmd == command.SET { // SET key val args
-		if len(pieces) < 3 {
-			return syntaxErr()
-		}
-		icmd = command.SET_I
-		req.Keys = datatype.Abytes{[]byte(pieces[1])} // key
-		req.Vals = datatype.Abytes{[]byte(pieces[2])} // value
-		// the rest as args
-		if len(pieces) > 3 {
-			req.Args = strings.Join(pieces[3:], consts.SPACE)
-		}
-	} else if cmd == command.GET { // GET k1
-		if len(pieces) != 2 {
-			return syntaxErr()
-		}
-		icmd = command.GET_I
-		req.Keys = datatype.Abytes{[]byte(pieces[1])} // key
+	} else if cmd == command.SET {
+		return encSET(pieces)
+	} else if cmd == command.GET {
+		return encGET(pieces)
 	} else if cmd == command.SETM { // SETM k1 v1 k2 v2
 		if len(pieces) < 3 || (len(pieces)-1)%2 != 0 {
 			return syntaxErr()
@@ -177,6 +164,7 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 	} else {
 		return nil, errors.New("syntax error")
 	}
+
 	reqBytes, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
@@ -188,7 +176,39 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 	result = append(result, reqBytes...)
 
 	return result, nil
+
 }
+
+/*String------------------*/
+func encSET(pieces []string) ([]byte, error) {
+	if len(pieces) < 3 {
+		return syntaxErr()
+	}
+	keys := Abytes{[]byte(pieces[1])}
+	vals := Abytes{[]byte(pieces[2])}
+	args := ""
+	if len(pieces) > 3 {
+		args = strings.Join(pieces[3:], consts.SPACE)
+	}
+	cmdBuilder := &CmdBuilder{Cmd: command.SET_I, Ver: 1}
+	return cmdBuilder.BuildM(keys, vals, args)
+}
+
+func encGET(pieces []string) ([]byte, error) {
+	if len(pieces) < 2 {
+		return syntaxErr()
+	}
+	keys := Abytes{[]byte(pieces[1])}
+	vals := Abytes{}
+	args := ""
+	if len(pieces) > 2 {
+		args = strings.Join(pieces[2:], consts.SPACE)
+	}
+	cmdBuilder := &CmdBuilder{Cmd: command.GETM_I, Ver: 1}
+	return cmdBuilder.BuildM(keys, vals, args)
+}
+
+/*List--------------------*/
 
 func errResult(e string) ([]byte, error) {
 	return nil, errors.New(e)
