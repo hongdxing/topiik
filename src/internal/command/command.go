@@ -34,16 +34,19 @@ const (
 	INCR_I uint8 = 20
 
 	/*** List ***/
-	LPUSH          = "LPUSH"
+	LPUSH  = "LPUSH"
+	LPOP   = "LPOP"
+	LPUSHR = "LPUSHR"
+	LPOPR  = "LPOPR"
+	LLEN   = "LLEN"
+	LRANGE = "LRANGE"
+
 	LPUSH_I  uint8 = 32
-	LPOP           = "LPOP"
 	LPOP_I   uint8 = 33
-	LPUSHR         = "LPUSHR"
 	LPUSHR_I uint8 = 34
-	LPOPR          = "LPOPR"
 	LPOPR_I  uint8 = 35
-	LLEN           = "LLEN"
 	LLEN_I   uint8 = 36
+	LRANGE_I uint8 = 37
 
 	// List blocking
 	LPUSHB  = "LPUSHB"

@@ -32,7 +32,7 @@ func SetM(req datatype.Req) (result int, err error) {
 		key := string(req.Keys[i])
 		if val, ok := memo.MemMap[key]; ok { // if the key exists, but not String type, then error
 			if val.Typ != datatype.V_TYPE_STRING {
-				return 0, errors.New(resp.RES_DATA_TYPE_NOT_MATCH + ":" + key)
+				return 0, errors.New(resp.RES_DATA_TYPE_MISMATCH + ":" + key)
 			}
 		}
 		kv[key] = req.Vals[i]

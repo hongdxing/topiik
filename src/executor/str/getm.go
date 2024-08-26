@@ -21,7 +21,7 @@ import (
 *	- req
 * Return:
 *	- list of value, the length of the returned values is the same as lenght of KEYs, if some key not exist then NIL in that position
-*	- RES_DATA_TYPE_NOT_MATCH if any KEY is not STRING
+*	- RES_DATA_TYPE_MISMATCH if any KEY is not STRING
 *
 * Syntax: GETM KEY1 KEY2 [... KEYn]
  */
@@ -36,7 +36,7 @@ func GetM(req datatype.Req) (result []string, err error) {
 				result = append(result, "")
 			}
 			if val.Typ != datatype.V_TYPE_STRING {
-				return nil, errors.New(resp.RES_DATA_TYPE_NOT_MATCH)
+				return nil, errors.New(resp.RES_DATA_TYPE_MISMATCH)
 			}
 			result = append(result, string(val.Str))
 		} else {

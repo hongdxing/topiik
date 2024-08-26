@@ -44,7 +44,7 @@ func Pop(req datatype.Req, icmd uint8) (result datatype.Abytes, err error) {
 	key := string(req.Keys[0])
 	if val, ok := memo.MemMap[key]; ok {
 		if val.Typ != datatype.V_TYPE_LIST {
-			return result, errors.New(resp.RES_DATA_TYPE_NOT_MATCH)
+			return result, errors.New(resp.RES_DATA_TYPE_MISMATCH)
 		}
 
 		var eleToBeRemoved []*list.Element

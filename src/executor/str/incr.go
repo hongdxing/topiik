@@ -62,7 +62,7 @@ func preINCR(key string) (i int64, err error) {
 	if val, ok := memo.MemMap[key]; ok {
 		i, err = strconv.ParseInt(string(val.Str), 10, 0)
 		if err != nil {
-			return i, errors.New(resp.RES_DATA_TYPE_NOT_MATCH)
+			return i, errors.New(resp.RES_DATA_TYPE_MISMATCH)
 		}
 	} else {
 		memo.MemMap[key] = &datatype.TValue{

@@ -22,7 +22,7 @@ import (
 * Return:
 *	- the value of the key if success
 *	- RES_NIL if KEY not exists
-*	- RES_DATA_TYPE_NOT_MATCH if the key found but wrong type
+*	- RES_DATA_TYPE_MISMATCH if the key found but wrong type
 * Syntax:
 * 	GET KEY
  */
@@ -33,7 +33,7 @@ func Get(req datatype.Req) (result string, err error) {
 			return "", errors.New(resp.RES_KEY_NOT_EXIST)
 		}
 		if val.Typ != datatype.V_TYPE_STRING {
-			return "", errors.New(resp.RES_DATA_TYPE_NOT_MATCH)
+			return "", errors.New(resp.RES_DATA_TYPE_MISMATCH)
 		}
 		return string(val.Str), nil
 	} else {

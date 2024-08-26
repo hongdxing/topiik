@@ -28,7 +28,7 @@ func Len(req datatype.Req) (result int, err error) {
 	key := string(req.Keys[0])
 	if val, ok := memo.MemMap[key]; ok {
 		if val.Typ != datatype.V_TYPE_LIST {
-			return 0, errors.New(resp.RES_DATA_TYPE_NOT_MATCH)
+			return 0, errors.New(resp.RES_DATA_TYPE_MISMATCH)
 		}
 		return val.Lst.Len(), nil
 	} else {

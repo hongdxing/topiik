@@ -77,7 +77,7 @@ func Set(req datatype.Req) (result string, err error) {
 	if val, ok := memo.MemMap[key]; ok {
 		/*
 			if val.Typ != datatype.V_TYPE_STRING {
-				return "", errors.New(resp.RES_DATA_TYPE_NOT_MATCH)
+				return "", errors.New(resp.RES_DATA_TYPE_MISMATCH)
 			}
 		*/
 		oldValue := resp.RES_OK

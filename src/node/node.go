@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"strings"
+	"sync"
 	"topiik/internal/config"
 	"topiik/internal/consts"
 	"topiik/internal/util"
@@ -141,7 +142,11 @@ func JoinCluster(clusterId string, role string) (err error) {
 	return nil
 }
 
+/* sync to avoid fatal error: concurrent map writes */
+var setPtnWg sync.WaitGroup
 func SetPtn(buf []byte) {
+	setPtnWg.Add(1)
+	defer setPtnWg.Done()
 	err := json.Unmarshal(buf, &partition)
 	if err != nil {
 		l.Err(err).Msg(err.Error())

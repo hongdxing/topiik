@@ -14,6 +14,7 @@ import (
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/memo"
+	"topiik/resp"
 )
 
 /*
@@ -28,7 +29,11 @@ import (
  */
 func Push(req datatype.Req, icmd uint8) (result int, err error) {
 	key := string(req.Keys[0])
-	if memo.MemMap[key] == nil {
+	if existing, ok := memo.MemMap[key]; ok {
+		if existing.Typ != datatype.V_TYPE_LIST {
+			return 0, errors.New(resp.RES_DATA_TYPE_MISMATCH)
+		}
+	} else {
 		memo.MemMap[key] = &datatype.TValue{
 			Typ: datatype.V_TYPE_LIST,
 			Lst: list.New(),
