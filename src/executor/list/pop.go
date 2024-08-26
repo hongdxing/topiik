@@ -10,7 +10,6 @@ package list
 import (
 	"container/list"
 	"errors"
-	"fmt"
 	"strconv"
 	"topiik/internal/command"
 	"topiik/internal/consts"
@@ -32,7 +31,6 @@ import (
 func Pop(req datatype.Req, icmd uint8) (result datatype.Abytes, err error) {
 	count := 1
 	if len(req.Args) != 0 { // if args has value, the only value should be the count
-		fmt.Printf("--%s--", req.Args)
 		count, err = strconv.Atoi(req.Args)
 		if err != nil {
 			return nil, errors.New(resp.RES_WRONG_ARG)
