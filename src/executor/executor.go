@@ -12,6 +12,7 @@ import (
 	"slices"
 	"topiik/cluster"
 	"topiik/executor/clus"
+	"topiik/executor/keyy"
 	"topiik/executor/list"
 	"topiik/executor/str"
 	"topiik/internal/command"
@@ -223,7 +224,8 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 			return resp.ErrResponse(err)
 		}
 		finalRes = resp.IntResponse(result)
-	} else if icmd == command.LPUSH_I || icmd == command.LPUSHR_I { // LIST COMMANDS
+	} else if icmd == command.LPUSH_I || icmd == command.LPUSHR_I {
+		/*LIST COMMANDS:****************************************************************/
 		/***List LPUSH***/
 		result, err := list.Push(req, icmd)
 		if err != nil {
@@ -231,19 +233,26 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 		}
 		finalRes = resp.IntResponse(int64(result))
 	} else if icmd == command.LPOP_I || icmd == command.LPOPR_I {
-		result, err := list.Pop(req, icmd)
+		rslt, err := list.Pop(req, icmd)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
 		// finalRes = resp.StrArrResponse(result)
-		finalRes = resp.ByteArrResponse(result)
+		finalRes = resp.StrArrResponse(rslt)
 	} else if icmd == command.LLEN_I {
 		result, err := list.Len(req)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
 		finalRes = resp.IntResponse(int64(result))
+	} else if icmd == command.LRANGE_I {
+		rslt, err := list.Rang(req)
+		if err != nil {
+			return resp.ErrResponse(err)
+		}
+		finalRes = resp.StrArrResponse(rslt)
 	} else if icmd == command.TTL_I { // KEY COMMANDS
+		/*KEY COMMANDS:*****************************************************************/
 		result, err := ttl(pieces)
 		if err != nil {
 			return resp.ErrResponse(err)
@@ -255,6 +264,12 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 			return resp.ErrResponse(err)
 		}
 		finalRes = resp.StrArrResponse(result)
+	} else if icmd == command.DEL_I {
+		rslt, err := keyy.Del(req)
+		if err != nil {
+			return resp.ErrResponse(err)
+		}
+		finalRes = resp.IntResponse(rslt)
 	} else {
 		l.Err(errors.New("Invalid cmd:" + string(icmd)))
 		return resp.ErrResponse(errors.New(consts.RES_INVALID_CMD))

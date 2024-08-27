@@ -28,7 +28,7 @@ import (
 *		-
 * Syntax: LPOP|RPOP key [COUNT]
  */
-func Pop(req datatype.Req, icmd uint8) (result datatype.Abytes, err error) {
+func Pop(req datatype.Req, icmd uint8) (rslt []string, err error) {
 	count := 1
 	if len(req.Args) != 0 { // if args has value, the only value should be the count
 		count, err = strconv.Atoi(req.Args)
@@ -42,7 +42,7 @@ func Pop(req datatype.Req, icmd uint8) (result datatype.Abytes, err error) {
 	key := string(req.Keys[0])
 	if val, ok := memo.MemMap[key]; ok {
 		if val.Typ != datatype.V_TYPE_LIST {
-			return result, errors.New(resp.RES_DATA_TYPE_MISMATCH)
+			return rslt, errors.New(resp.RES_DATA_TYPE_MISMATCH)
 		}
 
 		var eleToBeRemoved []*list.Element
@@ -50,18 +50,18 @@ func Pop(req datatype.Req, icmd uint8) (result datatype.Abytes, err error) {
 			looper := 0
 			for ele := val.Lst.Front(); ele != nil && looper < count; ele = ele.Next() {
 				looper++
-				result = append(result, ele.Value.([]byte))
+				rslt = append(rslt, string(ele.Value.([]byte)))
 				eleToBeRemoved = append(eleToBeRemoved, ele)
 			}
 		} else if icmd == command.LPOPR_I { //RPOP
 			looper := 0
 			for ele := val.Lst.Back(); ele != nil && looper < count; ele = ele.Prev() {
 				looper++
-				result = append(result, ele.Value.([]byte))
+				rslt = append(rslt, string(ele.Value.([]byte)))
 				eleToBeRemoved = append(eleToBeRemoved, ele)
 			}
 		} else {
-			return result, errors.New(consts.RES_INVALID_CMD) // This should never happen
+			return rslt, errors.New(consts.RES_INVALID_CMD) // This should never happen
 		}
 		// remove ele from list
 		for _, ele := range eleToBeRemoved {
@@ -72,7 +72,7 @@ func Pop(req datatype.Req, icmd uint8) (result datatype.Abytes, err error) {
 			delete(memo.MemMap, key)
 		}
 
-		return result, nil
+		return rslt, nil
 	}
-	return result, errors.New(resp.RES_KEY_NOT_EXIST)
+	return rslt, errors.New(resp.RES_KEY_NOT_EXIST)
 }

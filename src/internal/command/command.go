@@ -72,14 +72,14 @@ const (
 
 	/*** Keys 128 ***/
 	TTL            = "TTL"
-	TTL_I    uint8 = 128
 	DEL            = "DEL"
-	DEL_I    uint8 = 129
 	Keys           = "Keys"
-	KEYS_I   uint8 = 130
 	EXISTS         = "EXISTS"
-	EXISTS_I uint8 = 131
 	EXPIRE         = "EXPIRE"
+	TTL_I    uint8 = 128
+	DEL_I    uint8 = 129
+	KEYS_I   uint8 = 130
+	EXISTS_I uint8 = 131
 
 	/*** OTHERS  ***/
 	QUIT = "QUIT"
