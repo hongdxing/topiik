@@ -8,7 +8,6 @@
 package list
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"topiik/internal/consts"
@@ -57,7 +56,7 @@ func Rang(req datatype.Req) (rslt []string, err error) {
 				/* end=-1; then end=5-1+1=5*/
 				end = value.Lst.Len() + end + 1
 			}
-			fmt.Printf("start %v, end %v\n", start, end)
+			//fmt.Printf("start %v, end %v\n", start, end)
 
 			looper := 0
 			for ele := value.Lst.Front(); ele != nil && looper < end; ele = ele.Next() {

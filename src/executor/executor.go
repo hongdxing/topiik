@@ -193,8 +193,7 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 *
  */
 func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
-	pieces := []string{}
-	if icmd == command.GET_I { // STRING COMMANDS
+	if icmd == command.GET_I { /*** STRING COMMANDS ***/
 		result, err := str.Get(req)
 		if err != nil {
 			return resp.ErrResponse(err)
@@ -224,9 +223,8 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 			return resp.ErrResponse(err)
 		}
 		finalRes = resp.IntResponse(result)
-	} else if icmd == command.LPUSH_I || icmd == command.LPUSHR_I {
-		/*LIST COMMANDS:****************************************************************/
-		/***List LPUSH***/
+	} else if icmd == command.LPUSH_I || icmd == command.LPUSHR_I { /***LIST COMMANDS***/
+		/* LPUSH */
 		result, err := list.Push(req, icmd)
 		if err != nil {
 			return resp.ErrResponse(err)
@@ -251,26 +249,35 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 			return resp.ErrResponse(err)
 		}
 		finalRes = resp.StrArrResponse(rslt)
-	} else if icmd == command.TTL_I { // KEY COMMANDS
-		/*KEY COMMANDS:*****************************************************************/
-		result, err := ttl(pieces)
+	} else if icmd == command.TTL_I { /***KEY COMMANDS***/
+		/* TTL */
+		result, err := keyy.Ttl(req)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
 		finalRes = resp.IntResponse(result)
 	} else if icmd == command.KEYS_I {
+		/* KEYS */
 		result, err := keys(req)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
 		finalRes = resp.StrArrResponse(result)
 	} else if icmd == command.DEL_I {
+		/* DEL */
 		rslt, err := keyy.Del(req)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
 		finalRes = resp.IntResponse(rslt)
-	} else {
+	} else if icmd == command.EXISTS_I {
+		/* EXISTS */
+		rslt, err := keyy.Exists(req)
+		if err != nil {
+			return resp.ErrResponse(err)
+		}
+		finalRes = resp.IntResponse(rslt)
+	} else { /***Invalid command***/
 		l.Err(errors.New("Invalid cmd:" + string(icmd)))
 		return resp.ErrResponse(errors.New(consts.RES_INVALID_CMD))
 	}
