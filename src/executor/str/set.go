@@ -48,7 +48,7 @@ func Set(req datatype.Req) (result string, err error) {
 					return "", errors.New(resp.RES_SYNTAX_ERROR + " near TTL")
 				}
 				i++
-				ttl += time.Now().UTC().Unix() // will overflow??? or should limit ttl user can type???
+				//ttl += time.Now().UTC().Unix() // will overflow??? or should limit ttl user can type???
 			} else if piece == "TTLAT" {
 				if len(pieces) <= i+1 {
 					return "", errors.New(resp.RES_SYNTAX_ERROR + " near TTLAT")
@@ -57,6 +57,7 @@ func Set(req datatype.Req) (result string, err error) {
 				if err != nil {
 					return "", errors.New(resp.RES_SYNTAX_ERROR + " near TTLAT")
 				}
+				ttl = ttl - time.Now().UTC().Unix() // what if ttl < 0???
 				i++
 			} else if piece == "EX" {
 				if _, ok := memo.MemMap[key]; ok {
@@ -87,13 +88,14 @@ func Set(req datatype.Req) (result string, err error) {
 
 		memo.MemMap[key].Str = []byte(req.Vals[0])
 		memo.MemMap[key].Typ = datatype.V_TYPE_STRING
-		memo.MemMap[key].Exp = ttl
+		memo.MemMap[key].Ttl = ttl
 		return oldValue, nil
 	} else {
 		memo.MemMap[key] = &datatype.TValue{
 			Typ: datatype.V_TYPE_STRING,
 			Str: []byte(req.Vals[0]),
-			Exp: ttl}
+			Ttl: ttl,
+			Epo: time.Now().UTC().Unix()}
 		if returnOld {
 			return "", nil
 		}

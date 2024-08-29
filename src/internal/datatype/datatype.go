@@ -32,4 +32,6 @@ type TValue struct {
 	* max value: 4294967295 = Sunday, February 7, 2106 6:28:15 AM
 	 */
 	Exp int64
+	Epo int64 // epoch of created
+	Ttl int64 // ttl
 }

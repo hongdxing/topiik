@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"topiik/executor/shared"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/memo"
@@ -27,22 +28,22 @@ func Ttl(req datatype.Req) (ttl int64, err error) {
 	key := string(req.Keys[0])
 	if val, ok := memo.MemMap[key]; ok {
 		if strings.TrimSpace(req.Args) == "" {
-			if val.Exp == consts.INT64_MAX {
+			if val.Ttl == consts.INT64_MAX {
 				/* -1 means never expire */
 				return -1, nil
-			} else if val.Exp-time.Now().UTC().Unix() < 0 {
+			} else if shared.IsKeyExpired(key, val.Epo, val.Ttl) {
 				// delete the key
-				delete(memo.MemMap, key)
+				//delete(memo.MemMap, key)
 				return -2, nil
 			}
-			return val.Exp - time.Now().UTC().Unix(), nil
+			return val.Ttl - time.Now().UTC().Unix(), nil
 		} else {
 			pieces := strings.Split(req.Args, consts.SPACE)
 			ttl, err = strconv.ParseInt(pieces[0], 10, 64)
 			if err != nil {
 				return 0, errors.New(resp.RES_SYNTAX_ERROR)
 			}
-			val.Exp = time.Now().UTC().Unix() + int64(ttl)
+			val.Ttl = time.Now().UTC().Unix() + int64(ttl)
 			return ttl, nil
 		}
 	} else {

@@ -46,9 +46,11 @@ func main() {
 	}
 
 	// load controller metadata
-	err = cluster.LoadControllerMetadata()
-	if err != nil {
-		l.Panic().Msg(err.Error())
+	if node.IsController() {
+		err = cluster.LoadControllerMetadata()
+		if err != nil {
+			l.Panic().Msg(err.Error())
+		}
 	}
 
 	// Listen for incoming connections

@@ -10,6 +10,7 @@ package list
 import (
 	"container/list"
 	"errors"
+	"time"
 	"topiik/internal/command"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
@@ -37,7 +38,8 @@ func Push(req datatype.Req, icmd uint8) (result int, err error) {
 		memo.MemMap[key] = &datatype.TValue{
 			Typ: datatype.V_TYPE_LIST,
 			Lst: list.New(),
-			Exp: consts.UINT32_MAX,
+			Epo: time.Now().UTC().Unix(),
+			Ttl: consts.INT64_MAX,
 		}
 	}
 	if icmd == command.LPUSH_I {

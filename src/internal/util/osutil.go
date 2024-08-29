@@ -1,13 +1,14 @@
-/***
-** OS utils
-**
-**
-**
-**/
+/*
+* Author: Duan HongXing
+* Date: 6 Jul, 2024
+* Desc:
+*
+ */
 
 package util
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 )
@@ -17,7 +18,7 @@ func PathExists(path string) (bool, error) {
 	if err == nil {
 		return true, nil
 	}
-	if os.IsNotExist(err) {
+	if errors.Is(err, os.ErrNotExist) {
 		return false, nil
 	}
 	return false, err

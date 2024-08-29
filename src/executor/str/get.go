@@ -29,7 +29,7 @@ import (
 func Get(req datatype.Req) (result string, err error) {
 	key := string(req.Keys[0])
 	if val, ok := memo.MemMap[key]; ok {
-		if shared.IsKeyExpired(key, val.Exp) {
+		if shared.IsKeyExpired(key, val.Epo, val.Ttl) {
 			return "", errors.New(resp.RES_KEY_NOT_EXIST)
 		}
 		if val.Typ != datatype.V_TYPE_STRING {
