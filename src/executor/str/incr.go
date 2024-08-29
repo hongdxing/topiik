@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
+	"topiik/internal/util"
 	"topiik/memo"
 	"topiik/resp"
 )
@@ -68,7 +69,9 @@ func preINCR(key string) (i int64, err error) {
 		memo.MemMap[key] = &datatype.TValue{
 			Typ: datatype.V_TYPE_STRING,
 			Str: []byte("0"),
-			Exp: consts.UINT32_MAX}
+			Epo: util.GetUtcEpoch(),
+			Ttl: consts.INT64_MAX,
+		}
 	}
 	return i, nil
 }

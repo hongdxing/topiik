@@ -11,6 +11,7 @@ import (
 	"errors"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
+	"topiik/internal/util"
 	"topiik/memo"
 	"topiik/resp"
 )
@@ -44,7 +45,8 @@ func SetM(req datatype.Req) (result int, err error) {
 			memo.MemMap[k] = &datatype.TValue{
 				Typ: datatype.V_TYPE_STRING,
 				Str: []byte(v),
-				Exp: consts.UINT32_MAX,
+				Epo: util.GetUtcEpoch(),
+				Ttl: consts.INT64_MAX,
 			}
 		}
 	}
