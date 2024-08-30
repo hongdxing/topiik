@@ -39,7 +39,7 @@ func Incr(req datatype.Req) (result int64, err error) {
 			return 0, err
 		}
 		i++
-		memo.MemMap[key].Str = []byte(string(i))
+		memo.MemMap[key].Str = []byte(strconv.FormatInt(i, 10))
 		return i, nil
 	} else { // KEY num
 		var i int64
@@ -54,7 +54,7 @@ func Incr(req datatype.Req) (result int64, err error) {
 			return 0, err
 		}
 		i += int64(num)
-		memo.MemMap[key].Str = []byte(string(i))
+		memo.MemMap[key].Str = []byte(strconv.FormatInt(i, 10))
 		return i, nil
 	}
 }

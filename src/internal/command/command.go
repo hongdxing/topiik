@@ -3,22 +3,22 @@ package command
 const (
 	/*** CLUSTER ***/
 	INIT_CLUSTER           = "INIT-CLUSTER"
-	INIT_CLUSTER_I   uint8 = 1
-	SHOW_CLUSTER           = "SHOW-CLUSTER"
-	SHOW_CLUSTER_I   uint8 = 2
+	SHOW                   = "SHOW"
 	ADD_WORKER             = "ADD-WORKER"
-	ADD_WORKER_I     uint8 = 3
 	ADD_CONTROLLER         = "ADD-CONTROLLER"
-	ADD_CONTROLLER_I uint8 = 4
-	RM_NODE                = "RM-NODE"
-	RM_NODE_I        uint8 = 5
+	REMOVE_NODE            = "REMOVE-NODE"
 	NEW_PARTITION          = "NEW-PARTITION"
-	NEW_PARTITION_I  uint8 = 6
 	RM_PARTITION           = "RM-PARTITION"
-	RM_PARTITION_I   uint8 = 7
 	SCALE                  = "SCALE"
-	SCALE_I          uint8 = 8
 	GET_CTLADDR            = "GET-CTLADDR"
+	INIT_CLUSTER_I   uint8 = 1
+	SHOW_I           uint8 = 2
+	ADD_WORKER_I     uint8 = 3
+	ADD_CONTROLLER_I uint8 = 4
+	RM_NODE_I        uint8 = 5
+	NEW_PARTITION_I  uint8 = 6
+	RM_PARTITION_I   uint8 = 7
+	SCALE_I          uint8 = 8
 	GET_CTLADDR_I    uint8 = 15
 
 	/*** String ***/

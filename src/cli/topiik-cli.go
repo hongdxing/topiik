@@ -183,7 +183,10 @@ func response(conn *net.TCPConn, cmd string) error {
 				for i, v := range rslt {
 					fmt.Printf("%v: %s\n", i, v)
 				}
-			} else if resType == resp.ByteArray {
+			} else {
+				fmt.Println("(err): invalid response type")
+			}
+			/*else if resType == resp.ByteArray {
 				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
 				var result datatype.Abytes
 
@@ -195,10 +198,7 @@ func response(conn *net.TCPConn, cmd string) error {
 					fmt.Printf("%v: %s\n", i, string(v))
 				}
 				//fmt.Printf("%v\n", result)
-			} else {
-				fmt.Println("(err): invalid response type")
-			}
-
+			} */
 		} else {
 			res := buf[resp.RESPONSE_HEADER_SIZE:]
 			fmt.Printf("(err):%s\n", res)

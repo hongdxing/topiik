@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
-	"topiik/internal/datatype"
 	"topiik/internal/proto"
 )
 
@@ -76,6 +75,7 @@ func IntResponse(res int64) (result []byte) {
 	return result
 }
 
+/*
 func ByteArrResponse(res datatype.Abytes) (result []byte) {
 	buf, _ := json.Marshal(res)
 	result = append(result, byte(Success))
@@ -84,6 +84,7 @@ func ByteArrResponse(res datatype.Abytes) (result []byte) {
 	result, _ = proto.EncodeB(result)
 	return result
 }
+*/
 
 func RedirectResponse(leaderAddr string) (result []byte) {
 	result = append(result, byte(Success))

@@ -4,11 +4,6 @@ import (
 	"container/list"
 )
 
-type Key struct {
-	TheKey string
-	Expire int
-}
-
 const (
 	V_TYPE_STRING = 1
 	V_TYPE_LIST   = 2
@@ -26,11 +21,28 @@ type TValue struct {
 	//Set
 	//Zet
 	//
-	/***
-	* unint32 Max(-1): no expire
-	* else: seconds to epxire
-	* max value: 4294967295 = Sunday, February 7, 2106 6:28:15 AM
-	 */
 	Epo int64 // epoch of created
 	Ttl int64 // ttl
+}
+
+/* structs for SHOW command */
+type Cluster struct {
+	Controllers []Node
+	Workers     []Node
+	Partitions  map[string][]Partition
+}
+
+type Node struct {
+	Id      string
+	Address string
+}
+
+type Partition struct {
+	Id    string
+	Slots []int
+}
+
+type Slot struct {
+	From uint16
+	To   uint16
 }

@@ -16,10 +16,10 @@ const (
 	IntegerArray RespType = 4 // int64 list
 	Double       RespType = 5
 	DoubleArray  RespType = 6
-	Byte         RespType = 7
-	ByteArray    RespType = 8
-	Map          RespType = 9
-	Set          RespType = 10
+	Map          RespType = 7
+	Set          RespType = 8
+	//Byte         RespType = 9
+	//ByteArray    RespType = 10
 
 	Redirect RespType = 32
 )

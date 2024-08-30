@@ -143,10 +143,10 @@ func JoinCluster(clusterId string, role string) (err error) {
 }
 
 /* sync to avoid fatal error: concurrent map writes */
-var setPtnWg sync.WaitGroup
+var setPtnMu sync.Mutex
 func SetPtn(buf []byte) {
-	setPtnWg.Add(1)
-	defer setPtnWg.Done()
+	setPtnMu.Lock()
+	defer setPtnMu.Unlock()
 	err := json.Unmarshal(buf, &partition)
 	if err != nil {
 		l.Err(err).Msg(err.Error())

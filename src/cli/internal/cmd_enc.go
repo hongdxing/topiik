@@ -63,6 +63,8 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 		}
 		icmd = command.ADD_WORKER_I
 		req.Args = strings.Join(pieces[1:], consts.SPACE)
+	} else if cmd == command.SHOW {
+		return encShowCluster(pieces)
 	} else if cmd == command.SCALE {
 		/*
 		* Syntax: scale partition 1 replica 2
@@ -179,7 +181,13 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 
 }
 
-/*String------------------*/
+/*Cluster--------------------------------------------------------------------*/
+func encShowCluster(pieces []string) ([]byte, error) {
+	cmdBuilder := CmdBuilder{Cmd: command.SHOW_I, Ver: 1}
+	return cmdBuilder.BuildM(Abytes{}, Abytes{}, "")
+}
+
+/*String---------------------------------------------------------------------*/
 func encSET(pieces []string) ([]byte, error) {
 	if len(pieces) < 3 {
 		return syntaxErr()
@@ -208,7 +216,7 @@ func encGET(pieces []string) ([]byte, error) {
 	return cmdBuilder.BuildM(keys, vals, args)
 }
 
-/*List--------------------*/
+/*List-----------------------------------------------------------------------*/
 
 func errResult(e string) ([]byte, error) {
 	return nil, errors.New(e)

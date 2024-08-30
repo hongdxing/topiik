@@ -74,6 +74,9 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 			return resp.ErrResponse(err)
 		}
 		return resp.StrArrResponse(ptnIds)
+	} else if icmd == command.SHOW_I {
+		rslt := clus.Show(req)
+		return resp.StrResponse(rslt)
 	} else if icmd == command.ADD_CONTROLLER_I {
 		_, err := clus.AddController(req)
 		if err != nil {
