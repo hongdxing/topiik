@@ -6,8 +6,6 @@
 
 package evt
 
-import (
-	"topiik/logger"
-)
+import "topiik/internal/logger"
 
 var l = logger.Get()

@@ -13,7 +13,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"topiik/logger"
+	"topiik/internal/logger"
 
 	"github.com/spf13/viper"
 )

@@ -1,9 +1,9 @@
-/**
-** author: duan hongxing
-** date: 17 Jul 2024
-** desc:
-**	logger
-**/
+/*
+* author: duan hongxing
+* date: 17 Jul 2024
+* desc:
+*	logger
+ */
 
 package logger
 

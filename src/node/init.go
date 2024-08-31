@@ -1,8 +1,6 @@
 package node
 
-import (
-	"topiik/logger"
-)
+import "topiik/internal/logger"
 
 var nodeInfo *Node
 

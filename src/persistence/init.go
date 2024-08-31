@@ -7,9 +7,7 @@
 
 package persistence
 
-import (
-	"topiik/logger"
-)
+import "topiik/internal/logger"
 
 /* binlog seq and cmd len */
 const preMsgLen int = 12

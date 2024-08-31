@@ -1,5 +1,5 @@
 package server
 
-import "topiik/logger"
+import "topiik/internal/logger"
 
 var l = logger.Get()
