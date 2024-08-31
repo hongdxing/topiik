@@ -83,17 +83,42 @@ func Decode(reader *bufio.Reader) ([]byte, error) {
 		return nil, err
 	}
 
-	// Readable data in Buffer
-	if int32(reader.Buffered()) < length+4 {
-		return nil, err
-	}
+	var size int = int(length) + 4
 
-	// Read message
-	buf := make([]byte, int(4+length))
-	_, err = reader.Read(buf)
+	var ready int = 0
+	buf := make([]byte, length)
+	ready, err = reader.Read(buf)
 	if err != nil {
 		return nil, err
 	}
+	if ready < size {
+		for {
+			tmp := make([]byte, size-ready)
+			i, err := reader.Read(tmp)
+			if err != nil {
+				return nil, err
+			}
+			buf = append(buf, tmp...)
+			ready += i
+			if ready == size {
+				break
+			}
+		}
+	}
+
+	/*
+		// Readable data in Buffer
+		if int32(reader.Buffered()) < length+4 {
+			return nil, err
+		}
+
+		// Read message
+		buf := make([]byte, int(4+length))
+		_, err = reader.Read(buf)
+		if err != nil {
+			return nil, err
+		}
+	*/
 	return buf, nil
 }
 

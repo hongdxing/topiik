@@ -189,6 +189,7 @@ func syncBatch(conn *net.TCPConn, startSeq int64) {
 	flrSeq, err := doSync(conn, binlogs)
 	if err != nil {
 		l.Err(err).Msgf("persistence::syncBach %s", err.Error())
+		l.Warn().Msgf("persistence::syncBach end with error")
 	}
 	l.Info().Msgf("persistence::syncBach end")
 

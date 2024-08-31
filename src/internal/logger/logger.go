@@ -83,6 +83,7 @@ func Get() zerolog.Logger {
 			Level(zerolog.Level(logLevel)).
 			With().
 			Timestamp().
+			//Caller().
 			//Str("git_revision", gitRevision).
 			//Str("go_version", buildInfo.GoVersion).
 			Logger()

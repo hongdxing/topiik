@@ -31,6 +31,10 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 	// TODO: remove
 	//strs := strings.SplitN(strings.TrimLeft(string(msg[4:]), consts.SPACE), consts.SPACE, 2)
 	//CMD := strings.ToUpper(strings.TrimSpace(strs[0]))
+	if len(msg) < 4 {
+		return resp.ErrResponse(errors.New(resp.RES_NIL))
+	}
+	msg = msg[4:]
 
 	var icmd uint8 // two bytes of command
 	if len(msg) >= 1 {

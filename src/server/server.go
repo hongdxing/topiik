@@ -33,7 +33,7 @@ func StartServer(address string, serverConfig *config.ServerConfig) {
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
-			fmt.Println(err)
+			l.Err(err).Msgf("server::StartServer %s", err.Error())
 			continue
 		}
 
@@ -54,10 +54,11 @@ func handleConnection(conn net.Conn, serverConfig *config.ServerConfig) {
 			if err == io.EOF {
 				break
 			}
-			fmt.Println(err)
+			l.Err(err).Msgf("server::handleConnection %s", err.Error())
 			return
 		}
-		result := Execute(msg[4:], serverConfig)
+
+		result := Execute(msg, serverConfig)
 		conn.Write(result)
 	}
 }
