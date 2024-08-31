@@ -8,8 +8,8 @@
 package resp
 
 /*
-**	4 bytes of msg length, 1 byte of flag, 1 byte of datatype
-** 	datatype: 1:string, 2:integer, 3:string array
+*	4 bytes of msg length, 1 byte of flag, 1 byte of datatype
+* 	datatype: 1:string, 2:integer, 3:string array
  */
 const RESPONSE_HEADER_SIZE = 6
 
@@ -29,8 +29,9 @@ const (
 	RES_NO_CLUSTER       = "NO_CLUSTER" // if command run on node that not in cluster yet
 	RES_NODE_NA          = "NODE_NA"    // if node not accessible
 
-	RES_NO_CTL               = "NO_CONTROLLER"
+	RES_NO_CTL               = "NO_CONTROLLER" // if no controller leader available
 	RES_INVALID_ADDR         = "INVALID_ADDR"
 	RES_CONN_RESET           = "CONN_RESET" // Client need to reconnect
+	RES_REJECTED             = "REJECTED"   // if node not allow to be removed
 	RES_INVALID_PARTITION_ID = "RES_INVALID_PARTITION_ID"
 )

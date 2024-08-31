@@ -99,7 +99,7 @@ func handleConnection(conn net.Conn) {
 				//fmt.Printf("Client %s connection closed\n", conn.RemoteAddr())
 				break
 			}
-			fmt.Println(err)
+			l.Err(err).Msgf("topiik-server::handleConnection %s", err.Error())
 			return
 		}
 		result := executor.Execute(msg, conn.RemoteAddr().String(), serverConfig)

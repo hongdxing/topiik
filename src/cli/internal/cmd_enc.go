@@ -65,6 +65,8 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 		req.Args = strings.Join(pieces[1:], consts.SPACE)
 	} else if cmd == command.SHOW {
 		return encShowCluster(pieces)
+	} else if cmd == command.REMOVE_NODE {
+		return encRemoveNode(pieces)
 	} else if cmd == command.SCALE {
 		/*
 		* Syntax: scale partition 1 replica 2
@@ -185,6 +187,14 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 func encShowCluster(pieces []string) ([]byte, error) {
 	cmdBuilder := CmdBuilder{Cmd: command.SHOW_I, Ver: 1}
 	return cmdBuilder.BuildM(Abytes{}, Abytes{}, "")
+}
+
+func encRemoveNode(pieces []string) ([]byte, error) {
+	if len(pieces) != 2 {
+		return syntaxErr()
+	}
+	builder := CmdBuilder{Cmd: command.REMOVE_NODE_I, Ver: 1}
+	return builder.BuildM(Abytes{}, Abytes{}, pieces[1])
 }
 
 /*String---------------------------------------------------------------------*/

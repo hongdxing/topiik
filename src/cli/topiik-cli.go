@@ -22,11 +22,7 @@ import (
 var host string
 var pass string
 
-/***
-**
-**
-** Syntax: topiik-cli(.exe) --host localhost:8301 [--pass password]
-**/
+// Syntax: topiik-cli(.exe) --host localhost:8301 [--pass password]
 func main() {
 	// Connect to the server
 	//conn, err := net.Dial("tcp", "localhost:8302")

@@ -89,6 +89,12 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 			return resp.ErrResponse(err)
 		}
 		return resp.StrResponse(resp.RES_OK)
+	} else if icmd == command.REMOVE_NODE_I {
+		err := clus.RemoveNode(req)
+		if err != nil {
+			return resp.ErrResponse(err)
+		}
+		return resp.StrResponse(resp.RES_OK)
 	} else if icmd == command.NEW_PARTITION_I {
 		ptnIds, err := clus.NewPartition(req)
 		if err != nil {

@@ -14,6 +14,7 @@ import (
 	"strings"
 	"topiik/internal/util"
 	"topiik/node"
+	"topiik/resp"
 )
 
 /*
@@ -51,11 +52,95 @@ func AddNode(ndId string, addr string, addr2 string, role string) (err error) {
 	return nil
 }
 
-func SetClusterInfo(cluster *Cluster) {
-	clusterInfo = cluster
+/*
+* Remove node, Controller or Worker from cluster
+* Syntax: REMOVE-NODE nodeId
+ */
+func RemoveNode(ndId string) (err error) {
+	if nd, ok := clusterInfo.Ctls[ndId]; ok {
+		/* if there is only one Controller in cluster, then reject */
+		if len(clusterInfo.Ctls) == 1 {
+			return errors.New(resp.RES_REJECTED)
+		}
+		/* if trying to remove current node and current node is Controller Leader, then reject */
+		if nd.Id == node.GetNodeInfo().Id && nodeStatus.Role == RAFT_LEADER {
+			return errors.New(resp.RES_REJECTED)
+		}
+		delete(clusterInfo.Ctls, ndId)
+		notifyMetadataChanged()
+		err = saveClusterInfo()
+		if err != nil {
+			return err
+		}
+	} else if _, ok := clusterInfo.Wkrs[ndId]; ok {
+		/* if this is the only worker node, then reject */
+		if len(clusterInfo.Wkrs) == 1 {
+			return errors.New(resp.RES_REJECTED)
+		}
+		/* if is partition leader, then reject */
+		for _, ptn := range partitionInfo.PtnMap {
+			if ndId == ptn.LeaderNodeId {
+				return errors.New(resp.RES_REJECTED)
+			}
+		}
+
+		for _, ptn := range partitionInfo.PtnMap {
+			if _, ok := ptn.NodeSet[ndId]; ok {
+				if len(ptn.NodeSet) == 1 {
+					return errors.New(resp.RES_REJECTED)
+				}
+			}
+			delete(ptn.NodeSet, ndId)
+		}
+		delete(clusterInfo.Wkrs, ndId)
+		notifyMetadataChanged()
+
+		err = saveClusterInfo()
+		if err != nil {
+			return err
+		}
+
+		err = savePartition()
+		if err != nil {
+			return err
+		}
+	} else {
+		return errors.New(resp.RES_NIL)
+	}
+	return nil
 }
 
-func SaveClusterInfo(data []byte) (err error) {
+func SetClusterInfo(cluster *Cluster) {
+	clusterInfo = cluster
+	saveClusterInfo()
+}
+
+func SetRole(role uint8) {
+	nodeStatus.Role = role
+}
+
+func SetLeaderCtlAddr(addr string) {
+	nodeStatus.LeaderControllerAddr = addr
+}
+
+func SetPtnInfo(ptnInfo *PartitionInfo) {
+	partitionInfo = ptnInfo
+}
+
+func SetHeartbeat(heartbeat uint16, heartbeatAt int64) {
+	nodeStatus.Heartbeat = heartbeat
+	nodeStatus.HeartbeatAt = heartbeatAt
+}
+
+/*pivate func----------------------------------------------------------------*/
+
+func saveClusterInfo() (err error) {
+	data, err := json.Marshal(clusterInfo)
+	if err != nil {
+		l.Err(err).Msgf("cluster::RemoveNode %s", err.Error())
+		return err
+	}
+
 	fpath := GetClusterFilePath()
 	exist, _ := util.PathExists(fpath)
 	if exist {
@@ -65,6 +150,7 @@ func SaveClusterInfo(data []byte) (err error) {
 			return err
 		}
 	}
+
 	err = os.WriteFile(fpath, data, 0644)
 	if err != nil {
 		l.Err(err)

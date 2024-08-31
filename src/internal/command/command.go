@@ -1,39 +1,39 @@
 package command
 
 const (
-	/*** CLUSTER ***/
+	/*** CLUSTER(1-15) ***/
 	INIT_CLUSTER           = "INIT-CLUSTER"
 	SHOW                   = "SHOW"
 	ADD_WORKER             = "ADD-WORKER"
 	ADD_CONTROLLER         = "ADD-CONTROLLER"
 	REMOVE_NODE            = "REMOVE-NODE"
 	NEW_PARTITION          = "NEW-PARTITION"
-	RM_PARTITION           = "RM-PARTITION"
-	SCALE                  = "SCALE"
+	REMOVE_PARTITION       = "REMOVE-PARTITION"
+	SCALE                  = "SCALE" // to be deleted
 	GET_CTLADDR            = "GET-CTLADDR"
 	INIT_CLUSTER_I   uint8 = 1
 	SHOW_I           uint8 = 2
 	ADD_WORKER_I     uint8 = 3
 	ADD_CONTROLLER_I uint8 = 4
-	RM_NODE_I        uint8 = 5
+	REMOVE_NODE_I    uint8 = 5
 	NEW_PARTITION_I  uint8 = 6
 	RM_PARTITION_I   uint8 = 7
 	SCALE_I          uint8 = 8
 	GET_CTLADDR_I    uint8 = 15
 
-	/*** String ***/
+	/*** String(16-31) ***/
 	SET          = "SET"
-	SET_I  uint8 = 16
 	GET          = "GET"
-	GET_I  uint8 = 17
 	SETM         = "SETM"
-	SETM_I uint8 = 18
 	GETM         = "GETM"
-	GETM_I uint8 = 19
 	INCR         = "INCR"
+	SET_I  uint8 = 16
+	GET_I  uint8 = 17
+	SETM_I uint8 = 18
+	GETM_I uint8 = 19
 	INCR_I uint8 = 20
 
-	/*** List ***/
+	/*** List(32-47) ***/
 	LPUSH  = "LPUSH"
 	LPOP   = "LPOP"
 	LPUSHR = "LPUSHR"

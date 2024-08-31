@@ -68,11 +68,6 @@ func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 			}
 			/* set cluster info in memory */
 			cluster.SetClusterInfo(clusterInfo)
-			/* save */
-			err = cluster.SaveClusterInfo(entry[1:])
-			if err != nil {
-				return err
-			}
 			l.Info().Msg("rpc_append_entry::appendEntry metadata end")
 		} else if entryType == cluster.ENTRY_TYPE_PTNS {
 			l.Info().Msg("rpc_append_entry::appendEntry partition begin")

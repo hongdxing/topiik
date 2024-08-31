@@ -23,8 +23,9 @@ import (
 
 /*
 * msg:
-*	- msg[:1] 	= command
-*	- msg[1:]	= data
+*	- msg[:4] 	= lenght
+*	- msg[4:5] 	= command
+*	- msg[5:]	= data
 *
  */
 func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
