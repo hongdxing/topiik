@@ -11,6 +11,7 @@ const (
 	SPACE                 = " "
 	UINT32_MAX            = 4294967295
 	INT64_MAX       int64 = 9_223_372_036_854_775_807
+	INT64_MIN       int64 = -9_223_372_036_854_775_808
 	RESEVERD_PREFIX       = "__toPIIK"
 )
 

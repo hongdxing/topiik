@@ -46,7 +46,7 @@ func SetM(req datatype.Req) (result int, err error) {
 				Typ: datatype.V_TYPE_STRING,
 				Str: []byte(v),
 				Epo: util.GetUtcEpoch(),
-				Ttl: consts.INT64_MAX,
+				Ttl: consts.INT64_MIN,
 			}
 		}
 	}

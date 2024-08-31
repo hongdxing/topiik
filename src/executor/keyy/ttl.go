@@ -9,12 +9,13 @@ package keyy
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
-	"time"
 	"topiik/executor/shared"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
+	"topiik/internal/util"
 	"topiik/memo"
 	"topiik/resp"
 )
@@ -27,23 +28,33 @@ import (
 func Ttl(req datatype.Req) (ttl int64, err error) {
 	key := string(req.Keys[0])
 	if val, ok := memo.MemMap[key]; ok {
+		// get ttl
 		if strings.TrimSpace(req.Args) == "" {
-			if val.Ttl == consts.INT64_MAX {
+			if val.Ttl == consts.INT64_MIN {
 				/* -1 means never expire */
 				return -1, nil
-			} else if shared.IsKeyExpired(key, val.Epo, val.Ttl) {
+			} else if shared.IsKeyExpired(key, val.Ttl) {
 				// delete the key
 				//delete(memo.MemMap, key)
 				return -2, nil
 			}
-			return val.Ttl - time.Now().UTC().Unix(), nil
+			ttl = val.Ttl - util.GetUtcEpoch()
+			// only when ttl is INT64_MIN, should return -1
+			// if ttl is lt 0, then return -2
+			if ttl <= 0 {
+				ttl = -2
+			}
+			return ttl, nil
 		} else {
+			// set ttl
 			pieces := strings.Split(req.Args, consts.SPACE)
 			ttl, err = strconv.ParseInt(pieces[0], 10, 64)
 			if err != nil {
 				return 0, errors.New(resp.RES_SYNTAX_ERROR)
 			}
-			val.Ttl = time.Now().UTC().Unix() + int64(ttl)
+			// convert to epoch
+			val.Ttl = ttl + util.GetUtcEpoch()
+			fmt.Printf("ttl is: %v", val.Ttl)
 			return ttl, nil
 		}
 	} else {

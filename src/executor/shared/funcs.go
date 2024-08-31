@@ -8,16 +8,16 @@
 package shared
 
 import (
-	"time"
 	"topiik/internal/consts"
+	"topiik/internal/util"
 	"topiik/memo"
 )
 
-func IsKeyExpired(key string, epo int64, ttl int64) bool {
-	if ttl == consts.INT64_MAX {
+func IsKeyExpired(key string, ttl int64) bool {
+	if ttl == consts.INT64_MIN {
 		return false
 	}
-	if (epo + ttl) < time.Now().UTC().Unix() {
+	if ttl < util.GetUtcEpoch() {
 		delete(memo.MemMap, key)
 		return true
 	}

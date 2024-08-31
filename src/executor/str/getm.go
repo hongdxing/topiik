@@ -32,7 +32,7 @@ func GetM(req datatype.Req) (result []string, err error) {
 	for _, key := range req.Keys {
 		skey := string(key)
 		if val, ok := memo.MemMap[skey]; ok {
-			if shared.IsKeyExpired(skey, val.Epo, val.Ttl) {
+			if shared.IsKeyExpired(skey, val.Ttl) {
 				result = append(result, "")
 			}
 			if val.Typ != datatype.V_TYPE_STRING {

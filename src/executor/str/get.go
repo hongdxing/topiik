@@ -1,9 +1,8 @@
-/***
-* author: duan hongxing
-* date: 22 Jun 2024
-* desc:
-
-***/
+/*
+* ©2024 www.topiik.com
+* Author: duan hongxing
+* Date: 22 Jun 2024
+ */
 
 package str
 
@@ -29,14 +28,14 @@ import (
 func Get(req datatype.Req) (result string, err error) {
 	key := string(req.Keys[0])
 	if val, ok := memo.MemMap[key]; ok {
-		if shared.IsKeyExpired(key, val.Epo, val.Ttl) {
-			return "", errors.New(resp.RES_KEY_NOT_EXIST)
+		if shared.IsKeyExpired(key, val.Ttl) {
+			return resp.RES_NIL, nil
 		}
 		if val.Typ != datatype.V_TYPE_STRING {
 			return "", errors.New(resp.RES_DATA_TYPE_MISMATCH)
 		}
 		return string(val.Str), nil
 	} else {
-		return "", errors.New(resp.RES_KEY_NOT_EXIST)
+		return resp.RES_NIL, nil
 	}
 }

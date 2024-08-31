@@ -39,7 +39,7 @@ func Push(req datatype.Req, icmd uint8) (result int, err error) {
 			Typ: datatype.V_TYPE_LIST,
 			Lst: list.New(),
 			Epo: time.Now().UTC().Unix(),
-			Ttl: consts.INT64_MAX,
+			Ttl: consts.INT64_MIN,
 		}
 	}
 	if icmd == command.LPUSH_I {

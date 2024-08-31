@@ -22,7 +22,7 @@ type TValue struct {
 	//Zet
 	//
 	Epo int64 // epoch of created
-	Ttl int64 // ttl
+	Ttl int64 // ttl AT
 }
 
 /* structs for SHOW command */

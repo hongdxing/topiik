@@ -99,12 +99,7 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 		}
 		//req.Keys = append(req.Keys, pieces[1:]...)
 	} else if cmd == command.TTL {
-		if len(pieces) < 1 {
-			return syntaxErr()
-		}
-		icmd = command.TTL_I
-		req.Keys = append(req.Keys, []byte(pieces[0]))
-		req.Args = strings.Join(pieces[1:], consts.SPACE)
+		return encTtl(pieces)
 	} else if cmd == command.LPUSH { /* LIST COMMANDS START */
 		/*
 		* Syntax: LPUSH key v1 [v2 v3 ...]
@@ -195,6 +190,16 @@ func encRemoveNode(pieces []string) ([]byte, error) {
 	}
 	builder := CmdBuilder{Cmd: command.REMOVE_NODE_I, Ver: 1}
 	return builder.BuildM(Abytes{}, Abytes{}, pieces[1])
+}
+
+func encTtl(pieces []string) ([]byte, error) {
+	if len(pieces) < 2 {
+		return syntaxErr()
+	}
+	keys := Abytes{[]byte(pieces[1])}
+	args := strings.Join(pieces[2:], consts.SPACE)
+	builder := CmdBuilder{Cmd: command.TTL_I, Ver: 1}
+	return builder.BuildM(keys, Abytes{}, args)
 }
 
 /*String---------------------------------------------------------------------*/

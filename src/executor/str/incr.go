@@ -70,7 +70,7 @@ func preINCR(key string) (i int64, err error) {
 			Typ: datatype.V_TYPE_STRING,
 			Str: []byte("0"),
 			Epo: util.GetUtcEpoch(),
-			Ttl: consts.INT64_MAX,
+			Ttl: consts.INT64_MIN,
 		}
 	}
 	return i, nil
