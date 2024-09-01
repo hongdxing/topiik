@@ -85,7 +85,6 @@ func RemoveNode(ndId string) (err error) {
 			delete(ptn.NodeSet, ndId)
 		}
 		delete(workerInfo.Nodes, ndId)
-		notifyMetadataChanged()
 
 		go rpcRemoveNode(ndId)
 

@@ -110,7 +110,7 @@ func clusterJoin(pieces []string) (result string, err error) {
 			}
 		}
 	*/
-	cluUpdCh <- struct{}{}
+	//cluUpdCh <- struct{}{}
 	//fmt.Println(nodeInfo.ClusterId)
 	//return nodeInfo.ClusterId, nil
 	return "", nil

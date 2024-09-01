@@ -46,8 +46,9 @@ const (
 )
 
 const (
-	NODE_ID_LEN = 10
-	PTN_ID_LEN  = 10
+	CLUSTER_ID_LEN = 10
+	NODE_ID_LEN    = 10
+	PTN_ID_LEN     = 10
 )
 
 const SLOTS = 1024

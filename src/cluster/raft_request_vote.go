@@ -112,10 +112,11 @@ func RequestVote() {
 			/* Leader start to AppendEntries */
 			go AppendEntries()
 			/* make sure channel are ready */
-			time.Sleep(500 * time.Millisecond)
+			//time.Sleep(500 * time.Millisecond)
 
-			/* when new Leader selected, try to sync cluster meta data */
-			notifyMetadataChanged()
+			/* when new Leader selected, try to sync cluster metadata */
+			notifyControllerChanged()
+			notifyWorkerChanged()
 			notifyPtnChanged()
 
 			/* Print Selected Leader */
@@ -138,30 +139,29 @@ func voteMe(address string) {
 	}
 	defer conn.Close()
 
-	//line := RPC_VOTE + " " + strconv.Itoa(int(clusterInfo.Ver))
-	var cmdBytes []byte
+	var buf []byte
 	var bbuf = new(bytes.Buffer) // int to byte buf
 	_ = binary.Write(bbuf, binary.LittleEndian, consts.RPC_VOTE)
-	cmdBytes = append(cmdBytes, bbuf.Bytes()...)
-	//cmdBytes = append(cmdBytes, []byte(strconv.Itoa(int(clusterInfo.Ver)))...)
-	cmdBytes = append(cmdBytes, []byte(strconv.Itoa(int(1)))...) //TODO version
+	buf = append(buf, bbuf.Bytes()...)
+	buf = append(buf, []byte(node.GetNodeInfo().Id)...) // Include Cluster Id in request
+	buf = append(buf, []byte(strconv.Itoa(term))...)
 
 	// Enocde
-	data, err := proto.EncodeB(cmdBytes)
+	buf, err = proto.EncodeB(buf)
 	if err != nil {
 		l.Err(err).Msg(err.Error())
 		return
 	}
 
 	// Send
-	_, err = conn.Write(data)
+	_, err = conn.Write(buf)
 	if err != nil {
 		l.Err(err).Msg(err.Error())
 		return
 	}
 
 	reader := bufio.NewReader(conn)
-	buf, err := proto.Decode(reader)
+	buf, err = proto.Decode(reader)
 	if err != nil {
 		if err == io.EOF {
 			l.Err(err).Msgf("raft_request_vote::voteMe %s", err)
@@ -171,6 +171,11 @@ func voteMe(address string) {
 	if len(buf) < resp.RESPONSE_HEADER_SIZE {
 		l.Err(err).Msgf("raft_request_vote::voteMe invalid len(buf):%v", len(buf))
 		return
+	}
+
+	// If result is REJECTED, means current Node has been removed from cluster
+	if string(buf[resp.RESPONSE_HEADER_SIZE:]) == resp.RES_REJECTED {
+		l.Panic().Msg("Node rejected by other nodes, possible has been removed from cluster")
 	}
 	voteMeResults = append(voteMeResults, string(buf[resp.RESPONSE_HEADER_SIZE:]))
 }

@@ -9,7 +9,6 @@ package cluster
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"topiik/internal/util"
 	"topiik/node"
@@ -27,38 +26,65 @@ const (
 	dataDIR = "data"
 )
 
-func LoadControllerMetadata() (err error) {
-	exist := false // whether the file exist
+func LoadControllerInfo() (err error) {
+	l.Info().Msg("Loading controller info begin")
+	// whether the file exist
+	exist := false
 
-	// the cluster file
+	// Load controller info
 	fpath := getControllerFilePath()
 	exist, err = util.PathExists(fpath)
 	if err != nil {
 		l.Panic().Msg(err.Error())
 	}
 	if exist {
-		l.Info().Msg("Loading cluster metadata...")
+
 		jsonStr, err := os.ReadFile(fpath)
 		if err != nil {
 			l.Panic().Msg(err.Error())
 		}
 		err = json.Unmarshal([]byte(jsonStr), &controllerInfo)
-		fmt.Println(controllerInfo)
 		if err != nil {
 			l.Panic().Msg(err.Error())
 			//panic(err)
 		}
 	}
+	l.Info().Msg("Loading controller info end")
+	return nil
+}
 
-	// the slots file
+func LoadMetadata() (err error) {
+	exist := false // whether the file exist
 
-	filePath := GetPatitionFilePath()
-	exist, err = util.PathExists(filePath)
+	// Load worker info
+	fpath := getWorkerFilePath()
+	exist, err = util.PathExists(fpath)
 	if err != nil {
 		l.Panic().Msg(err.Error())
 	}
 	if exist {
-		data, err := util.ReadBinaryFile(filePath)
+		data, err := util.ReadBinaryFile(fpath)
+		if err != nil {
+			l.Panic().Msg(err.Error())
+		}
+
+		if err != nil {
+			l.Panic().Msg(err.Error())
+		}
+		err = json.Unmarshal(data, &workerInfo)
+		if err != nil {
+			l.Panic().Msg(err.Error())
+		}
+	}
+
+	// Load partition info
+	fpath = GetPatitionFilePath()
+	exist, err = util.PathExists(fpath)
+	if err != nil {
+		l.Panic().Msg(err.Error())
+	}
+	if exist {
+		data, err := util.ReadBinaryFile(fpath)
 		if err != nil {
 			l.Panic().Msg(err.Error())
 		}
@@ -84,6 +110,10 @@ func LoadControllerMetadata() (err error) {
 func SetControllerInfo(controllers *NodesInfo) {
 	controllerInfo = controllers
 	saveControllerInfo()
+}
+
+func GetControllerInfo() NodesInfo {
+	return *controllerInfo
 }
 
 func SetWorkerInfo(workers *NodesInfo) {
@@ -185,11 +215,13 @@ func saveWorkerInfo() (err error) {
 	return nil
 }
 
+/*
 func notifyMetadataChanged() {
 	l.Info().Msg("metadata::notifyMetadataChanged begin")
 	cluUpdCh <- struct{}{}
 	l.Info().Msg("metadata::notifyMetadataChanged end")
 }
+*/
 
 func notifyControllerChanged() {
 	l.Info().Msg("metadata::notifyControllerChanged begin")

@@ -45,9 +45,22 @@ func main() {
 		return
 	}
 
-	// load controller metadata
+	// load controller info on each node
+	err = cluster.LoadControllerInfo()
+	if err != nil {
+		l.Panic().Msg(err.Error())
+	}
+
+	/*
+		// online check
+		err = online()
+		if err != nil {
+			l.Panic().Msg(err.Error())
+		}*/
+
+	// load metadata
 	if node.IsController() {
-		err = cluster.LoadControllerMetadata()
+		err = cluster.LoadMetadata()
 		if err != nil {
 			l.Panic().Msg(err.Error())
 		}
@@ -114,9 +127,91 @@ func printBanner() {
 	l.Info().Msg("[TOPIIK] Starting Topiik Server...")
 }
 
-/***
-** Read config values from server.env
-**/
+/*
+// check if node still valid in the cluster
+func online() error {
+	// if current node is controller, and the only controller
+	if node.GetNodeInfo().Role == node.ROLE_CONTROLLER && len(cluster.GetControllerInfo().Nodes) == 1 {
+		return nil
+	}
+	var connFailCount = 0
+	var count = len(cluster.GetControllerInfo().Nodes)
+	for _, controller := range cluster.GetControllerInfo().Nodes {
+		if node.GetNodeInfo().Id == controller.Id {
+			count--
+			continue
+		}
+
+		err := doOnline(controller.Addr2)
+		if err != nil {
+			if err.Error() == "CONNECTION" {
+				connFailCount++
+			}
+			continue
+		} else {
+			return nil
+		}
+	}
+	// if connFailCount ecquals controller count, then this is the first node to start
+	if connFailCount == count {
+		return nil
+	}
+	return errors.New(resp.RES_REJECTED)
+}
+
+func doOnline(addr2 string) error {
+	conn, err := util.PreapareSocketClient(addr2)
+	if err != nil {
+		l.Warn().Msgf("online connect to controller %s failed", addr2)
+		return errors.New("CONNECTION")
+	}
+	defer conn.Close()
+
+	var buf []byte
+	var bbuf = new(bytes.Buffer)
+	if err != nil {
+		l.Err(err).Msg(err.Error())
+	} else {
+		binary.Write(bbuf, binary.LittleEndian, consts.RPC_ONLINE)
+		buf = append(buf, bbuf.Bytes()...)
+		buf = append(buf, []byte(node.GetNodeInfo().ClusterId)...)
+	}
+	// Enocde
+	buf, err = proto.EncodeB(buf)
+	if err != nil {
+		l.Err(err)
+		return err
+	}
+
+	// Send
+	_, err = conn.Write(buf)
+	if err != nil {
+		l.Err(err)
+		return err
+	}
+
+	// Read
+	reader := bufio.NewReader(conn)
+	buf, err = proto.Decode(reader)
+	if err != nil {
+		if err == io.EOF {
+			l.Err(err).Msgf("online %s\n", err)
+		}
+	}
+	if len(buf) < resp.RESPONSE_HEADER_SIZE {
+		l.Err(err)
+		return err
+	}
+	rslt := string(buf[resp.RESPONSE_HEADER_SIZE:])
+	if rslt == resp.RES_REJECTED {
+		l.Warn().Err(errors.New(resp.RES_REJECTED))
+		return err
+	}
+	return nil
+}
+*/
+
+// Read config values from server.env
 func readConfig() (*config.ServerConfig, error) {
 	configFile := ""
 	if len(os.Args) > 1 {

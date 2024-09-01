@@ -29,7 +29,7 @@ const ptnLeaderDownMaxMills int = 3000
 
 var hbTicker *time.Ticker  // heartbeat ticker
 var ptnTicker *time.Ticker // partition ticker
-var cluUpdCh chan struct{}
+// var cluUpdCh chan struct{}
 var ctlUpdCh chan struct{}
 var wrkUpdCh chan struct{}
 var ptnUpdCh chan struct{}
@@ -44,12 +44,14 @@ var connCache = make(map[string]*net.TCPConn)
 func AppendEntries() {
 	hbTicker = time.NewTicker(200 * time.Millisecond)
 	ptnTicker = time.NewTicker(time.Duration(ptnTickerDur) * time.Millisecond)
-	cluUpdCh = make(chan struct{}, 2)
+	//cluUpdCh = make(chan struct{}, 2)
 	ptnUpdCh = make(chan struct{}, 2)
 	ctlUpdCh = make(chan struct{}, 2)
 	wrkUpdCh = make(chan struct{}, 2)
-	defer close(cluUpdCh)
+	//defer close(cluUpdCh)
 	defer close(ptnUpdCh)
+	defer close(ctlUpdCh)
+	defer close(wrkUpdCh)
 
 	//dialErrorCounter := 0 // this not 'thread' safe, but it's not important
 	for {
