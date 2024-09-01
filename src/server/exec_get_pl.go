@@ -30,7 +30,7 @@ func getPartitionLeader(pieces []string) (res string, err error) {
 		return "", errors.New(resp.RES_NIL)
 	}
 	// get worker use the partition leader id
-	if worker, ok := cluster.GetClusterInfo().Wkrs[ptnLeaderId]; ok {
+	if worker, ok := cluster.GetWorkerInfo().Nodes[ptnLeaderId]; ok {
 		// return partition leader node id + addr2
 		// when the follow get this string, can use fix lenght worker node id to split it
 		return worker.Id + worker.Addr2, nil

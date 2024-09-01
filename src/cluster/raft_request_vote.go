@@ -41,7 +41,7 @@ func RequestVote() {
 		return
 	}
 
-	if len(clusterInfo.Ctls) == 1 { // if this is the only Controller, then it alawys Leader
+	if len(controllerInfo.Nodes) == 1 { // if this is the only Controller, then it alawys Leader
 		nodeStatus.Role = RAFT_LEADER
 		go AppendEntries()
 		return
@@ -67,10 +67,10 @@ func RequestVote() {
 		}
 		// merge controller and woker address2
 		var addr2List = []string{}
-		for _, v := range clusterInfo.Ctls {
+		for _, v := range controllerInfo.Nodes {
 			addr2List = append(addr2List, v.Addr2)
 		}
-		for _, v := range clusterInfo.Wkrs {
+		for _, v := range workerInfo.Nodes {
 			addr2List = append(addr2List, v.Addr2)
 		}
 
@@ -140,10 +140,11 @@ func voteMe(address string) {
 
 	//line := RPC_VOTE + " " + strconv.Itoa(int(clusterInfo.Ver))
 	var cmdBytes []byte
-	var byteBuf = new(bytes.Buffer) // int to byte buf
-	_ = binary.Write(byteBuf, binary.LittleEndian, consts.RPC_VOTE)
-	cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
-	cmdBytes = append(cmdBytes, []byte(strconv.Itoa(int(clusterInfo.Ver)))...)
+	var bbuf = new(bytes.Buffer) // int to byte buf
+	_ = binary.Write(bbuf, binary.LittleEndian, consts.RPC_VOTE)
+	cmdBytes = append(cmdBytes, bbuf.Bytes()...)
+	//cmdBytes = append(cmdBytes, []byte(strconv.Itoa(int(clusterInfo.Ver)))...)
+	cmdBytes = append(cmdBytes, []byte(strconv.Itoa(int(1)))...) //TODO version
 
 	// Enocde
 	data, err := proto.EncodeB(cmdBytes)

@@ -30,6 +30,8 @@ const ptnLeaderDownMaxMills int = 3000
 var hbTicker *time.Ticker  // heartbeat ticker
 var ptnTicker *time.Ticker // partition ticker
 var cluUpdCh chan struct{}
+var ctlUpdCh chan struct{}
+var wrkUpdCh chan struct{}
 var ptnUpdCh chan struct{}
 
 var connCache = make(map[string]*net.TCPConn)
@@ -44,6 +46,8 @@ func AppendEntries() {
 	ptnTicker = time.NewTicker(time.Duration(ptnTickerDur) * time.Millisecond)
 	cluUpdCh = make(chan struct{}, 2)
 	ptnUpdCh = make(chan struct{}, 2)
+	ctlUpdCh = make(chan struct{}, 2)
+	wrkUpdCh = make(chan struct{}, 2)
 	defer close(cluUpdCh)
 	defer close(ptnUpdCh)
 
@@ -54,14 +58,19 @@ func AppendEntries() {
 			appendHeartbeat()
 		case <-ptnTicker.C:
 			appendPtn()
-		case <-cluUpdCh:
-			appendClusterInfo()
+		//case <-cluUpdCh:
+		//	appendClusterInfo()
+		case <-ctlUpdCh:
+			appendControllerInfo()
+		case <-wrkUpdCh:
+			appendWorkerInfo()
 		case <-ptnUpdCh:
 			appendPartitionInfo()
 		}
 	}
 }
 
+/*
 func appendClusterInfo() {
 	var buf []byte
 	var byteBuf = new(bytes.Buffer)
@@ -72,7 +81,53 @@ func appendClusterInfo() {
 		binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_METADATA)
 		buf = append(buf, byteBuf.Bytes()...)
 		buf = append(buf, data...)
-		for _, controller := range clusterInfo.Ctls {
+		for _, controller := range controllerInfo.Nodes {
+			if controller.Id == node.GetNodeInfo().Id {
+				continue
+			}
+			send(controller.Addr2, controller.Id, buf)
+		}
+	}
+}*/
+
+// sync controller info to controllers and workers
+func appendControllerInfo() {
+	var buf []byte
+	var bbuf = new(bytes.Buffer)
+	data, err := json.Marshal(controllerInfo)
+	if err != nil {
+		l.Err(err).Msg(err.Error())
+	} else {
+		binary.Write(bbuf, binary.LittleEndian, ENTRY_TYPE_CTL)
+		buf = append(buf, bbuf.Bytes()...)
+		buf = append(buf, data...)
+		for _, controller := range controllerInfo.Nodes {
+			if controller.Id == node.GetNodeInfo().Id {
+				continue
+			}
+			send(controller.Addr2, controller.Id, buf)
+		}
+		for _, worker := range workerInfo.Nodes {
+			if worker.Id == node.GetNodeInfo().Id {
+				continue
+			}
+			send(worker.Addr2, worker.Id, buf)
+		}
+	}
+}
+
+// sync worker info to controllers
+func appendWorkerInfo() {
+	var buf []byte
+	var bbuf = new(bytes.Buffer)
+	data, err := json.Marshal(workerInfo)
+	if err != nil {
+		l.Err(err).Msg(err.Error())
+	} else {
+		binary.Write(bbuf, binary.LittleEndian, ENTRY_TYPE_WRK)
+		buf = append(buf, bbuf.Bytes()...)
+		buf = append(buf, data...)
+		for _, controller := range controllerInfo.Nodes {
 			if controller.Id == node.GetNodeInfo().Id {
 				continue
 			}
@@ -91,7 +146,7 @@ func appendPartitionInfo() {
 		binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_PTNS)
 		buf = append(buf, byteBuf.Bytes()...)
 		buf = append(buf, data...)
-		for _, controller := range clusterInfo.Ctls {
+		for _, controller := range controllerInfo.Nodes {
 			if controller.Id == node.GetNodeInfo().Id {
 				continue
 			}
@@ -101,14 +156,14 @@ func appendPartitionInfo() {
 }
 
 func appendHeartbeat() {
-	for _, controller := range clusterInfo.Ctls {
+	for _, controller := range controllerInfo.Nodes {
 		if controller.Id == node.GetNodeInfo().Id {
 			continue
 		}
 		go send(controller.Addr2, controller.Id, []byte{})
 	}
 
-	for _, worker := range clusterInfo.Wkrs {
+	for _, worker := range workerInfo.Nodes {
 		if worker.Id == node.GetNodeInfo().Id {
 			continue
 		}
@@ -128,9 +183,9 @@ func appendPtn() {
 		if ptn.LeaderNodeId == "" { // no leader yet
 			electPtnLeader(ptn)
 		} else {
-			if ptnLeader, ok := clusterInfo.Wkrs[ptn.LeaderNodeId]; ok { // get the leader Worker
+			if ptnLeader, ok := workerInfo.Nodes[ptn.LeaderNodeId]; ok { // get the leader Worker
 				for ndId, nd := range ptn.NodeSet {
-					if wrk, ok := clusterInfo.Wkrs[ndId]; ok {
+					if wrk, ok := workerInfo.Nodes[ndId]; ok {
 						nd.Id = ndId
 						nd.Addr = wrk.Addr
 						nd.Addr2 = wrk.Addr2
@@ -173,7 +228,7 @@ func electPtnLeader(ptn *node.Partition) {
 	/* notice here not execlude the leader, in case it's recovered and give it last chance */
 	for ndId := range ptn.NodeSet {
 		wg.Add(1)
-		if wrk, ok := clusterInfo.Wkrs[ndId]; ok {
+		if wrk, ok := workerInfo.Nodes[ndId]; ok {
 			go getWorkerBinlogSeq(wrk.Id, wrk.Addr2, &wg, &seqMap)
 		} else {
 			wg.Done()
@@ -190,7 +245,7 @@ func electPtnLeader(ptn *node.Partition) {
 		}
 	}
 	// l.Info().Msgf("new LeaderId: %s", newLeaderId)
-	if _, ok := clusterInfo.Wkrs[newLeaderId]; ok {
+	if _, ok := workerInfo.Nodes[newLeaderId]; ok {
 		l.Info().Msgf("Partition %s has new leader: %s", ptn.Id, newLeaderId)
 		ptn.LeaderNodeId = newLeaderId
 		//ptnUpdCh <- struct{}{} // sync partition to followers

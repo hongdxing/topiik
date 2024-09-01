@@ -25,7 +25,7 @@ import (
 var ctlwkrConnCache = make(map[string]*net.TCPConn)
 
 func forwardByKey(key []byte, msg []byte) []byte {
-	if len(cluster.GetClusterInfo().Wkrs) == 0 {
+	if len(cluster.GetWorkerInfo().Nodes) == 0 {
 		return resp.ErrResponse(errors.New(resp.RES_NO_ENOUGH_WORKER))
 	}
 	if len(cluster.GetPartitionInfo().PtnMap) == 0 {
@@ -84,7 +84,7 @@ func getWorker(key []byte) (worker node.NodeSlim) {
 	for _, partition := range cluster.GetPartitionInfo().PtnMap {
 		for _, slot := range partition.Slots {
 			if slot.From <= uint16(keyHash) && slot.To >= uint16(keyHash) {
-				worker = cluster.GetClusterInfo().Wkrs[partition.LeaderNodeId]
+				worker = cluster.GetWorkerInfo().Nodes[partition.LeaderNodeId]
 				break
 			}
 		}

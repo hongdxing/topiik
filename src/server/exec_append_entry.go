@@ -67,8 +67,28 @@ func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 				return err
 			}
 			/* set cluster info in memory */
-			cluster.SetClusterInfo(clusterInfo)
+			//cluster.SetClusterInfo(clusterInfo)
 			l.Info().Msg("rpc_append_entry::appendEntry metadata end")
+		} else if entryType == cluster.ENTRY_TYPE_CTL {
+			l.Info().Msg("rpc_append_entry::appendEntry controller begin")
+			var controllerInfo = &cluster.NodesInfo{}
+			err := json.Unmarshal(entry[1:], controllerInfo)
+			if err != nil {
+				l.Err(err)
+				return err
+			}
+			cluster.SetControllerInfo(controllerInfo)
+			l.Info().Msg("rpc_append_entry::appendEntry controller end")
+		} else if entryType == cluster.ENTRY_TYPE_WRK {
+			l.Info().Msg("rpc_append_entry::appendEntry worker begin")
+			var workerInfo = &cluster.NodesInfo{}
+			err := json.Unmarshal(entry[1:], workerInfo)
+			if err != nil {
+				l.Err(err)
+				return err
+			}
+			cluster.SetWorkerInfo(workerInfo)
+			l.Info().Msg("rpc_append_entry::appendEntry worker end")
 		} else if entryType == cluster.ENTRY_TYPE_PTNS {
 			l.Info().Msg("rpc_append_entry::appendEntry partition begin")
 			var ptnInfo cluster.PartitionInfo

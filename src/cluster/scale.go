@@ -20,12 +20,12 @@ import (
 
 func Scale(p int, r int) (result string, err error) {
 	// if no enough worker nodes
-	if len(clusterInfo.Wkrs) < p*r || p > consts.SLOTS {
+	if len(workerInfo.Nodes) < p*r || p > consts.SLOTS {
 		return "", errors.New(resp.RES_NO_ENOUGH_WORKER)
 	}
 	if len(partitionInfo.PtnMap) == 0 { // new cluster
-		keys := make([]string, 0, len(clusterInfo.Wkrs))
-		for k := range clusterInfo.Wkrs {
+		keys := make([]string, 0, len(workerInfo.Nodes))
+		for k := range workerInfo.Nodes {
 			keys = append(keys, k)
 		}
 

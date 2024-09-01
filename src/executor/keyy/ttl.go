@@ -9,7 +9,6 @@ package keyy
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"topiik/executor/shared"
@@ -54,7 +53,6 @@ func Ttl(req datatype.Req) (ttl int64, err error) {
 			}
 			// convert to epoch
 			val.Ttl = ttl + util.GetUtcEpoch()
-			fmt.Printf("ttl is: %v", val.Ttl)
 			return ttl, nil
 		}
 	} else {

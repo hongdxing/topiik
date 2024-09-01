@@ -16,6 +16,8 @@ const (
 	ENTRY_TYPE_PTN      int8 = 3
 	ENTRY_TYPE_PTNS     int8 = 4
 	ENTRY_TYPE_PTN_LDR  int8 = 5
+	ENTRY_TYPE_CTL      int8 = 6
+	ENTRY_TYPE_WRK      int8 = 7
 )
 
 const (

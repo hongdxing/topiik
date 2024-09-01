@@ -1,9 +1,9 @@
-/***
-** author: duan hongxing
-** data: 3 Jul 2024
-** desc:
-**
-**/
+/*
+* ©2024 www.topiik.com
+* author: Duan Hongxing
+* data: 3 Jul 2024
+*
+ */
 
 package cluster
 
@@ -16,6 +16,11 @@ type Cluster struct {
 	Ver  uint   // compare which is more lastest
 	Ctls map[string]node.NodeSlim
 	Wkrs map[string]node.NodeSlim
+}
+
+type NodesInfo struct {
+	ClusterId string
+	Nodes     map[string]node.NodeSlim
 }
 
 type PartitionInfo struct {

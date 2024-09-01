@@ -1,9 +1,9 @@
-/***
-** author: duan hongxing
-** data: 7 Jul 2024
-** desc:
-**
-**/
+/*
+* ©2024 www.topiik.com
+* author: Duan Hongxing
+* data: 7 Jul 2024
+*
+ */
 
 package server
 
@@ -16,7 +16,7 @@ import (
 )
 
 /*
-**
+*
   - Return: [A|R]:[A|L|F|T]
   - return value seperated by :
   - 1) first part, Aaccept or Rejected
@@ -37,7 +37,7 @@ func vote(cTerm int) string {
 		if cluster.GetNodeStatus().Role != cluster.RAFT_FOLLOWER {
 			return consts.VOTE_REJECTED + ":F"
 		}
-		if cluster.GetClusterInfo().Ver > uint(cTerm) {
+		if cluster.GetTerm() > cTerm {
 			return consts.VOTE_REJECTED + ":L" // if current node version greater than candidate's version, reject as Leader reject
 		}
 	} else {
@@ -50,7 +50,7 @@ func vote(cTerm int) string {
 	}
 
 	// (lastTermV > lastTermC) || ((lastTermV == lastTermC) && (lastIndexV > lastIndexC))
-	if cluster.GetClusterInfo().Ver > uint(cTerm) {
+	if cluster.GetTerm() > cTerm {
 		return consts.VOTE_REJECTED + ":T"
 	} else {
 		return consts.VOTE_ACCEPTED + ":A"

@@ -8,9 +8,7 @@
 package cluster
 
 import (
-	"encoding/json"
 	"errors"
-	"os"
 	"strings"
 	"topiik/internal/config"
 	"topiik/internal/util"
@@ -31,7 +29,7 @@ func InitCluster(ptnCount int, serverConfig *config.ServerConfig) (ptnIds []stri
 	if err != nil {
 		return ptnIds, err
 	}
-	node.InitCluster(GetClusterInfo().Id)
+	node.InitCluster(controllerInfo.ClusterId)
 	nodeStatus.Role = RAFT_LEADER
 
 	/* create partition */
@@ -51,33 +49,24 @@ func InitCluster(ptnCount int, serverConfig *config.ServerConfig) (ptnIds []stri
 }
 
 func doInit(serverConfig *config.ServerConfig) error {
-	if len(clusterInfo.Id) > 0 {
-		return errors.New("current node already in cluster: " + clusterInfo.Id)
+	if len(node.GetNodeInfo().ClusterId) > 0 {
+		return errors.New("current node already in cluster: " + node.GetNodeInfo().Id)
 	}
 	// set clusterInfo
 	nodeId := node.GetNodeInfo().Id
-	clusterInfo.Id = strings.ToLower(util.RandStringRunes(10))
+	controllerInfo.ClusterId = strings.ToLower(util.RandStringRunes(10))
 
 	hostPort, err := util.SplitAddress(serverConfig.Listen)
 	if err != nil {
 		l.Panic().Msg(err.Error())
 	}
-	clusterInfo.Ctls[nodeId] = node.NodeSlim{
+	controllerInfo.Nodes[nodeId] = node.NodeSlim{
 		Id:    nodeId,
 		Addr:  serverConfig.Listen,
 		Addr2: hostPort[0] + ":" + hostPort[2],
 	}
 
 	// save cluster metadata
-	fpath := GetClusterFilePath()
-	_ = os.Remove(fpath) // just incase
-	data, err := json.Marshal(clusterInfo)
-	if err != nil {
-		return errors.New(clusterInitFailed)
-	}
-	err = os.WriteFile(fpath, data, 0644)
-	if err != nil {
-		return err
-	}
+	saveControllerInfo()
 	return nil
 }

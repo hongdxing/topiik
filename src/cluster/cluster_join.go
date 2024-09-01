@@ -8,26 +8,24 @@
 package cluster
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"topiik/internal/util"
 	"topiik/node"
 	"topiik/resp"
 )
 
-/***
-** Obsoleted
-** Parameter:
-**	- pieces: id[0] host:port[1] ROLE[2]
-**
-** Syntax: CLUSTER JOIN_ACK id host:port ROLE
-**	id: the node id asking to join
-**	host:port: the worker listen host:port
-**
-**/
+/*
+* Obsoleted
+* Parameter:
+*	- pieces: id[0] host:port[1] ROLE[2]
+*
+* Syntax: CLUSTER JOIN_ACK id host:port ROLE
+*	id: the node id asking to join
+*	host:port: the worker listen host:port
+*
+ */
 func clusterJoin(pieces []string) (result string, err error) {
 	fmt.Printf("%s\n", pieces)
 	if len(pieces) != 3 {
@@ -43,7 +41,7 @@ func clusterJoin(pieces []string) (result string, err error) {
 			return "", errors.New("join cluster failed")
 		}
 
-		if exist, ok := clusterInfo.Ctls[id]; ok {
+		if exist, ok := controllerInfo.Nodes[id]; ok {
 			if exist.Addr == addr {
 				//return nodeInfo.ClusterId, nil
 				return "", nil
@@ -51,7 +49,7 @@ func clusterJoin(pieces []string) (result string, err error) {
 				exist.Addr = addr // update adddress
 			}
 		} else {
-			clusterInfo.Ctls[id] = node.NodeSlim{
+			controllerInfo.Nodes[id] = node.NodeSlim{
 				Id:    id,
 				Addr:  addr,
 				Addr2: addrSplit[0] + ":" + addrSplit[2],
@@ -65,7 +63,7 @@ func clusterJoin(pieces []string) (result string, err error) {
 			return "", errors.New("join cluster failed")
 		}
 
-		if exist, ok := clusterInfo.Wkrs[id]; ok {
+		if exist, ok := workerInfo.Nodes[id]; ok {
 			if exist.Addr == addr {
 				//return nodeInfo.ClusterId, nil
 				return "", nil
@@ -73,7 +71,7 @@ func clusterJoin(pieces []string) (result string, err error) {
 				exist.Addr = addr // update adddress
 			}
 		} else {
-			clusterInfo.Wkrs[id] = node.NodeSlim{
+			workerInfo.Nodes[id] = node.NodeSlim{
 				Id:    id,
 				Addr:  addr,
 				Addr2: addrSplit[0] + ":" + addrSplit[2],
@@ -85,26 +83,28 @@ func clusterJoin(pieces []string) (result string, err error) {
 	}
 
 	// increase version
-	clusterInfo.Ver += 1
+	//clusterInfo.Ver += 1
 
 	// persist cluster metadata
-	clusterPath := GetClusterFilePath()
-	buf, err := json.Marshal(clusterInfo)
-	if err != nil {
-		return "", errors.New("update cluster failed")
-	}
-	err = os.Truncate(clusterPath, 0) // TODO: myabe need backup first
-	if err != nil {
-		return "", errors.New("update cluster failed")
-	}
-	err = os.WriteFile(clusterPath, buf, 0664) // save back controller file
-	if err != nil {
-		return "", errors.New("update cluster failed")
-	}
+	/*
+		clusterPath := GetClusterFilePath()
+		buf, err := json.Marshal(clusterInfo)
+		if err != nil {
+			return "", errors.New("update cluster failed")
+		}
+		err = os.Truncate(clusterPath, 0) // TODO: myabe need backup first
+		if err != nil {
+			return "", errors.New("update cluster failed")
+		}
+		err = os.WriteFile(clusterPath, buf, 0664) // save back controller file
+		if err != nil {
+			return "", errors.New("update cluster failed")
+		}
+	*/
 
 	// cluster meta changed, pending to sync to follower(s)
 	/*
-		for _, v := range clusterInfo.Ctls {
+		for _, v := range controllerInfo.Nodes {
 			if v.Id != nodeInfo.Id {
 				clusterMetadataPendingAppend[v.Id] = v.Id
 			}

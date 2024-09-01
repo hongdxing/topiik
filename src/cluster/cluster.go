@@ -8,10 +8,12 @@
 package cluster
 
 import (
-	"encoding/json"
+	"bytes"
+	"encoding/binary"
 	"errors"
-	"os"
 	"strings"
+	"topiik/internal/consts"
+	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/node"
 	"topiik/resp"
@@ -24,30 +26,23 @@ import (
  */
 func AddNode(ndId string, addr string, addr2 string, role string) (err error) {
 	if strings.ToUpper(role) == node.ROLE_CONTROLLER {
-		clusterInfo.Ctls[ndId] = node.NodeSlim{Id: ndId, Addr: addr, Addr2: addr2}
+		// controllerInfo.Nodes[ndId] = node.NodeSlim{Id: ndId, Addr: addr, Addr2: addr2}
+		controllerInfo.Nodes[ndId] = node.NodeSlim{Id: ndId, Addr: addr, Addr2: addr2}
+		saveControllerInfo()
+	} else if strings.ToUpper(role) == node.ROLE_WORKER {
+		//workerInfo.Nodes[ndId] = node.NodeSlim{Id: ndId, Addr: addr, Addr2: addr2}
+		workerInfo.Nodes[ndId] = node.NodeSlim{Id: ndId, Addr: addr, Addr2: addr2}
+		saveWorkerInfo()
 	} else {
-		worker := node.NodeSlim{Id: ndId, Addr: addr, Addr2: addr2}
-		clusterInfo.Wkrs[ndId] = worker
+		return errors.New("")
 	}
 
-	/* save cluster to disk */
-	clusterPath := GetClusterFilePath()
-	buf, err := json.Marshal(clusterInfo)
-	if err != nil {
-		return errors.New("update cluster failed")
-	}
-	err = os.Truncate(clusterPath, 0) // TODO: myabe need backup first
-	if err != nil {
-		return errors.New("update cluster failed")
-	}
-	err = os.WriteFile(clusterPath, buf, 0664) // save back controller file
-	if err != nil {
-		return errors.New("update cluster failed")
-	}
+	notifyControllerChanged()
+	notifyWorkerChanged()
 
 	/* cluster meta changed, pending sync to follower(s) */
-	notifyMetadataChanged()
-	notifyPtnChanged()
+	//notifyMetadataChanged()
+	//notifyPtnChanged()
 
 	return nil
 }
@@ -57,24 +52,21 @@ func AddNode(ndId string, addr string, addr2 string, role string) (err error) {
 * Syntax: REMOVE-NODE nodeId
  */
 func RemoveNode(ndId string) (err error) {
-	if nd, ok := clusterInfo.Ctls[ndId]; ok {
+	if nd, ok := controllerInfo.Nodes[ndId]; ok {
 		/* if there is only one Controller in cluster, then reject */
-		if len(clusterInfo.Ctls) == 1 {
+		if len(controllerInfo.Nodes) == 1 {
 			return errors.New(resp.RES_REJECTED)
 		}
 		/* if trying to remove current node and current node is Controller Leader, then reject */
 		if nd.Id == node.GetNodeInfo().Id && nodeStatus.Role == RAFT_LEADER {
 			return errors.New(resp.RES_REJECTED)
 		}
-		delete(clusterInfo.Ctls, ndId)
-		notifyMetadataChanged()
-		err = saveClusterInfo()
-		if err != nil {
-			return err
-		}
-	} else if _, ok := clusterInfo.Wkrs[ndId]; ok {
+		delete(controllerInfo.Nodes, ndId)
+		saveControllerInfo()
+		notifyControllerChanged()
+	} else if _, ok := workerInfo.Nodes[ndId]; ok {
 		/* if this is the only worker node, then reject */
-		if len(clusterInfo.Wkrs) == 1 {
+		if len(workerInfo.Nodes) == 1 {
 			return errors.New(resp.RES_REJECTED)
 		}
 		/* if is partition leader, then reject */
@@ -92,15 +84,16 @@ func RemoveNode(ndId string) (err error) {
 			}
 			delete(ptn.NodeSet, ndId)
 		}
-		delete(clusterInfo.Wkrs, ndId)
+		delete(workerInfo.Nodes, ndId)
 		notifyMetadataChanged()
 
-		err = saveClusterInfo()
-		if err != nil {
-			return err
-		}
+		go rpcRemoveNode(ndId)
+
+		saveWorkerInfo()
+		notifyWorkerChanged()
 
 		err = savePartition()
+		notifyPtnChanged()
 		if err != nil {
 			return err
 		}
@@ -110,10 +103,12 @@ func RemoveNode(ndId string) (err error) {
 	return nil
 }
 
+/*
 func SetClusterInfo(cluster *Cluster) {
 	clusterInfo = cluster
 	saveClusterInfo()
 }
+*/
 
 func SetRole(role uint8) {
 	nodeStatus.Role = role
@@ -134,10 +129,11 @@ func SetHeartbeat(heartbeat uint16, heartbeatAt int64) {
 
 /*pivate func----------------------------------------------------------------*/
 
+/*
 func saveClusterInfo() (err error) {
 	data, err := json.Marshal(clusterInfo)
 	if err != nil {
-		l.Err(err).Msgf("cluster::RemoveNode %s", err.Error())
+		l.Err(err).Msgf("cluster::saveClusterInfo %s", err.Error())
 		return err
 	}
 
@@ -157,4 +153,43 @@ func saveClusterInfo() (err error) {
 		return err
 	}
 	return nil
+}
+*/
+
+// RPC to remove cluster info of the node
+func rpcRemoveNode(ndId string) {
+	var addr2 string
+	if nd, ok := controllerInfo.Nodes[ndId]; ok {
+		addr2 = nd.Addr2
+	} else if nd, ok := workerInfo.Nodes[ndId]; ok {
+		addr2 = nd.Addr2
+	}
+	if addr2 == "" {
+		return
+	}
+
+	var buf []byte
+	var bbuf = new(bytes.Buffer) // int to byte buf
+	_ = binary.Write(bbuf, binary.LittleEndian, consts.RPC_REMOVE_NODE)
+	buf = append(buf, bbuf.Bytes()...)
+	buf = append(buf, []byte(ndId)...)
+
+	// Enocde
+	buf, err := proto.EncodeB(buf)
+	if err != nil {
+		l.Err(err).Msg(err.Error())
+		return
+	}
+
+	// Send
+	conn, err := util.PreapareSocketClient(addr2)
+	if err != nil {
+		l.Warn().Msgf("cluster::rpcRemoveNode Cannot connect to the addr2 %s", addr2)
+		return
+	}
+	_, err = conn.Write(buf)
+	if err != nil {
+		l.Err(err).Msg(err.Error())
+		return
+	}
 }

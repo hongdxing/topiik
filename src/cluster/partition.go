@@ -37,7 +37,7 @@ func NewPartition(ptnCount int) (ptnIds []string, err error) {
 
 			ptnId := strings.ToLower(util.RandStringRunes(10))
 			ptnIds = append(ptnIds, ptnId)
-			partitionInfo.ClusterId = clusterInfo.Id
+			partitionInfo.ClusterId = controllerInfo.ClusterId
 			partitionInfo.PtnMap[ptnId] = &node.Partition{
 				Id:      ptnId,
 				NodeSet: make(map[string]*node.NodeSlim),
@@ -73,6 +73,7 @@ func AddNode2Partition(ptnId string, ndId string) {
 		}
 	}
 	savePartition()
+	notifyPtnChanged()
 }
 
 func GetPartitionInfo() PartitionInfo {
