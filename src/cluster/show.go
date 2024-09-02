@@ -7,29 +7,30 @@
 package cluster
 
 import (
-	"fmt"
-	"strings"
+	"encoding/json"
+	"topiik/internal/datatype"
 )
 
 func Show() string {
-	var sb strings.Builder
 
-	sb.WriteString("Partitions:\n")
-	var i = 1
+	cluData := datatype.ClusterData{}
+
 	for _, ptn := range partitionInfo.PtnMap {
-		sb.WriteString(fmt.Sprintf("  %s\n", ptn.Id))
-		sb.WriteString("    slots:")
+		ptnData := datatype.PartitionData{
+			Id: ptn.Id,
+		}
 		for _, slot := range ptn.Slots {
-			sb.WriteString(fmt.Sprintf("[%v, %v]", slot.From, slot.To))
+			ptnData.Slots = append(ptnData.Slots, datatype.SlotData{From: slot.From, To: slot.To})
 		}
-		sb.WriteString("\n")
-		sb.WriteString("    nodes:\n")
-		var j = 1
 		for _, nd := range ptn.NodeSet {
-			sb.WriteString(fmt.Sprintf("      %s %s\n", nd.Id, nd.Addr))
-			j++
+			ptnData.Nodes = append(ptnData.Nodes, datatype.NodeData{Id: nd.Id, Address: nd.Addr})
 		}
-		i++
+		cluData.Partitions = append(cluData.Partitions, ptnData)
 	}
-	return sb.String()
+
+	rslt, err := json.MarshalIndent(cluData, "", "    ")
+	if err != nil {
+		return err.Error()
+	}
+	return string(rslt)
 }

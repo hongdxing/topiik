@@ -1,23 +1,24 @@
 package datatype
 
 /* structs for SHOW command */
-type Cluster struct {
-	Controllers []Node
-	Workers     []Node
-	Partitions  map[string][]Partition
+type ClusterData struct {
+	Controllers []NodeData
+	Workers     []NodeData
+	Partitions  []PartitionData
 }
 
-type Node struct {
+type NodeData struct {
 	Id      string
 	Address string
 }
 
-type Partition struct {
+type PartitionData struct {
 	Id    string
-	Slots []int
+	Slots []SlotData
+	Nodes []NodeData
 }
 
-type Slot struct {
+type SlotData struct {
 	From uint16
 	To   uint16
 }

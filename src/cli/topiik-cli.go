@@ -180,9 +180,7 @@ func response(conn *net.TCPConn, cmd string) error {
 				}
 				fmt.Printf("%v\n", result)
 			} else if resType == resp.Map {
-				if cmd == command.SHOW{
-					
-				}
+				//
 			} else {
 				fmt.Println("(err): invalid response type")
 			}
