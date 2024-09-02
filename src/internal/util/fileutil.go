@@ -17,13 +17,13 @@ func WriteBinaryFile(path string, data []byte) (err error) {
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 	if !exist {
 		file, err = os.Create(path)
 		if err != nil {
 			return err
 		}
 	}
-	defer file.Close()
 
 	err = binary.Write(file, binary.LittleEndian, data)
 	if err != nil {

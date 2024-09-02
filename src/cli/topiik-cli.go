@@ -156,15 +156,6 @@ func response(conn *net.TCPConn, cmd string) error {
 			if resType == resp.String {
 				res := buf[resp.RESPONSE_HEADER_SIZE:]
 				fmt.Printf("%s\n", string(res))
-			} else if resType == resp.Integer {
-				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
-				bbuf := bytes.NewBuffer(bufSlice)
-				var result int64
-				err = binary.Read(bbuf, binary.LittleEndian, &result)
-				if err != nil {
-					fmt.Println("(err):")
-				}
-				fmt.Printf("%v\n", result)
 			} else if resType == resp.StringArray {
 				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
 				var rslt []string
@@ -178,6 +169,19 @@ func response(conn *net.TCPConn, cmd string) error {
 				}
 				for i, v := range rslt {
 					fmt.Printf("%v: %s\n", i, v)
+				}
+			} else if resType == resp.Integer {
+				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
+				bbuf := bytes.NewBuffer(bufSlice)
+				var result int64
+				err = binary.Read(bbuf, binary.LittleEndian, &result)
+				if err != nil {
+					fmt.Println("(err):")
+				}
+				fmt.Printf("%v\n", result)
+			} else if resType == resp.Map {
+				if cmd == command.SHOW{
+					
 				}
 			} else {
 				fmt.Println("(err): invalid response type")

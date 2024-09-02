@@ -41,7 +41,7 @@ func Pop(req datatype.Req, icmd uint8) (rslt []string, err error) {
 	}
 	key := string(req.Keys[0])
 	if val, ok := memo.MemMap[key]; ok {
-		if val.Typ != datatype.V_TYPE_LIST {
+		if val.Typ != memo.V_TYPE_LIST {
 			return rslt, errors.New(resp.RES_DATA_TYPE_MISMATCH)
 		}
 

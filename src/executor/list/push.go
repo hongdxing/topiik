@@ -31,12 +31,12 @@ import (
 func Push(req datatype.Req, icmd uint8) (result int, err error) {
 	key := string(req.Keys[0])
 	if existing, ok := memo.MemMap[key]; ok {
-		if existing.Typ != datatype.V_TYPE_LIST {
+		if existing.Typ != memo.V_TYPE_LIST {
 			return 0, errors.New(resp.RES_DATA_TYPE_MISMATCH)
 		}
 	} else {
-		memo.MemMap[key] = &datatype.TValue{
-			Typ: datatype.V_TYPE_LIST,
+		memo.MemMap[key] = &memo.TValue{
+			Typ: memo.V_TYPE_LIST,
 			Lst: list.New(),
 			Epo: time.Now().UTC().Unix(),
 			Ttl: consts.INT64_MIN,

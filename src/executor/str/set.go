@@ -78,7 +78,7 @@ func Set(req datatype.Req) (result string, err error) {
 
 	if val, ok := memo.MemMap[key]; ok {
 		/*
-			if val.Typ != datatype.V_TYPE_STRING {
+			if val.Typ != memo.V_TYPE_STRING {
 				return "", errors.New(resp.RES_DATA_TYPE_MISMATCH)
 			}
 		*/
@@ -88,12 +88,12 @@ func Set(req datatype.Req) (result string, err error) {
 		}
 
 		memo.MemMap[key].Str = []byte(req.Vals[0])
-		memo.MemMap[key].Typ = datatype.V_TYPE_STRING
+		memo.MemMap[key].Typ = memo.V_TYPE_STRING
 		memo.MemMap[key].Ttl = ttl
 		return oldValue, nil
 	} else {
-		memo.MemMap[key] = &datatype.TValue{
-			Typ: datatype.V_TYPE_STRING,
+		memo.MemMap[key] = &memo.TValue{
+			Typ: memo.V_TYPE_STRING,
 			Str: []byte(req.Vals[0]),
 			Ttl: ttl,
 			Epo: util.GetUtcEpoch()}

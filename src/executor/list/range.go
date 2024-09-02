@@ -18,7 +18,7 @@ import (
 func Rang(req datatype.Req) (rslt []string, err error) {
 	key := string(req.Keys[0])
 	if value, ok := memo.MemMap[key]; ok {
-		if value.Typ == datatype.V_TYPE_LIST && value.Lst.Len() > 0 {
+		if value.Typ == memo.V_TYPE_LIST && value.Lst.Len() > 0 {
 			pieces := strings.Split(req.Args, consts.SPACE)
 			if len(pieces) != 2 {
 				return rslt, err

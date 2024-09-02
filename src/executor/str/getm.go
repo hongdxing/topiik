@@ -35,7 +35,7 @@ func GetM(req datatype.Req) (result []string, err error) {
 			if shared.IsKeyExpired(skey, val.Ttl) {
 				result = append(result, "")
 			}
-			if val.Typ != datatype.V_TYPE_STRING {
+			if val.Typ != memo.V_TYPE_STRING {
 				return nil, errors.New(resp.RES_DATA_TYPE_MISMATCH)
 			}
 			result = append(result, string(val.Str))

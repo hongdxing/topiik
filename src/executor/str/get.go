@@ -31,7 +31,7 @@ func Get(req datatype.Req) (result string, err error) {
 		if shared.IsKeyExpired(key, val.Ttl) {
 			return resp.RES_NIL, nil
 		}
-		if val.Typ != datatype.V_TYPE_STRING {
+		if val.Typ != memo.V_TYPE_STRING {
 			return "", errors.New(resp.RES_DATA_TYPE_MISMATCH)
 		}
 		return string(val.Str), nil

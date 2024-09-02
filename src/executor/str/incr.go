@@ -66,8 +66,8 @@ func preINCR(key string) (i int64, err error) {
 			return i, errors.New(resp.RES_DATA_TYPE_MISMATCH)
 		}
 	} else {
-		memo.MemMap[key] = &datatype.TValue{
-			Typ: datatype.V_TYPE_STRING,
+		memo.MemMap[key] = &memo.TValue{
+			Typ: memo.V_TYPE_STRING,
 			Str: []byte("0"),
 			Epo: util.GetUtcEpoch(),
 			Ttl: consts.INT64_MIN,
