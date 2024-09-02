@@ -38,7 +38,7 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 		return nil, err
 	}
 	cmd := strings.ToUpper(pieces[0])
-	theCMD = &cmd
+	*theCMD = cmd
 	var icmd uint8 = 0
 	var ver uint8 = 0
 	req := datatype.Req{Keys: datatype.Abytes{}, Vals: datatype.Abytes{}}

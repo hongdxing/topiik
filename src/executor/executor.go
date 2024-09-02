@@ -69,11 +69,11 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 	}
 
 	if icmd == command.INIT_CLUSTER_I {
-		ptnIds, err := clus.ClusterInit(req, serverConfig)
+		_, err := clus.ClusterInit(req, serverConfig)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
-		return resp.StrArrResponse(ptnIds)
+		return resp.StrResponse(resp.RES_OK)
 	} else if icmd == command.SHOW_I {
 		rslt := clus.Show(req)
 		return resp.StrResponse(rslt)
