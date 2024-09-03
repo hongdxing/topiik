@@ -38,7 +38,6 @@ func LoadControllerInfo() (err error) {
 		l.Panic().Msg(err.Error())
 	}
 	if exist {
-
 		jsonStr, err := os.ReadFile(fpath)
 		if err != nil {
 			l.Panic().Msg(err.Error())
@@ -46,7 +45,6 @@ func LoadControllerInfo() (err error) {
 		err = json.Unmarshal([]byte(jsonStr), &controllerInfo)
 		if err != nil {
 			l.Panic().Msg(err.Error())
-			//panic(err)
 		}
 	}
 	l.Info().Msg("Loading controller info end")
@@ -99,7 +97,6 @@ func LoadMetadata() (err error) {
 	}
 
 	//
-	l.Info().Msgf("Current node role: %s", node.GetNodeInfo().Role)
 	if node.GetNodeInfo().Role == node.ROLE_CONTROLLER {
 		go RequestVote()
 	}

@@ -12,20 +12,13 @@ import (
 )
 
 func WriteBinaryFile(path string, data []byte) (err error) {
-	var file *os.File
-	exist, err := PathExists(path)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC, 0664)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-	if !exist {
-		file, err = os.Create(path)
-		if err != nil {
-			return err
-		}
-	}
+	defer f.Close()
 
-	err = binary.Write(file, binary.LittleEndian, data)
+	err = binary.Write(f, binary.LittleEndian, data)
 	if err != nil {
 		return err
 	}
@@ -33,7 +26,7 @@ func WriteBinaryFile(path string, data []byte) (err error) {
 }
 
 func ReadBinaryFile(path string) ([]byte, error) {
-	file, err := os.Open(path)
+	file, err := os.OpenFile(path, os.O_RDONLY, 0664)
 	if err != nil {
 		return nil, err
 	}

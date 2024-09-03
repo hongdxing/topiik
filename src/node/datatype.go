@@ -1,3 +1,6 @@
+// author: Duan Hongxing
+// date: 24 Aug, 2024
+
 package node
 
 type Node struct {

@@ -37,8 +37,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	// self check
-	//err = persistence.SelfCheck()
+
 	// init node
 	err = node.InitNode(*serverConfig)
 	if err != nil {
@@ -75,7 +74,6 @@ func main() {
 	// Start routines
 	if !node.IsController() {
 		persistence.Load(executor.Execute1)
-		//go persistence.PersistAsync() // persist
 		//go persistence.Sync()    // sync from Partition Leader
 	}
 
@@ -86,7 +84,7 @@ func main() {
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
-			fmt.Println(err)
+			l.Err(err).Msg(err.Error())
 			continue
 		}
 
@@ -120,9 +118,7 @@ func handleConnection(conn net.Conn) {
 	}
 }
 
-/*
-* Print banner(TODO)
- */
+// Print banner(TODO)
 func printBanner() {
 	l.Info().Msg("[TOPIIK] Starting Topiik Server...")
 }

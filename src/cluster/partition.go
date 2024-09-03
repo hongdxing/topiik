@@ -55,10 +55,8 @@ func NewPartition(ptnCount int) (ptnIds []string, err error) {
 	return ptnIds, err
 }
 
-/*
-* Add node to NodeSet of partition
- */
-func AddNode2Partition(ptnId string, ndId string) {
+// Add node to NodeSet of partition
+func addNode2Partition(ptnId string, ndId string) {
 	if ptn, ok := partitionInfo.PtnMap[ptnId]; ok {
 		if len(ptn.NodeSet) == 0 {
 			/* if ndId is the first node, set to Leader */
@@ -73,40 +71,36 @@ func AddNode2Partition(ptnId string, ndId string) {
 		}
 	}
 	savePartition()
-	notifyPtnChanged()
 }
 
 func GetPartitionInfo() PartitionInfo {
 	return *partitionInfo
 }
 
-/*
-* Save partition info to disk
-*
- */
+// Save partition info to disk
 func savePartition() (err error) {
 	fpath := GetPatitionFilePath()
 	exist, err := util.PathExists(fpath)
 	if err != nil {
-		l.Err(err).Msgf("scale: %s", err.Error())
+		l.Err(err).Msgf("savePartition: %s", err.Error())
 		return err
 	}
 	if exist { // rename to old for backup
 		err = os.Rename(fpath, fpath+"old")
 		if err != nil {
-			l.Err(err).Msgf("scale: %s", err.Error())
+			l.Err(err).Msgf("savePartition: %s", err.Error())
 			return err
 		}
 	}
 	data, err := json.Marshal(partitionInfo)
 	if err != nil {
-		l.Err(err).Msgf("scale: %s", err.Error())
+		l.Err(err).Msgf("savePartition: %s", err.Error())
 		return err
 	}
 
 	err = util.WriteBinaryFile(fpath, data)
 	if err != nil {
-		l.Err(err).Msgf("scale: %s", err.Error())
+		l.Err(err).Msgf("savePartition: %s", err.Error())
 		return err
 	}
 	return nil

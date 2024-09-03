@@ -23,10 +23,8 @@ import (
 	"topiik/resp"
 )
 
-/*
-* Add worker to cluster
-* Syntax: ADD-WORKER host:port partition {ptnId}
- */
+// Add worker to cluster
+// Syntax: ADD-WORKER host:port partition {ptnId}
 func AddWorker(req datatype.Req) (ndId string, err error) {
 	if !node.IsController() {
 		return ndId, errors.New("add-worker can only run on controller node")
@@ -55,12 +53,10 @@ func AddWorker(req datatype.Req) (ndId string, err error) {
 		return ndId, errors.New(resp.RES_INVALID_PARTITION_ID)
 	}
 
-	ndId, err = addNode(nodeAddr, node.ROLE_WORKER)
+	ndId, err = addNode(nodeAddr, node.ROLE_WORKER, ptnId)
 	if err != nil {
 		return ndId, err
 	}
-	/* add the new node to partition */
-	cluster.AddNode2Partition(ptnId, ndId)
 	return ndId, err
 }
 
@@ -85,7 +81,7 @@ func AddController(req datatype.Req) (rslt string, err error) {
 	if !reg.MatchString(nodeAddr) {
 		return "", errors.New("invalide address format")
 	}
-	rslt, err = addNode(nodeAddr, node.ROLE_CONTROLLER)
+	rslt, err = addNode(nodeAddr, node.ROLE_CONTROLLER, "")
 	return rslt, err
 }
 
@@ -95,7 +91,7 @@ func AddController(req datatype.Req) (rslt string, err error) {
 * Syntax: ADD-NODE host:port CONTROLLER|WORKER partition xxx
 *
  */
-func addNode(nodeAddr string, role string) (result string, err error) {
+func addNode(nodeAddr string, role string, ptnId string) (result string, err error) {
 	/* get controller address2 */
 	hostPort, _ := util.SplitAddress(nodeAddr)
 	nodeAddr2 := hostPort[0] + ":" + hostPort[2]
@@ -106,9 +102,9 @@ func addNode(nodeAddr string, role string) (result string, err error) {
 	defer conn.Close()
 
 	var cmdBytes []byte
-	var byteBuf = new(bytes.Buffer) // int to byte buf
-	_ = binary.Write(byteBuf, binary.LittleEndian, consts.RPC_ADD_NODE)
-	cmdBytes = append(cmdBytes, byteBuf.Bytes()...)
+	var bbuf = new(bytes.Buffer) // int to byte buf
+	_ = binary.Write(bbuf, binary.LittleEndian, consts.RPC_ADD_NODE)
+	cmdBytes = append(cmdBytes, bbuf.Bytes()...)
 	//line = clusterid role
 	line := node.GetNodeInfo().ClusterId + consts.SPACE + role
 	cmdBytes = append(cmdBytes, []byte(line)...)
@@ -138,7 +134,7 @@ func addNode(nodeAddr string, role string) (result string, err error) {
 
 	if flag == resp.Success {
 		l.Info().Msgf("executor::addNode succeed: %s", ndId)
-		cluster.AddNode(ndId, nodeAddr, nodeAddr2, role)
+		cluster.AddNode(ndId, nodeAddr, nodeAddr2, role, ptnId)
 
 	} else {
 		l.Err(nil).Msg("executor::addNode failed")

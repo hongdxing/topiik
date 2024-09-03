@@ -1,9 +1,6 @@
-/*
-* author: Duan Hongxing
-* date: 23 Aug, 2024
-* desc:
-*	Cluster info implementation
- */
+// author: Duan Hongxing
+// date: 23 Aug, 2024
+// desc:	Cluster info implementation
 
 package cluster
 
@@ -19,38 +16,29 @@ import (
 	"topiik/resp"
 )
 
-/*
-* Client issue command ADD-WORKER or ADD-CONTROLLER
-* After the target node accepted, Controller add node to metadata
-*
- */
-func AddNode(ndId string, addr string, addr2 string, role string) (err error) {
+// Client issue command ADD-WORKER or ADD-CONTROLLER
+// After the target node accepted, Controller add node to metadata
+func AddNode(ndId string, addr string, addr2 string, role string, ptnId string) (err error) {
 	if strings.ToUpper(role) == node.ROLE_CONTROLLER {
-		// controllerInfo.Nodes[ndId] = node.NodeSlim{Id: ndId, Addr: addr, Addr2: addr2}
 		controllerInfo.Nodes[ndId] = node.NodeSlim{Id: ndId, Addr: addr, Addr2: addr2}
 		saveControllerInfo()
 	} else if strings.ToUpper(role) == node.ROLE_WORKER {
-		//workerInfo.Nodes[ndId] = node.NodeSlim{Id: ndId, Addr: addr, Addr2: addr2}
 		workerInfo.Nodes[ndId] = node.NodeSlim{Id: ndId, Addr: addr, Addr2: addr2}
 		saveWorkerInfo()
+		addNode2Partition(ptnId, ndId)
 	} else {
 		return errors.New("")
 	}
 
 	notifyControllerChanged()
 	notifyWorkerChanged()
-
-	/* cluster meta changed, pending sync to follower(s) */
-	//notifyMetadataChanged()
-	//notifyPtnChanged()
+	notifyPtnChanged()
 
 	return nil
 }
 
-/*
-* Remove node, Controller or Worker from cluster
-* Syntax: REMOVE-NODE nodeId
- */
+// Remove node, Controller or Worker from cluster
+// Syntax: REMOVE-NODE nodeId
 func RemoveNode(ndId string) (err error) {
 	if nd, ok := controllerInfo.Nodes[ndId]; ok {
 		/* if there is only one Controller in cluster, then reject */
@@ -102,12 +90,10 @@ func RemoveNode(ndId string) (err error) {
 	return nil
 }
 
-/*
-func SetClusterInfo(cluster *Cluster) {
-	clusterInfo = cluster
-	saveClusterInfo()
+func RemovePartition(ptnId string) error {
+
+	return nil
 }
-*/
 
 func SetRole(role uint8) {
 	nodeStatus.Role = role

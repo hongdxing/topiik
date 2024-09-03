@@ -27,21 +27,21 @@ func InitNode(serverConfig config.ServerConfig) (err error) {
 	// data dir
 	exist, err = util.PathExists(dataDIR)
 	if err != nil {
-		return err
+		l.Panic().Msg(err.Error())
 	}
 
 	if !exist {
 		l.Info().Msg("node::InitNode Creating data dir...")
 		err = os.Mkdir(dataDIR, os.ModeDir)
 		if err != nil {
-			l.Err(err).Msg(err.Error())
+			l.Panic().Msg(err.Error())
 		}
 	}
 
 	// node file
 	exist, err = util.PathExists(fpath)
 	if err != nil {
-		return err
+		l.Panic().Msg(err.Error())
 	}
 
 	var buf []byte
@@ -74,6 +74,7 @@ func InitNode(serverConfig config.ServerConfig) (err error) {
 	}
 	nodeInfo = &node
 
+	l.Info().Msgf("node::InitNode node role: %s", nodeInfo.Role)
 	l.Info().Msg("node::InitNode end")
 	return nil
 }
@@ -144,6 +145,7 @@ func JoinCluster(clusterId string, role string) (err error) {
 
 /* sync to avoid fatal error: concurrent map writes */
 var setPtnMu sync.Mutex
+
 func SetPtn(buf []byte) {
 	setPtnMu.Lock()
 	defer setPtnMu.Unlock()

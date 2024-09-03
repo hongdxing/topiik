@@ -99,12 +99,12 @@ func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 			}
 			//partitionInfo = &ptnInfo
 			cluster.SetPtnInfo(&ptnInfo)
-			filePath := cluster.GetPatitionFilePath()
-			exist, _ := util.PathExists(filePath)
+			fpath := cluster.GetPatitionFilePath()
+			exist, _ := util.PathExists(fpath)
 			if exist {
-				os.Rename(filePath, filePath+"old") // rename
+				os.Rename(fpath, fpath+"old") // rename
 			}
-			err = util.WriteBinaryFile(filePath, entry[1:])
+			err = util.WriteBinaryFile(fpath, entry[1:])
 			if err != nil {
 				l.Err(err).Msg(err.Error())
 				return err

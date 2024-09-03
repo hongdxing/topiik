@@ -140,13 +140,13 @@ func appendWorkerInfo() {
 
 func appendPartitionInfo() {
 	var buf []byte
-	var byteBuf = new(bytes.Buffer)
+	var bbuf = new(bytes.Buffer)
 	data, err := json.Marshal(partitionInfo)
 	if err != nil {
 		l.Err(err).Msg(err.Error())
 	} else {
-		binary.Write(byteBuf, binary.LittleEndian, ENTRY_TYPE_PTNS)
-		buf = append(buf, byteBuf.Bytes()...)
+		binary.Write(bbuf, binary.LittleEndian, ENTRY_TYPE_PTNS)
+		buf = append(buf, bbuf.Bytes()...)
 		buf = append(buf, data...)
 		for _, controller := range controllerInfo.Nodes {
 			if controller.Id == node.GetNodeInfo().Id {
