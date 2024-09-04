@@ -1,9 +1,5 @@
-/*
-* author: duan hongxing
-* date: 6 July, 2024
-* desc:
-*
- */
+// author: duan hongxing
+// date: 6 July, 2024
 
 package cluster
 
@@ -15,12 +11,7 @@ import (
 	"topiik/node"
 )
 
-const clusterInitFailed = "cluster init failed"
-
-/*
-* Execute command INIT-CLUSTER
-*
- */
+// Execute command INIT-CLUSTER
 func InitCluster(ptnCount int, serverConfig *config.ServerConfig) (ptnIds []string, err error) {
 	l.Info().Msg("cluster::ClusterInit start")
 

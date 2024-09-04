@@ -1,9 +1,7 @@
-/*
-* @author: Duan Hongxing
-* @date: 23 Aug, 2024
-* @desc:
-*	Partition info implementation
- */
+// author: Duan Hongxing
+// date: 23 Aug, 2024
+// desc:
+//	Partition info implementation
 
 package cluster
 
@@ -17,10 +15,7 @@ import (
 	"topiik/node"
 )
 
-/*
-* Client issue command NEW-PARTITION
-*
- */
+// new partition
 func NewPartition(ptnCount int) (ptnIds []string, err error) {
 	if len(partitionInfo.ClusterId) == 0 { // brand new cluster without partition yet
 		for i := 0; i < int(ptnCount); i++ {
@@ -53,6 +48,16 @@ func NewPartition(ptnCount int) (ptnIds []string, err error) {
 	err = savePartition()
 
 	return ptnIds, err
+}
+
+// Remove partition
+func RemovePartition(ptnId string) error {
+	return nil
+}
+
+// Reshard partition
+func ReShard() error {
+	return nil
 }
 
 // Add node to NodeSet of partition

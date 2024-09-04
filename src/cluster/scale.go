@@ -53,8 +53,8 @@ func Scale(p int, r int) (result string, err error) {
 			}
 			slot := node.Slot{From: uint16(from), To: uint16(to)}
 			partition.Slots = []node.Slot{slot}
-			partitionInfo.Ptns = uint16(p)
-			partitionInfo.Rpls = uint16(r)
+			//partitionInfo.Ptns = uint16(p)
+			//partitionInfo.Rpls = uint16(r)
 			partitionInfo.PtnMap[pId] = &partition
 		}
 	} else if p > len(partitionInfo.PtnMap) { // scale out

@@ -1,8 +1,5 @@
-/***
-* author: duan hongxing
-* date: 21 Jun 2024
-* desc:
- */
+// author: Duan Hongxing
+// date: 21 Jun, 2024
 
 package executor
 
@@ -197,10 +194,7 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 	return forwardByKey(key, msg)
 }
 
-/*
-* Execute Memory commands
-*
- */
+// Execute Memory commands
 func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 	if icmd == command.GET_I { /*** STRING COMMANDS ***/
 		result, err := str.Get(req)
@@ -232,8 +226,7 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 			return resp.ErrResponse(err)
 		}
 		finalRes = resp.IntResponse(result)
-	} else if icmd == command.LPUSH_I || icmd == command.LPUSHR_I { /***LIST COMMANDS***/
-		/* LPUSH */
+	} else if icmd == command.LPUSH_I || icmd == command.LPUSHR_I { // LIST COMMANDS
 		result, err := list.Push(req, icmd)
 		if err != nil {
 			return resp.ErrResponse(err)
@@ -258,7 +251,13 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 			return resp.ErrResponse(err)
 		}
 		finalRes = resp.StrArrResponse(rslt)
-	} else if icmd == command.TTL_I { /***KEY COMMANDS***/
+	} else if icmd == command.LSET_I {
+		rslt, err := list.Set(req)
+		if err != nil {
+			return resp.ErrResponse(err)
+		}
+		finalRes = resp.StrResponse(rslt)
+	} else if icmd == command.TTL_I { // KEY COMMANDS
 		/* TTL */
 		result, err := keyy.Ttl(req)
 		if err != nil {

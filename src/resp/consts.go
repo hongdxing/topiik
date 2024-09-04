@@ -1,16 +1,10 @@
-/***
-** author: duan hongxing
-** data: 14 Jul 2024
-** desc:
-**
-**/
+// author: Duan Hongxing
+// data: 14 Jul 2024
 
 package resp
 
-/*
-*	4 bytes of msg length, 1 byte of flag, 1 byte of datatype
-* 	datatype: 1:string, 2:integer, 3:string array
- */
+// 4 bytes of msg length, 1 byte of flag, 1 byte of datatype
+// datatype: 1:string, 2:integer, 3:string array
 const RESPONSE_HEADER_SIZE = 6
 
 const (
@@ -23,6 +17,7 @@ const (
 	RES_EMPTY_KEY            = "EMPTY_KEY"
 	RES_KEY_NOT_EXIST        = "KEY_NOT_EXIST"
 	RES_KEY_EXIST_ALREADY    = "KEY_EXIST_ALR"
+	RES_OUT_OF_BOUND         = "OUT_OF_BOUND"
 
 	RES_NO_ENOUGH_WORKER = "NO_ENOUGH_WORKER"
 	RES_NO_PARTITION     = "NO_PARTITION"

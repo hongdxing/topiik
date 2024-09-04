@@ -90,11 +90,6 @@ func RemoveNode(ndId string) (err error) {
 	return nil
 }
 
-func RemovePartition(ptnId string) error {
-
-	return nil
-}
-
 func SetRole(role uint8) {
 	nodeStatus.Role = role
 }

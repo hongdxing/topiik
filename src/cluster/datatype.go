@@ -1,9 +1,6 @@
-/*
-* ©2024 www.topiik.com
-* author: Duan Hongxing
-* data: 3 Jul 2024
-*
- */
+// ©2024 www.topiik.com
+// author: Duan Hongxing
+// data: 3 Jul 2024
 
 package cluster
 
@@ -18,6 +15,7 @@ type Cluster struct {
 	Wkrs map[string]node.NodeSlim
 }
 
+// datatype of ControllerInfo and WorkerInfo
 type NodesInfo struct {
 	ClusterId string
 	Nodes     map[string]node.NodeSlim
@@ -25,8 +23,6 @@ type NodesInfo struct {
 
 type PartitionInfo struct {
 	ClusterId string
-	Ptns      uint16 // number of partitions, given parameter when INIT a cluster
-	Rpls      uint16 // number of replicas, recommend 3 relicas at most, given parameter when INIT a cluster
 	PtnMap    map[string]*node.Partition
 }
 
