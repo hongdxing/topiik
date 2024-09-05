@@ -1,9 +1,5 @@
-/***
-** author: duan hongxing
-** date: 26 Jun 2024
-** desc:
-**
-**/
+//author: Duan HongXing
+//date: 26 Jun 2024
 
 package persistence
 
@@ -23,41 +19,11 @@ import (
 
 //var lineFeed = byte('\n')
 
-/*
-* Binary format file, with each msg, 8 Sequence + 4 bytes length + msg
-* +-----------------------------8 bytes Sequence---------------------------|--------4 bytes lenght---------------|------msg--------+
-* |00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 | 00000000 00000000 00000000 00000000 | xxxxxxxxxxxxxxxx|
-* +------------------------------------------------------------------------|-------------------------------------|-----------------+
-*
- */
-/*
-func Persist() {
-	filePath := getCurrentLogFile()
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		l.Panic().Msg(err.Error())
-	}
-	defer file.Close()
-
-	for {
-		// msg
-		msg := <-executor.PersistenceCh
-		// msg sequence
-		binLogSeq++
-
-		// 1: sequence
-		byteBuf := new(bytes.Buffer)
-		binary.Write(byteBuf, binary.LittleEndian, binLogSeq)
-		buf := byteBuf.Bytes()
-
-		// 2: msg
-		buf = append(buf, msg...)
-
-		// write to file
-		binary.Write(file, binary.NativeEndian, buf)
-	}
-}
-*/
+//
+// Binary format file, with each msg, 8 Sequence + 4 bytes length + msg
+// +-----------------------------8 bytes Sequence---------------------------|--------4 bytes lenght---------------|------msg--------+
+// |00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 | 00000000 00000000 00000000 00000000 | xxxxxxxxxxxxxxxx|
+// +------------------------------------------------------------------------|-------------------------------------|-----------------+
 
 // active log file
 var activeLF *os.File
@@ -68,10 +34,7 @@ var connCache = make(map[string]*net.TCPConn)
 // is batch syncing in progress
 var batchSyncing = false
 
-/*
-* Append msg to binary log
-*
- */
+// Append msg to binary log
 func Append(msg []byte) (err error) {
 	if activeLF == nil {
 		var err error
@@ -130,12 +93,10 @@ func syncOne(binlogs []byte) {
 	}
 }
 
-const batchSyncSize = 1024 * 1024
+const batchSyncSize = 1024 * 1024 //
 
-/*
-* if follower is fall behind, then try to send binlog in batch to folower(s)
-* max 64kb for each batch
- */
+// if follower is fall behind, then try to send binlog in batch to folower(s)
+// max 64kb for each batch
 func syncBatch(conn *net.TCPConn, startSeq int64) {
 	l.Info().Msgf("persistence::syncBach start")
 
@@ -198,10 +159,7 @@ func syncBatch(conn *net.TCPConn, startSeq int64) {
 	}
 }
 
-/*
-* Sync to follower(s)
-*
- */
+// Sync to follower(s)
 func doSync(conn *net.TCPConn, binlogs []byte) (flrSeq int64, err error) {
 	// icmd
 	bbuf := new(bytes.Buffer)
@@ -251,27 +209,24 @@ func doSync(conn *net.TCPConn, binlogs []byte) (flrSeq int64, err error) {
 	return flrSeq, nil
 }
 
-/*
-* Load binary log to memory when server start
-* Parameters:
-*	- f fn: the func that execute command, i.e: executor.Executer1
- */
-
-func Load(f execute1) {
+// Load binary log to memory when server start
+// Parameters:
+//   - execute fn: the func that execute command, i.e: executor.Executer1
+func Load(execute execute1) {
 	fpath := getActiveBinlogFile()
 	exist, err := util.PathExists(fpath)
 	if err != nil {
 		l.Panic().Msg("[X]load binlog failed")
 	}
 	if exist {
-		file, err := os.OpenFile(fpath, os.O_RDONLY, 0644)
+		f, err := os.OpenFile(fpath, os.O_RDONLY, 0644)
 		if err != nil {
 			l.Panic().Msg("[X]load binlog failed")
 		}
-		defer file.Close()
+		defer f.Close()
 
 		for {
-			buf, err := parseOne(file, &binlogSeq)
+			buf, err := parseOne(f, &binlogSeq)
 			if err != nil {
 				if err != io.EOF {
 					l.Panic().Msg(err.Error())
@@ -279,8 +234,8 @@ func Load(f execute1) {
 				break
 			}
 
-			/* load to RAM */
-			replay(buf, f)
+			// load to RAM
+			replay(buf, execute)
 		}
 	}
 	l.Info().Msgf("persistence::Load BINLOG SEQ: %v", binlogSeq)
