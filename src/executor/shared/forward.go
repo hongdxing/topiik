@@ -1,11 +1,7 @@
-/*
-* author: duan hongxing
-* data: 4 Jul 2024
-* desc:
-*
- */
+//author: Duan HongXing
+//data: 4 Jul, 2024
 
-package executor
+package shared
 
 import (
 	"bufio"
@@ -24,7 +20,7 @@ import (
 /* Conn cache from Controller to Workers */
 var ctlwkrConnCache = make(map[string]*net.TCPConn)
 
-func forwardByKey(key []byte, msg []byte) []byte {
+func ForwardByKey(key []byte, msg []byte) []byte {
 	if len(cluster.GetWorkerInfo().Nodes) == 0 {
 		return resp.ErrResponse(errors.New(resp.RES_NO_ENOUGH_WORKER))
 	}
@@ -95,7 +91,7 @@ func getWorker(key []byte) (worker node.NodeSlim) {
 	return worker
 }
 
-func forwardByWorker(targetWorker node.NodeSlim, msg []byte) []byte {
+func ForwardByWorker(targetWorker node.NodeSlim, msg []byte) []byte {
 	var err error
 	conn, ok := ctlwkrConnCache[targetWorker.Id]
 	if !ok {

@@ -11,6 +11,7 @@ import (
 	"topiik/executor/clus"
 	"topiik/executor/keyy"
 	"topiik/executor/list"
+	"topiik/executor/shared"
 	"topiik/executor/str"
 	"topiik/internal/command"
 	"topiik/internal/config"
@@ -20,12 +21,6 @@ import (
 	"topiik/node"
 	"topiik/persistence"
 	"topiik/resp"
-)
-
-/***Command RESponse***/
-const (
-	RES_SYNTAX_ERROR  = "SYNTAX_ERR"
-	RES_KEY_NOT_EXIST = "KEY_NOT_EXIST"
 )
 
 // var PersistenceCh = make(chan []byte)
@@ -161,7 +156,7 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 			msgN, _ := proto.EncodeHeader(command.SET_I, 1)                                      // msg header
 			msgN = append(msgN, reqBytesN...)                                                    // combine msg header and req bytes
 			msgN, _ = proto.EncodeB(msgN)                                                        // encode msg
-			forwardByKey(key, msgN)
+			shared.ForwardByKey(key, msgN)
 		}
 		return resp.StrResponse(resp.RES_OK)
 	} else if icmd == command.GETM_I {
@@ -173,7 +168,7 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 			msgN, _ := proto.EncodeHeader(command.GET_I, 1)                           // msg header
 			msgN = append(msgN, reqBytesN...)                                         // combine msg header and req bytes
 			msgN, _ = proto.EncodeB(msgN)                                             // encode msg
-			resN := forwardByKey(key, msgN)
+			resN := shared.ForwardByKey(key, msgN)
 			flag := resp.ParseResFlag(resN)
 			if flag != resp.Success {
 				res = append(res, "")
@@ -182,7 +177,7 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 		}
 		return resp.StrArrResponse(res)
 	} else if icmd == command.KEYS_I {
-		res := forwardKeys(msg)
+		res := keyy.ForwardKeys(msg)
 		return resp.StrArrResponse(res)
 	}
 
@@ -191,7 +186,7 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 		return resp.ErrResponse(errors.New(resp.RES_EMPTY_KEY))
 	}
 	key := req.Keys[0]
-	return forwardByKey(key, msg)
+	return shared.ForwardByKey(key, msg)
 }
 
 // Execute Memory commands
@@ -266,7 +261,7 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 		finalRes = resp.IntResponse(result)
 	} else if icmd == command.KEYS_I {
 		/* KEYS */
-		result, err := keys(req)
+		result, err := keyy.Keys(req)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
@@ -284,8 +279,8 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
-		finalRes = resp.IntResponse(rslt)
-	} else { /***Invalid command***/
+		finalRes = resp.StrArrResponse(rslt)
+	} else { //Invalid command
 		l.Err(errors.New("Invalid cmd:" + string(icmd)))
 		return resp.ErrResponse(errors.New(consts.RES_INVALID_CMD))
 	}

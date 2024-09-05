@@ -1,11 +1,7 @@
-/*
-* author: duan hongxing
-* date: 29 Jun 2024
-* desc:
-*	return keys
-*
- */
-package executor
+//author: Duan HongXing
+//date: 29 Jun, 2024
+
+package keyy
 
 import (
 	"bytes"
@@ -16,24 +12,23 @@ import (
 	"regexp"
 	"strings"
 	"topiik/cluster"
+	"topiik/executor/shared"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/memo"
 	"topiik/resp"
 )
 
-/*
-* Return keys
-* Parameters:
-*	- args: the arguments, command line that CMD(Keys) stripped
-* Return:
-*	-
-* Synctax: Keys pattern
-*	- pattern is a string to search keys, use astrisk(*) for pattern search
- */
-func keys(req datatype.Req) (result []string, err error) {
+// Search keys
+// Return list of key(s) matched
+// Synctax: Keys pattern
+//   - pattern is a string to search keys, use atrisk(*) for pattern search
+//
+// Example:
+//   - KEYS user:*
+func Keys(req datatype.Req) (result []string, err error) {
 	if len(req.Args) == 0 {
-		return nil, errors.New(RES_SYNTAX_ERROR)
+		return nil, errors.New(resp.RES_SYNTAX_ERROR)
 	}
 	pattern := req.Args
 	if !strings.HasPrefix(pattern, "*") { // exactly match from beginning
@@ -45,7 +40,7 @@ func keys(req datatype.Req) (result []string, err error) {
 	//fmt.Println(strings.ReplaceAll(pattern, "*", ".*"))
 	reg, err := regexp.Compile(strings.ReplaceAll(pattern, "*", ".*"))
 	if err != nil {
-		return nil, errors.New(RES_SYNTAX_ERROR)
+		return nil, errors.New(resp.RES_SYNTAX_ERROR)
 	}
 	keys := make([]string, 0, len(memo.MemMap))
 	for k := range memo.MemMap {
@@ -58,10 +53,10 @@ func keys(req datatype.Req) (result []string, err error) {
 	return keys, nil
 }
 
-func forwardKeys(msg []byte) (res []string) {
+func ForwardKeys(msg []byte) (res []string) {
 	var err error
 	for _, worker := range cluster.GetWorkerLeaders() {
-		buf := forwardByWorker(worker, msg) // get keys from each worker leader
+		buf := shared.ForwardByWorker(worker, msg) // get keys from each worker leader
 		if len(buf) > 4 {
 			bufSlice := buf[4:5]
 			byteBuf := bytes.NewBuffer(bufSlice)
