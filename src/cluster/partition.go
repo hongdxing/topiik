@@ -7,7 +7,6 @@ package cluster
 
 import (
 	"encoding/json"
-	"errors"
 	"os"
 	"strings"
 	"topiik/internal/consts"
@@ -15,39 +14,18 @@ import (
 	"topiik/node"
 )
 
-// new partition
+// Reshard partition
 func NewPartition(ptnCount int) (ptnIds []string, err error) {
-	if len(partitionInfo.ClusterId) == 0 { // brand new cluster without partition yet
-		for i := 0; i < int(ptnCount); i++ {
-			var from int
-			var to int
-			from = i * (consts.SLOTS / ptnCount) // p=2--> i=0: 0, i=1: 512
-
-			if i == (ptnCount - 1) {
-				to = consts.SLOTS - 1
-			} else {
-				to = (i+1)*(consts.SLOTS/ptnCount) - 1 // p=2--> i=0: 511, i=1: 1024
-			}
-			slot := node.Slot{From: uint16(from), To: uint16(to)}
-
-			ptnId := strings.ToLower(util.RandStringRunes(10))
-			ptnIds = append(ptnIds, ptnId)
-			partitionInfo.ClusterId = controllerInfo.ClusterId
-			partitionInfo.PtnMap[ptnId] = &node.Partition{
-				Id:      ptnId,
-				NodeSet: make(map[string]*node.NodeSlim),
-				Slots:   []node.Slot{slot},
-			}
+	for i := 0; i < int(ptnCount); i++ {
+		ptnId := strings.ToLower(util.RandStringRunes(10))
+		partitionInfo.PtnMap[ptnId] = &node.Partition{
+			Id:      ptnId,
+			NodeSet: make(map[string]*node.NodeSlim),
+			// The SlotFrom and SlotTo leave to not set, Till RESHARD executed
 		}
-	} else { // having existing partition(s), TODO
-		err = errors.New("cannot create new partition")
-		return ptnIds, err
 	}
 
-	// persist
-	err = savePartition()
-
-	return ptnIds, err
+	return []string{}, nil
 }
 
 // Remove partition
@@ -55,9 +33,35 @@ func RemovePartition(ptnId string) error {
 	return nil
 }
 
-// Reshard partition
-func ReShard() error {
-	return nil
+// New partition
+// The new Partition always take slots from the last slot, i.e. the one end with 1023
+// And then slide from the first to next make slots even
+func ReShard() (err error) {
+	// brand new cluster without partition yet
+	if len(partitionInfo.ClusterId) == 0 {
+		partitionInfo.ClusterId = controllerInfo.ClusterId
+		var ptnCount = len(partitionInfo.PtnMap)
+		var i int = 0
+		for _, ptn := range partitionInfo.PtnMap {
+			var from int
+			var to int
+			from = i * (consts.SLOTS / ptnCount) // p=2--> i=0: 0, i=1: 512
+			if i == (ptnCount - 1) {
+				to = consts.SLOTS - 1
+			} else {
+				to = (i+1)*(consts.SLOTS/ptnCount) - 1 // p=2--> i=0: 511, i=1: 1024
+			}
+			ptn.SlotFrom = uint16(from)
+			ptn.SlotTo = uint16(to)
+			i++
+		}
+	} else {
+		//
+	}
+
+	// persist
+	err = savePartition()
+	return err
 }
 
 // Add node to NodeSet of partition

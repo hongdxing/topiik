@@ -13,9 +13,11 @@ type NodeData struct {
 }
 
 type PartitionData struct {
-	Id    string
-	Slots []SlotData
-	Nodes []NodeData
+	Id       string
+	Slots    []SlotData
+	Nodes    []NodeData
+	SlotFrom uint16
+	SlotTo   uint16
 }
 
 type SlotData struct {

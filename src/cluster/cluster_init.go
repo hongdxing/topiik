@@ -23,8 +23,9 @@ func InitCluster(ptnCount int, serverConfig *config.ServerConfig) (ptnIds []stri
 	node.InitCluster(controllerInfo.ClusterId)
 	nodeStatus.Role = RAFT_LEADER
 
-	/* create partition */
-	ptnIds, err = NewPartition(ptnCount)
+	//create partition
+	NewPartition(ptnCount)
+	err = ReShard()
 
 	if err != nil {
 		l.Err(err).Msgf("executor::clusterInit %s", err.Error())

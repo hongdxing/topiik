@@ -14,10 +14,9 @@ import (
 	"topiik/resp"
 )
 
-/*
-* Create new partition
-* Syntax: NEW-PARTITION count
- */
+// Create new partition
+// Only after RESHARD the new partition  before 
+// Syntax: NEW-PARTITION count
 func NewPartition(req datatype.Req) (ptnIds []string, err error) {
 	if len(req.Args) == 0 {
 		return nil, errors.New(resp.RES_SYNTAX_ERROR)

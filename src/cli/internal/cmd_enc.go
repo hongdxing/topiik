@@ -67,14 +67,8 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 		return encShowCluster(pieces)
 	} else if cmd == command.REMOVE_NODE {
 		return encRemoveNode(pieces)
-	} else if cmd == command.SCALE {
-		/*
-		* Syntax: scale partition 1 replica 2
-		 */
-		if len(pieces) != 5 {
-			return syntaxErr()
-		}
-		icmd = command.SCALE_I
+	} else if cmd == command.RESHARD {
+		icmd = command.RESHARD_I
 		req.Args = strings.Join(pieces[1:], consts.SPACE)
 	} else if cmd == command.SET {
 		return encSET(pieces)

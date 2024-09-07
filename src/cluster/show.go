@@ -1,8 +1,6 @@
-/*
-* ©2024 www.topiik.com
-* Author: Duan HongXing
-* Date: 30 Aug, 2024
- */
+//©2024 www.topiik.com
+//Author: Duan HongXing
+//Date: 30 Aug, 2024
 
 package cluster
 
@@ -11,17 +9,16 @@ import (
 	"topiik/internal/datatype"
 )
 
+// Show cluster information
 func Show() string {
-
 	cluData := datatype.ClusterData{}
 
 	for _, ptn := range partitionInfo.PtnMap {
 		ptnData := datatype.PartitionData{
 			Id: ptn.Id,
 		}
-		for _, slot := range ptn.Slots {
-			ptnData.Slots = append(ptnData.Slots, datatype.SlotData{From: slot.From, To: slot.To})
-		}
+		ptnData.SlotFrom = ptn.SlotFrom
+		ptnData.SlotTo = ptn.SlotTo
 		for _, nd := range ptn.NodeSet {
 			ptnData.Nodes = append(ptnData.Nodes, datatype.NodeData{Id: nd.Id, Address: nd.Addr})
 		}

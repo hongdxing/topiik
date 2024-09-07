@@ -78,11 +78,17 @@ func getWorker(key []byte) (worker node.NodeSlim) {
 	keyHash = keyHash % consts.SLOTS
 	//fmt.Printf("key hash %v\n", keyHash)
 	for _, partition := range cluster.GetPartitionInfo().PtnMap {
-		for _, slot := range partition.Slots {
-			if slot.From <= uint16(keyHash) && slot.To >= uint16(keyHash) {
-				worker = cluster.GetWorkerInfo().Nodes[partition.LeaderNodeId]
-				break
+		/*
+			for _, slot := range partition.Slots {
+				if slot.From <= uint16(keyHash) && slot.To >= uint16(keyHash) {
+					worker = cluster.GetWorkerInfo().Nodes[partition.LeaderNodeId]
+					break
+				}
 			}
+		*/
+		if partition.SlotFrom <= uint16(keyHash) && partition.SlotTo >= uint16(keyHash) {
+			worker = cluster.GetWorkerInfo().Nodes[partition.LeaderNodeId]
+			break
 		}
 		if len(worker.Id) > 0 {
 			break

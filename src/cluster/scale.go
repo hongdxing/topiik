@@ -42,17 +42,18 @@ func Scale(p int, r int) (result string, err error) {
 			}
 			partition.NodeSet = nodeSet
 
-			var from int
-			var to int
-			from = i * (consts.SLOTS / p) // p=2--> i=0: 0, i=1: 512
+			/*
+				var from int
+				var to int
+				from = i * (consts.SLOTS / p) // p=2--> i=0: 0, i=1: 512
 
-			if i == (p - 1) {
-				to = consts.SLOTS - 1
-			} else {
-				to = (i+1)*(consts.SLOTS/p) - 1 // p=2--> i=0: 511, i=1: 1024
-			}
-			slot := node.Slot{From: uint16(from), To: uint16(to)}
-			partition.Slots = []node.Slot{slot}
+				if i == (p - 1) {
+					to = consts.SLOTS - 1
+				} else {
+					to = (i+1)*(consts.SLOTS/p) - 1 // p=2--> i=0: 511, i=1: 1024
+				}*/
+			//slot := node.Slot{From: uint16(from), To: uint16(to)}
+			//partition.Slots = []node.Slot{slot}
 			//partitionInfo.Ptns = uint16(p)
 			//partitionInfo.Rpls = uint16(r)
 			partitionInfo.PtnMap[pId] = &partition

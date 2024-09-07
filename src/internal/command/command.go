@@ -9,7 +9,7 @@ const (
 	REMOVE_NODE            = "REMOVE-NODE"
 	NEW_PARTITION          = "NEW-PARTITION"
 	REMOVE_PARTITION       = "REMOVE-PARTITION"
-	SCALE                  = "SCALE" // to be deleted
+	RESHARD                = "RESHARD"
 	GET_CTLADDR            = "GET-CTLADDR"
 	INIT_CLUSTER_I   uint8 = 1
 	SHOW_I           uint8 = 2
@@ -18,7 +18,7 @@ const (
 	REMOVE_NODE_I    uint8 = 5
 	NEW_PARTITION_I  uint8 = 6
 	RM_PARTITION_I   uint8 = 7
-	SCALE_I          uint8 = 8
+	RESHARD_I        uint8 = 8
 	GET_CTLADDR_I    uint8 = 15
 
 	// String(16-31)
