@@ -20,7 +20,7 @@ func Show() string {
 		ptnData.SlotFrom = ptn.SlotFrom
 		ptnData.SlotTo = ptn.SlotTo
 		for _, nd := range ptn.NodeSet {
-			ptnData.Nodes = append(ptnData.Nodes, datatype.NodeData{Id: nd.Id, Address: nd.Addr})
+			ptnData.Workers = append(ptnData.Workers, datatype.NodeData{Id: nd.Id, Address: nd.Addr})
 		}
 		cluData.Partitions = append(cluData.Partitions, ptnData)
 	}

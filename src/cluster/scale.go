@@ -1,9 +1,5 @@
-/*
-* author: duan hongxing
-* data: 25 Jul 2024
-* desc:
-*
- */
+//author: Duan HongXing
+//data: 25 Jul 2024
 
 package cluster
 
@@ -21,7 +17,7 @@ import (
 func Scale(p int, r int) (result string, err error) {
 	// if no enough worker nodes
 	if len(workerInfo.Nodes) < p*r || p > consts.SLOTS {
-		return "", errors.New(resp.RES_NO_ENOUGH_WORKER)
+		return "", errors.New(resp.RES_NO_WORKER)
 	}
 	if len(partitionInfo.PtnMap) == 0 { // new cluster
 		keys := make([]string, 0, len(workerInfo.Nodes))

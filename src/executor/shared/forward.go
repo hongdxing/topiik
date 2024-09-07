@@ -17,12 +17,12 @@ import (
 	"topiik/resp"
 )
 
-/* Conn cache from Controller to Workers */
+// Conn cache from Controller to Workers
 var ctlwkrConnCache = make(map[string]*net.TCPConn)
 
 func ForwardByKey(key []byte, msg []byte) []byte {
 	if len(cluster.GetWorkerInfo().Nodes) == 0 {
-		return resp.ErrResponse(errors.New(resp.RES_NO_ENOUGH_WORKER))
+		return resp.ErrResponse(errors.New(resp.RES_NO_WORKER))
 	}
 	if len(cluster.GetPartitionInfo().PtnMap) == 0 {
 		return resp.ErrResponse(errors.New(resp.RES_NO_PARTITION))
@@ -32,7 +32,7 @@ func ForwardByKey(key []byte, msg []byte) []byte {
 	targetWorker := getWorker(key)
 	if len(targetWorker.Id) == 0 {
 		l.Warn().Msg("forward::Forward no slot available")
-		return resp.ErrResponse(errors.New(resp.RES_NO_PARTITION))
+		return resp.ErrResponse(errors.New(resp.RES_NO_WORKER))
 	}
 
 	conn, ok := ctlwkrConnCache[targetWorker.Id]
@@ -78,14 +78,6 @@ func getWorker(key []byte) (worker node.NodeSlim) {
 	keyHash = keyHash % consts.SLOTS
 	//fmt.Printf("key hash %v\n", keyHash)
 	for _, partition := range cluster.GetPartitionInfo().PtnMap {
-		/*
-			for _, slot := range partition.Slots {
-				if slot.From <= uint16(keyHash) && slot.To >= uint16(keyHash) {
-					worker = cluster.GetWorkerInfo().Nodes[partition.LeaderNodeId]
-					break
-				}
-			}
-		*/
 		if partition.SlotFrom <= uint16(keyHash) && partition.SlotTo >= uint16(keyHash) {
 			worker = cluster.GetWorkerInfo().Nodes[partition.LeaderNodeId]
 			break

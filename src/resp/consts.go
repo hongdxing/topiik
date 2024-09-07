@@ -19,10 +19,10 @@ const (
 	RES_KEY_EXIST_ALREADY    = "KEY_EXIST_ALR"
 	RES_OUT_OF_BOUND         = "OUT_OF_BOUND"
 
-	RES_NO_ENOUGH_WORKER = "NO_ENOUGH_WORKER"
-	RES_NO_PARTITION     = "NO_PARTITION"
-	RES_NO_CLUSTER       = "NO_CLUSTER" // if command run on node that not in cluster yet
-	RES_NODE_NA          = "NODE_NA"    // if node not accessible
+	RES_NO_WORKER    = "NO_WORKER"
+	RES_NO_PARTITION = "NO_PARTITION"
+	RES_NO_CLUSTER   = "NO_CLUSTER" // if command run on node that not in cluster yet
+	RES_NODE_NA      = "NODE_NA"    // if node not accessible
 
 	RES_NO_CTL               = "NO_CONTROLLER" // if no controller leader available
 	RES_INVALID_ADDR         = "INVALID_ADDR"

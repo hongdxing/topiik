@@ -14,8 +14,7 @@ type NodeData struct {
 
 type PartitionData struct {
 	Id       string
-	Slots    []SlotData
-	Nodes    []NodeData
+	Workers  []NodeData
 	SlotFrom uint16
 	SlotTo   uint16
 }
