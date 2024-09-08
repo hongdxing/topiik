@@ -75,7 +75,7 @@ const (
 	/*** Keys 176 ***/
 	TTL            = "TTL"
 	DEL            = "DEL"
-	Keys           = "Keys"
+	Keys           = "KEYS"
 	EXISTS         = "EXISTS"
 	EXPIRE         = "EXPIRE"
 	TTL_I    uint8 = 176

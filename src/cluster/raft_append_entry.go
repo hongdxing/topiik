@@ -1,9 +1,5 @@
-/*
-* author: duan hongxing
-* data: 3 Jul 2024
-* desc:
-*
- */
+//author: Duan Hongxing
+//data: 3 Jul, 2024
 
 package cluster
 
@@ -33,16 +29,11 @@ var ptnTicker *time.Ticker // partition ticker
 
 var connCache = make(map[string]*net.TCPConn)
 
-/*
-* Controller issues AppendEntries RPCs to replicate metadata to follower,
-* or send heartbeats (AppendEntries RPCs that carry no data)
-*
- */
+// Controller issues AppendEntries RPCs to replicate metadata to follower,
+// or send heartbeats (AppendEntries RPCs that carry no data)
 func AppendEntries() {
 	hbTicker = time.NewTicker(200 * time.Millisecond)
 	ptnTicker = time.NewTicker(time.Duration(ptnTickerDur) * time.Millisecond)
-	//cluUpdCh = make(chan struct{}, 2)
-	//defer close(cluUpdCh)
 	defer close(ptnUpdCh)
 	defer close(ctlUpdCh)
 	defer close(wrkUpdCh)
@@ -54,8 +45,6 @@ func AppendEntries() {
 			appendHeartbeat()
 		case <-ptnTicker.C:
 			appendPtn()
-		//case <-cluUpdCh:
-		//	appendClusterInfo()
 		case <-ctlUpdCh:
 			appendControllerInfo()
 		case <-wrkUpdCh:
@@ -167,13 +156,10 @@ func appendHeartbeat() {
 	}
 }
 
-/* when partition leader not available, the accoumulated milli seconds retried */
+// when partition leader not available, the accoumulated milli seconds retried
 var ptnLeaderDownMills = make(map[string]int)
 
-/*
-* healthcheck partition leader, and sync follower(s) to leader
-*
- */
+// healthcheck partition leader, and sync follower(s) to leader
 func appendPtn() {
 	for _, ptn := range partitionInfo.PtnMap {
 		if ptn.LeaderNodeId == "" { // no leader yet
@@ -223,12 +209,13 @@ func electPtnLeader(ptn *node.Partition) {
 	var wg sync.WaitGroup
 	var newLeaderId string
 
-	if len(ptn.NodeSet) == 1 {
-		for _, nd := range ptn.NodeSet {
-			newLeaderId = nd.Id
-			break
-		}
-	} else {
+	// set init value to first node id
+	for _, nd := range ptn.NodeSet {
+		newLeaderId = nd.Id
+		break
+	}
+
+	if len(ptn.NodeSet) > 1 {
 		// notice here not execlude the leader, in case it's recovered and give it last chance
 		for ndId := range ptn.NodeSet {
 			wg.Add(1)
