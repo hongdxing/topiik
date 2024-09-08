@@ -87,3 +87,17 @@ func SplitAddress(address string) ([]string, error) {
 	iPort += 10000
 	return []string{pieces[1], pieces[3], strconv.Itoa(iPort)}, nil
 }
+
+func SplitAddress2(address string) (host string, port string, port2 string, err error) {
+	reg := regexp.MustCompile(`(.*)((?::))((?:[0-9]+))$`)
+	pieces := reg.FindStringSubmatch(address)
+	if len(pieces) != 4 {
+		return host, port, port2, errors.New("Invalid Listen format: " + address)
+	}
+	iPort, err := strconv.Atoi(pieces[3])
+	if err != nil {
+		return host, port, port2, errors.New("Invalid Listen format: " + address)
+	}
+	iPort += 10000
+	return pieces[1], pieces[3], strconv.Itoa(iPort), nil
+}

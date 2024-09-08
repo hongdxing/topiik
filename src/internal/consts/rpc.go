@@ -8,6 +8,7 @@ const (
 	RPC_GET_PL       uint8 = 5
 	RPC_SYNC_BINLOG  uint8 = 6
 	RPC_GET_BLSEQ    uint8 = 7
-	RPC_ONLINE       uint8 = 8
+	RPC_TEST_CONN    uint8 = 8
+	RPC_ONLINE       uint8 = 9
 	CLUSTER_JOIN_ACK uint8 = 4 // obsoleted
 )

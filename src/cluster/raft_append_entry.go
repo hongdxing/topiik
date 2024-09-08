@@ -30,9 +30,6 @@ const ptnLeaderDownMaxMills int = 3000
 var hbTicker *time.Ticker  // heartbeat ticker
 var ptnTicker *time.Ticker // partition ticker
 // var cluUpdCh chan struct{}
-var ctlUpdCh chan struct{}
-var wrkUpdCh chan struct{}
-var ptnUpdCh chan struct{}
 
 var connCache = make(map[string]*net.TCPConn)
 
@@ -45,9 +42,6 @@ func AppendEntries() {
 	hbTicker = time.NewTicker(200 * time.Millisecond)
 	ptnTicker = time.NewTicker(time.Duration(ptnTickerDur) * time.Millisecond)
 	//cluUpdCh = make(chan struct{}, 2)
-	ptnUpdCh = make(chan struct{}, 2)
-	ctlUpdCh = make(chan struct{}, 2)
-	wrkUpdCh = make(chan struct{}, 2)
 	//defer close(cluUpdCh)
 	defer close(ptnUpdCh)
 	defer close(ctlUpdCh)
@@ -227,25 +221,35 @@ func appendPtn() {
 func electPtnLeader(ptn *node.Partition) {
 	seqMap := make(map[string]int64)
 	var wg sync.WaitGroup
-	/* notice here not execlude the leader, in case it's recovered and give it last chance */
-	for ndId := range ptn.NodeSet {
-		wg.Add(1)
-		if wrk, ok := workerInfo.Nodes[ndId]; ok {
-			go getWorkerBinlogSeq(wrk.Id, wrk.Addr2, &wg, &seqMap)
-		} else {
-			wg.Done()
-		}
-	}
-	wg.Wait()
-	/* get worker that have max seq */
 	var newLeaderId string
-	var maxSeq int64
-	for ndId, seq := range seqMap {
-		if seq > maxSeq {
-			newLeaderId = ndId
-			maxSeq = seq
+
+	if len(ptn.NodeSet) == 1 {
+		for _, nd := range ptn.NodeSet {
+			newLeaderId = nd.Id
+			break
+		}
+	} else {
+		// notice here not execlude the leader, in case it's recovered and give it last chance
+		for ndId := range ptn.NodeSet {
+			wg.Add(1)
+			if wrk, ok := workerInfo.Nodes[ndId]; ok {
+				go getWorkerBinlogSeq(wrk.Id, wrk.Addr2, &wg, &seqMap)
+			} else {
+				wg.Done()
+			}
+		}
+		wg.Wait()
+
+		// get worker that have max seq
+		var maxSeq int64
+		for ndId, seq := range seqMap {
+			if seq > maxSeq {
+				newLeaderId = ndId
+				maxSeq = seq
+			}
 		}
 	}
+
 	// l.Info().Msgf("new LeaderId: %s", newLeaderId)
 	if _, ok := workerInfo.Nodes[newLeaderId]; ok {
 		l.Info().Msgf("Partition %s has new leader: %s", ptn.Id, newLeaderId)

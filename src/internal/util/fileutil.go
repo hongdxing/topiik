@@ -1,8 +1,5 @@
-/*
-* author: duan hongxing
-* date: 22 Jun 2024
-* desc:
- */
+//author: Duan Hongxing
+//date: 22 Jun, 2024
 
 package util
 

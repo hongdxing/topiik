@@ -9,6 +9,7 @@ import (
 	"topiik/internal/config"
 	"topiik/internal/consts"
 	"topiik/internal/util"
+	"topiik/resp"
 )
 
 const (
@@ -91,9 +92,14 @@ func InitCluster(clusterId string) (err error) {
 	var jsonStr string
 	var buf []byte
 
-	buf, err = os.ReadFile(fpath)
+	/*buf, err = os.ReadFile(fpath)
 	if err != nil {
 		return errors.New(cluster_init_failed)
+	}*/
+	buf, err = util.ReadBinaryFile(fpath)
+	if err != nil {
+		l.Err(err).Msg(err.Error())
+		return errors.New(resp.RES_OPEN_FILE_ERR)
 	}
 	jsonStr = string(buf)
 
@@ -112,8 +118,9 @@ func InitCluster(clusterId string) (err error) {
 	buf2, _ := json.Marshal(nodeInfo)
 
 	// 5. write back to file
-	os.Truncate(fpath, 0)
-	os.WriteFile(fpath, buf2, 0644)
+	util.WriteBinaryFile(fpath, buf2)
+	//os.Truncate(fpath, 0)
+	//os.WriteFile(fpath, buf2, 0644)
 
 	return nil
 }

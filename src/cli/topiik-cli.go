@@ -156,14 +156,6 @@ func response(conn *net.TCPConn, cmd string) error {
 			if resType == resp.String {
 				res := buf[resp.RESPONSE_HEADER_SIZE:]
 				fmt.Printf("%s\n", res)
-				if cmd == command.INIT_CLUSTER {
-					if resp.RES_OK == string(res) {
-						fmt.Printf("hints:\n")
-						fmt.Printf(" -SHOW command to get cluster details\n")
-						fmt.Printf(" -ADD-CONTROLLER command to add controller node\n")
-						fmt.Printf(" -ADD-WORKER host:port partition {partitionId} command to add worker node\n")
-					}
-				}
 			} else if resType == resp.StringArray {
 				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
 				var rslt []string

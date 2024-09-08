@@ -132,6 +132,9 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 			return resp.ErrResponse(err)
 		}
 		return resp.StrResponse(res)
+	} else if icmd == consts.RPC_TEST_CONN {
+		ndId := testConn()
+		return resp.StrResponse(ndId)
 	} else if icmd == consts.RPC_ONLINE {
 		pieces := strings.Split(string(dataBytes), consts.SPACE)
 		rslt, err := online(pieces)

@@ -6,59 +6,111 @@ package cluster
 import (
 	"errors"
 	"strings"
-	"topiik/internal/config"
 	"topiik/internal/util"
 	"topiik/node"
 )
 
 // Execute command INIT-CLUSTER
-func InitCluster(ptnCount int, serverConfig *config.ServerConfig) (ptnIds []string, err error) {
+func InitCluster(controllers map[string]string, workers map[string]string, ptnCount int) (err error) {
 	l.Info().Msg("cluster::ClusterInit start")
 
 	// 0. init cluster
-	err = doInit(serverConfig)
+	// generate cluster id, set controllers, set workers
+	err = doInit(controllers, workers)
 	if err != nil {
-		return ptnIds, err
+		return err
 	}
-	node.InitCluster(controllerInfo.ClusterId)
-	nodeStatus.Role = RAFT_LEADER
 
-	//create partition
+	// 1. create partition
 	NewPartition(ptnCount)
-	err = ReShard()
 
+	// 2. assign worker(s) to partition(s)
+	// the algorithm is, use worker index in workers, mode lenght of partition,
+	// if the mod result ecquals to partition index in PtnMap, then assign the worker to the partition
+	// example:
+	// let's say there are 2 partitions and 3 workers, the first partition will assign 2 workers,
+	// and the second partition will assign only 1 worker; this un-even workers for each partition is just for example,
+	// in real environment, best to set even number of worker(s) for each partition
+	// 1)          ptnLen: 2, index: 0, 1
+	// 2)         workers: 3, index: 0, 1, 2
+	// 3) wrkIdx % ptnLen: 0 % 2 = 0, 1 % 2 = 1, 2 % 2 = 0
+	var ptnLen = len(partitionInfo.PtnMap)
+	var ptnIdx = 0
+	for _, ptn := range partitionInfo.PtnMap {
+		var wrkIdx = 0
+		for ndId := range workers {
+			if wrkIdx%ptnLen == ptnIdx {
+				ptn.NodeSet[ndId] = &node.NodeSlim{Id: ndId}
+			}
+			wrkIdx++
+		}
+		ptnIdx++
+	}
+
+	// 3. reshard to assign Slots
+	err = ReShard()
 	if err != nil {
 		l.Err(err).Msgf("executor::clusterInit %s", err.Error())
 		/* TODO: clean cluster info and partition */
-		return ptnIds, err
+		return err
 	}
 
-	// after init, the node default is LEADER, and start to AppendEntries()
+	// 4. send notification to sync meta data to other controller(s) and worker(s)
+	notifyControllerChanged()
+	notifyWorkerChanged()
+	notifyPtnChanged()
+
+	// 5. after init, the node default is LEADER, and start to AppendEntries()
 	go AppendEntries()
 	//ptnUpdCh <- struct{}{} // sync partition to followers
 	l.Info().Msg("cluster::ClusterInit end")
-	return ptnIds, nil
+	return nil
 }
 
-func doInit(serverConfig *config.ServerConfig) error {
+func doInit(controllers map[string]string, workers map[string]string) error {
 	if len(node.GetNodeInfo().ClusterId) > 0 {
 		return errors.New("current node already in cluster: " + node.GetNodeInfo().Id)
 	}
-	// set clusterInfo
-	nodeId := node.GetNodeInfo().Id
-	controllerInfo.ClusterId = strings.ToLower(util.RandStringRunes(10))
 
-	hostPort, err := util.SplitAddress(serverConfig.Listen)
-	if err != nil {
-		l.Panic().Msg(err.Error())
-	}
-	controllerInfo.Nodes[nodeId] = node.NodeSlim{
-		Id:    nodeId,
-		Addr:  serverConfig.Listen,
-		Addr2: hostPort[0] + ":" + hostPort[2],
+	// generate cluster id
+	clusterId := strings.ToLower(util.RandStringRunes(10))
+
+	// set controllerInfo
+	controllerInfo.ClusterId = clusterId
+	for ndId, addr := range controllers {
+		host, _, port2, err := util.SplitAddress2(addr)
+		if err != nil {
+			l.Panic().Msg(err.Error())
+		}
+		controllerInfo.Nodes[ndId] = node.NodeSlim{
+			Id:    ndId,
+			Addr:  addr,
+			Addr2: host + ":" + port2,
+		}
 	}
 
-	// save cluster metadata
+	// set workerInfo
+	workerInfo.ClusterId = clusterId
+	for ndId, addr := range workers {
+		host, _, port2, err := util.SplitAddress2(addr)
+		if err != nil {
+			l.Panic().Msg(err.Error())
+		}
+		workerInfo.Nodes[ndId] = node.NodeSlim{
+			Id:    ndId,
+			Addr:  addr,
+			Addr2: host + ":" + port2,
+		}
+	}
+
+	// update current(controller) node
+	node.InitCluster(clusterId)
+
+	// set current Role to Raft Leader
+	nodeStatus.Role = RAFT_LEADER
+
+	// save controllerInfo and workerInfo
 	saveControllerInfo()
+	saveWorkerInfo()
 	return nil
 }

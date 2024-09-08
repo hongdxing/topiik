@@ -43,14 +43,7 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 	var ver uint8 = 0
 	req := datatype.Req{Keys: datatype.Abytes{}, Vals: datatype.Abytes{}}
 	if cmd == command.INIT_CLUSTER { // INIT-CLUSTER partitions count
-		if len(pieces) != 3 {
-			return syntaxErr()
-		}
-		if strings.ToLower(pieces[1]) != "partition" {
-			return syntaxErr()
-		}
-		icmd = command.INIT_CLUSTER_I
-		req.Args = strings.Join(pieces[2:], consts.SPACE)
+		return encInitCluster(pieces)
 	} else if cmd == command.ADD_CONTROLLER { // ADD-CONTROLLER host:port
 		if len(pieces) != 2 {
 			return syntaxErr()
@@ -172,7 +165,18 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 
 }
 
-/*Cluster--------------------------------------------------------------------*/
+// Cluster--------------------------------------------------------------------
+
+func encInitCluster(pieces []string) ([]byte, error) {
+	builder := CmdBuilder{Cmd: command.INIT_CLUSTER_I, Ver: 1}
+	// The first piece must be partition
+	if strings.ToLower(pieces[1]) != "partition" {
+		return syntaxErr()
+	}
+	args := strings.Join(pieces[1:], consts.SPACE)
+	return builder.BuildM(Abytes{}, Abytes{}, args)
+}
+
 func encShowCluster(pieces []string) ([]byte, error) {
 	cmdBuilder := CmdBuilder{Cmd: command.SHOW_I, Ver: 1}
 	return cmdBuilder.BuildM(Abytes{}, Abytes{}, "")
@@ -196,7 +200,7 @@ func encTtl(pieces []string) ([]byte, error) {
 	return builder.BuildM(keys, Abytes{}, args)
 }
 
-/*String---------------------------------------------------------------------*/
+// String---------------------------------------------------------------------
 func encSET(pieces []string) ([]byte, error) {
 	if len(pieces) < 3 {
 		return syntaxErr()
@@ -225,8 +229,7 @@ func encGET(pieces []string) ([]byte, error) {
 	return cmdBuilder.BuildM(keys, vals, args)
 }
 
-/*List-----------------------------------------------------------------------*/
-
+// List-----------------------------------------------------------------------
 func errResult(e string) ([]byte, error) {
 	return nil, errors.New(e)
 }

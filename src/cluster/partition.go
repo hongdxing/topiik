@@ -59,7 +59,10 @@ func ReShard() (err error) {
 		//
 	}
 
-	// persist
+	// Notify
+	notifyPtnChanged()
+
+	// Persist
 	err = savePartition()
 	return err
 }

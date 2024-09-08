@@ -1,9 +1,5 @@
-/*
-* author: duan hongxing
-* date: 21 Jul 2024
-* desc:
-*
- */
+//author: Duan Hongxing
+//date: 21 Jul, 2024
 
 package clus
 
@@ -37,7 +33,7 @@ func AddWorker(req datatype.Req) (ndId string, err error) {
 		return "", errors.New(resp.RES_SYNTAX_ERROR)
 	}
 	nodeAddr := pieces[0]
-	/* validate address */
+	// validate address
 	reg, _ := regexp.Compile(consts.HOST_PATTERN)
 	if !reg.MatchString(nodeAddr) {
 		return "", errors.New("invalide address")
@@ -47,7 +43,7 @@ func AddWorker(req datatype.Req) (ndId string, err error) {
 		return ndId, errors.New(resp.RES_SYNTAX_ERROR)
 	}
 
-	/* make sure the ptnId is valid */
+	// make sure the ptnId is valid
 	ptnId := pieces[2]
 	if _, ok := cluster.GetPartitionInfo().PtnMap[ptnId]; !ok {
 		return ndId, errors.New(resp.RES_INVALID_PARTITION_ID)
@@ -60,10 +56,8 @@ func AddWorker(req datatype.Req) (ndId string, err error) {
 	return ndId, err
 }
 
-/*
-* Add controller to cluster
-* Syntax: ADD-CONTROLLER host:port
- */
+// Add controller to cluster
+// Syntax: ADD-CONTROLLER host:port
 func AddController(req datatype.Req) (rslt string, err error) {
 	if !node.IsController() {
 		return rslt, errors.New("add-controller can only run on controller node")
@@ -85,14 +79,11 @@ func AddController(req datatype.Req) (rslt string, err error) {
 	return rslt, err
 }
 
-/*
-* Run from controller leader, to add new node to cluster
-* The target node must already stated, and not joined any cluster yet
-* Syntax: ADD-NODE host:port CONTROLLER|WORKER partition xxx
-*
- */
+// Run from controller leader, to add new node to cluster
+// The target node must already started, and not joined any cluster yet
+// This method may trigger via INIT-CLUSTER, ADD-CONTROLLER or ADD-WORKER
 func addNode(nodeAddr string, role string, ptnId string) (result string, err error) {
-	/* get controller address2 */
+	// get controller address2
 	hostPort, _ := util.SplitAddress(nodeAddr)
 	nodeAddr2 := hostPort[0] + ":" + hostPort[2]
 	conn, err := util.PreapareSocketClient(nodeAddr2)
@@ -109,27 +100,23 @@ func addNode(nodeAddr string, role string, ptnId string) (result string, err err
 	line := node.GetNodeInfo().ClusterId + consts.SPACE + role
 	cmdBytes = append(cmdBytes, []byte(line)...)
 
+	// encode
 	data, err := proto.EncodeB(cmdBytes)
 	if err != nil {
 		l.Err(err).Msg(err.Error())
 	}
 
-	// Send
+	// write
 	_, err = conn.Write(data)
 	if err != nil {
 		l.Err(err).Msg(err.Error())
 	}
 
+	// read
 	reader := bufio.NewReader(conn)
 	buf, err := proto.Decode(reader)
-	flagByte := buf[4:5]
-	flagBuff := bytes.NewBuffer(flagByte)
-	var flag resp.RespFlag
-	err = binary.Read(flagBuff, binary.LittleEndian, &flag)
-	if err != nil {
-		l.Err(err).Msg(err.Error())
-		return "", errors.New("add node failed")
-	}
+
+	flag := resp.ParseResFlag(buf)
 	ndId := string(buf[resp.RESPONSE_HEADER_SIZE:]) // the node id
 
 	if flag == resp.Success {
@@ -142,4 +129,46 @@ func addNode(nodeAddr string, role string, ptnId string) (result string, err err
 	}
 
 	return ndId, nil
+}
+
+func rpcAddNode(addr2 string, role string) (string, error) {
+	conn, err := util.PreapareSocketClient(addr2)
+	if err != nil {
+		return "", errors.New(resp.RES_NODE_NA)
+	}
+	defer conn.Close()
+
+	var buf []byte
+	var bbuf = new(bytes.Buffer) // int to byte buf
+	_ = binary.Write(bbuf, binary.LittleEndian, consts.RPC_ADD_NODE)
+	buf = append(buf, bbuf.Bytes()...)
+	//line = clusterid role
+	line := node.GetNodeInfo().ClusterId + consts.SPACE + role
+	buf = append(buf, []byte(line)...)
+
+	// encode
+	data, err := proto.EncodeB(buf)
+	if err != nil {
+		l.Err(err).Msg(err.Error())
+	}
+
+	// write
+	_, err = conn.Write(data)
+	if err != nil {
+		l.Err(err).Msg(err.Error())
+	}
+
+	// read
+	reader := bufio.NewReader(conn)
+	buf, err = proto.Decode(reader)
+	if err != nil {
+		return "", errors.New(resp.RES_NODE_NA)
+	}
+
+	flag := resp.ParseResFlag(buf)
+	if flag == resp.Success {
+		ndId := string(buf[resp.RESPONSE_HEADER_SIZE:]) // the node id
+		return ndId, nil
+	}
+	return "", errors.New(resp.RES_NODE_NA)
 }

@@ -28,5 +28,5 @@ type Partition struct {
 	NodeSet      map[string]*NodeSlim // member nodes
 	SlotFrom     uint16
 	SlotTo       uint16
-	//Slots        []Slot
+	Status       string
 }

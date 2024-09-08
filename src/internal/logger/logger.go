@@ -28,8 +28,9 @@ func Get() zerolog.Logger {
 		zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 		zerolog.TimeFieldFormat = time.RFC3339
 		zerolog.TimestampFieldName = "t"
-		zerolog.LevelFieldName = "l"
-		zerolog.MessageFieldName = "m"
+		zerolog.LevelFieldName = "lvl"
+		//zerolog.MessageFieldName = "f"
+		zerolog.CallerFieldName = "file"
 
 		logLevel, err := strconv.Atoi(os.Getenv("LOG_LEVEL"))
 		if err != nil {
@@ -83,7 +84,7 @@ func Get() zerolog.Logger {
 			Level(zerolog.Level(logLevel)).
 			With().
 			Timestamp().
-			//Caller().
+			Caller().
 			//Str("git_revision", gitRevision).
 			//Str("go_version", buildInfo.GoVersion).
 			Logger()
