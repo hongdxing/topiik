@@ -211,12 +211,9 @@ func response(conn *net.TCPConn, cmd string) error {
 	return nil
 }
 
-/*
-* Desc: get controller leader address
-* Return:
-*	- leader address
-*
- */
+// get controller leader address
+// return:
+//   - leader address
 func getControllerLeaderAddr(host string) (addr string, err error) {
 	conn, err := util.PreapareSocketClient(host)
 	if err != nil {

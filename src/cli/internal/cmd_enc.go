@@ -146,6 +146,8 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 		// no additional data
 	} else if cmd == command.DEL { // KEY COMMANDS START
 		return encDEL(pieces)
+	} else if cmd == command.EXISTS {
+		return encExists(pieces)
 	} else if cmd == command.Keys {
 		if len(pieces) != 2 {
 			return syntaxErr()

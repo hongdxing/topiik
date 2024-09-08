@@ -183,6 +183,9 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 	} else if icmd == command.DEL_I {
 		rslt := keyy.ForwardDel(msg)
 		return resp.IntResponse(rslt)
+	} else if icmd == command.EXISTS_I {
+		rslt := keyy.ForwardExists(msg, len(req.Keys))
+		return resp.StrArrResponse(rslt)
 	} else if icmd == command.KEYS_I {
 		res := keyy.ForwardKeys(msg)
 		return resp.StrArrResponse(res)
