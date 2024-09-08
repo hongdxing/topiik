@@ -144,7 +144,11 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 }
 
 func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
-	// special process SETM, because SETM has more than one keys
+	// special process commands that could have more than one key
+	// 1) SETM
+	// 2) GETM
+	// 3) DEL
+	// 4) EXISTS
 	if icmd == command.SETM_I {
 		if len(req.Keys) != len(req.Vals) {
 			return resp.ErrResponse(errors.New(resp.RES_SYNTAX_ERROR))
@@ -176,6 +180,9 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 			res = append(res, string(resN[resp.RESPONSE_HEADER_SIZE:]))
 		}
 		return resp.StrArrResponse(res)
+	} else if icmd == command.DEL_I {
+		rslt := keyy.ForwardDel(msg)
+		return resp.IntResponse(rslt)
 	} else if icmd == command.KEYS_I {
 		res := keyy.ForwardKeys(msg)
 		return resp.StrArrResponse(res)

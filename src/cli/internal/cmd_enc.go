@@ -1,3 +1,6 @@
+//author: Duan HongXing
+//date: 21 Jul, 2024
+
 package internal
 
 import (
@@ -141,7 +144,9 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 		req.Keys = append(req.Keys, []byte(pieces[1]))
 	} else if cmd == command.GET_CTLADDR { /* Get Cluster Leader Addr for client to redirect */
 		// no additional data
-	} else if cmd == command.Keys { /* KEY COMMANDS START */
+	} else if cmd == command.DEL { // KEY COMMANDS START
+		return encDEL(pieces)
+	} else if cmd == command.Keys {
 		if len(pieces) != 2 {
 			return syntaxErr()
 		}
@@ -230,6 +235,7 @@ func encGET(pieces []string) ([]byte, error) {
 }
 
 // List-----------------------------------------------------------------------
+
 func errResult(e string) ([]byte, error) {
 	return nil, errors.New(e)
 }

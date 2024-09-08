@@ -1,3 +1,6 @@
+//author: Duan HongXing
+//date: 19 Jun, 2024
+
 package main
 
 import (
