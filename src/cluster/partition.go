@@ -14,18 +14,36 @@ import (
 	"topiik/node"
 )
 
-// Reshard partition
-func NewPartition(ptnCount int) (ptnIds []string, err error) {
-	for i := 0; i < int(ptnCount); i++ {
-		ptnId := strings.ToLower(util.RandStringRunes(10))
-		partitionInfo.PtnMap[ptnId] = &node.Partition{
-			Id:      ptnId,
-			NodeSet: make(map[string]*node.NodeSlim),
-			// The SlotFrom and SlotTo leave to not set, Till RESHARD executed
-		}
-	}
+// New partition
+func NewPartition(workers map[string]string) (ptnId string, err error) {
 
-	return []string{}, nil
+	//for i := 0; i < int(ptnCount); i++ {
+	//	ptnId := strings.ToLower(util.RandStringRunes(10))
+	//	partitionInfo.PtnMap[ptnId] = &node.Partition{
+	//		Id:      ptnId,
+	//		NodeSet: make(map[string]*node.NodeSlim),
+	//		// The SlotFrom and SlotTo leave to not set, Till RESHARD executed
+	//	}
+	//}
+
+	addPartition(workers)
+
+	return ptnId, nil
+}
+
+// add partition
+// workers: map of node id and addr
+func addPartition(workers map[string]string) {
+	ptnId := strings.ToLower(util.RandStringRunes(10))
+	newPartition := &node.Partition{
+		Id:      ptnId,
+		NodeSet: make(map[string]*node.NodeSlim),
+		// The SlotFrom and SlotTo leave to not set, Till RESHARD executed
+	}
+	for ndId := range workers {
+		newPartition.NodeSet[ndId] = &node.NodeSlim{Id: ndId}
+	}
+	partitionInfo.PtnMap[ptnId] = newPartition
 }
 
 // Remove partition
@@ -33,7 +51,7 @@ func RemovePartition(ptnId string) error {
 	return nil
 }
 
-// New partition
+// Reshard partition
 // The new Partition always take slots from the last slot, i.e. the one end with 1023
 // And then slide from the first to next make slots even
 func ReShard() (err error) {

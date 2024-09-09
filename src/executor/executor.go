@@ -88,11 +88,11 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 		}
 		return resp.StrResponse(resp.RES_OK)
 	} else if icmd == command.NEW_PARTITION_I {
-		ptnIds, err := clus.NewPartition(req)
+		ptnId, err := clus.NewPartition(req)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
-		return resp.StrArrResponse(ptnIds)
+		return resp.StrResponse(ptnId)
 	} else if icmd == command.RESHARD_I {
 		result, err := clus.Reshard(req)
 		if err != nil {

@@ -21,7 +21,7 @@ import (
 )
 
 // Init a Topiik cluster
-// Param:
+// Params:
 //   - addr: current node addr
 //
 // Syntax: INIT-CLUSTER partition count [controller host:port[,host:port]] worker host:port[,host:port]
@@ -127,7 +127,7 @@ func checkConnection(addrs []string) (map[string]string, map[string]string) {
 	var addrMap = make(map[string]string)
 	var addr2Map = make(map[string]string)
 	for _, addr := range addrs {
-		host, _, port2, err := util.SplitAddress2(addr)
+		host, _, port2, err := util.SplitAddress2(strings.TrimSpace(addr))
 		if err != nil {
 			l.Err(err).Msg(err.Error())
 			break

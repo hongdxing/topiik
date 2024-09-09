@@ -59,6 +59,8 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 		}
 		icmd = command.ADD_WORKER_I
 		req.Args = strings.Join(pieces[1:], consts.SPACE)
+	} else if cmd == command.NEW_PARTITION {
+		return encNewPartition(pieces)
 	} else if cmd == command.SHOW {
 		return encShowCluster(pieces)
 	} else if cmd == command.REMOVE_NODE {
@@ -66,7 +68,7 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 	} else if cmd == command.RESHARD {
 		icmd = command.RESHARD_I
 		req.Args = strings.Join(pieces[1:], consts.SPACE)
-	} else if cmd == command.SET {
+	} else if cmd == command.SET { // String commands
 		return encSET(pieces)
 	} else if cmd == command.GET {
 		return encGET(pieces)
@@ -172,69 +174,8 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 
 }
 
-// Cluster--------------------------------------------------------------------
-
-func encInitCluster(pieces []string) ([]byte, error) {
-	builder := CmdBuilder{Cmd: command.INIT_CLUSTER_I, Ver: 1}
-	// The first piece must be partition
-	if strings.ToLower(pieces[1]) != "partition" {
-		return syntaxErr()
-	}
-	args := strings.Join(pieces[1:], consts.SPACE)
-	return builder.BuildM(Abytes{}, Abytes{}, args)
-}
-
-func encShowCluster(pieces []string) ([]byte, error) {
-	cmdBuilder := CmdBuilder{Cmd: command.SHOW_I, Ver: 1}
-	return cmdBuilder.BuildM(Abytes{}, Abytes{}, "")
-}
-
-func encRemoveNode(pieces []string) ([]byte, error) {
-	if len(pieces) != 2 {
-		return syntaxErr()
-	}
-	builder := CmdBuilder{Cmd: command.REMOVE_NODE_I, Ver: 1}
-	return builder.BuildM(Abytes{}, Abytes{}, pieces[1])
-}
-
-func encTtl(pieces []string) ([]byte, error) {
-	if len(pieces) < 2 {
-		return syntaxErr()
-	}
-	keys := Abytes{[]byte(pieces[1])}
-	args := strings.Join(pieces[2:], consts.SPACE)
-	builder := CmdBuilder{Cmd: command.TTL_I, Ver: 1}
-	return builder.BuildM(keys, Abytes{}, args)
-}
-
 // String---------------------------------------------------------------------
-func encSET(pieces []string) ([]byte, error) {
-	if len(pieces) < 3 {
-		return syntaxErr()
-	}
-	keys := Abytes{[]byte(pieces[1])}
-	vals := Abytes{[]byte(pieces[2])}
-	args := ""
-	if len(pieces) > 3 {
-		args = strings.Join(pieces[3:], consts.SPACE)
-	}
-	cmdBuilder := &CmdBuilder{Cmd: command.SET_I, Ver: 1}
-	return cmdBuilder.BuildM(keys, vals, args)
-}
 
-func encGET(pieces []string) ([]byte, error) {
-	if len(pieces) < 2 {
-		return syntaxErr()
-	}
-	keys := Abytes{[]byte(pieces[1])}
-	vals := Abytes{}
-	args := ""
-	if len(pieces) > 2 {
-		args = strings.Join(pieces[2:], consts.SPACE)
-	}
-	cmdBuilder := &CmdBuilder{Cmd: command.GET_I, Ver: 1}
-	return cmdBuilder.BuildM(keys, vals, args)
-}
 
 // List-----------------------------------------------------------------------
 

@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
-	"fmt"
 	"topiik/cluster"
 	"topiik/executor/shared"
 	"topiik/internal/datatype"
@@ -18,7 +17,6 @@ import (
 // Chech if key(s) exists
 // Return array of T if exist or F if not exist
 func Exists(req datatype.Req) (rslt []string, err error) {
-	fmt.Printf("Exists Keys %s", req.Keys)
 	for _, keyB := range req.Keys {
 		key := string(keyB)
 		if _, ok := memo.MemMap[string(key)]; ok {

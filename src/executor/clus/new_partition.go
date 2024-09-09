@@ -1,38 +1,31 @@
-/*
-* author: Duan Hongxing
-* date: 22 Aug, 2024
-* desc:
-*
- */
+//author: Duan Hongxing
+//date: 22 Aug, 2024
+
 package clus
 
 import (
 	"errors"
-	"strconv"
+	"strings"
 	"topiik/cluster"
 	"topiik/internal/datatype"
 	"topiik/resp"
 )
 
 // Create new partition
-// Only after RESHARD the new partition  before 
-// Syntax: NEW-PARTITION count
-func NewPartition(req datatype.Req) (ptnIds []string, err error) {
+// Only after RESHARD the new partition  before
+// Syntax: NEW-PARTITION host:port[,host:port...]
+func NewPartition(req datatype.Req) (ptnId string, err error) {
 	if len(req.Args) == 0 {
-		return nil, errors.New(resp.RES_SYNTAX_ERROR)
-	}
-	var ptnCount int
-	ptnCount, err = strconv.Atoi(req.Args)
-	if err != nil {
-		return nil, err
-	}
-	if ptnCount <= 0 {
-		return nil, errors.New(resp.RES_SYNTAX_ERROR)
-	}
-	ptnIds, err = cluster.NewPartition(ptnCount)
-	if err != nil {
-		return nil, err
+		return "", errors.New(resp.RES_SYNTAX_ERROR)
 	}
 
-	return ptnIds, nil
+	workers := strings.Split(req.Args, ",")
+
+	wrkNodeIdAddr, _ := checkConnection(workers)
+	ptnId, err = cluster.NewPartition(wrkNodeIdAddr)
+	if err != nil {
+		return "", err
+	}
+
+	return ptnId, nil
 }

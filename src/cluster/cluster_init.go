@@ -21,8 +21,22 @@ func InitCluster(controllers map[string]string, workers map[string]string, ptnCo
 		return err
 	}
 
+	//var ptnIdx = 0
+	for ptnIdx := range ptnCount {
+		var wrkIdx = 0
+		var nodes = make(map[string]string)
+		for ndId, addr := range workers {
+			if wrkIdx%ptnCount == ptnIdx {
+				nodes[ndId] = addr
+			}
+			wrkIdx++
+		}
+		addPartition(nodes)
+		ptnIdx++
+	}
+
 	// 1. create partition
-	NewPartition(ptnCount)
+	//NewPartition(ptnCount)
 
 	// 2. assign worker(s) to partition(s)
 	// the algorithm is, use worker index in workers, mode lenght of partition,
@@ -34,18 +48,18 @@ func InitCluster(controllers map[string]string, workers map[string]string, ptnCo
 	// 1)          ptnLen: 2, index: 0, 1
 	// 2)         workers: 3, index: 0, 1, 2
 	// 3) wrkIdx % ptnLen: 0 % 2 = 0, 1 % 2 = 1, 2 % 2 = 0
-	var ptnLen = len(partitionInfo.PtnMap)
-	var ptnIdx = 0
-	for _, ptn := range partitionInfo.PtnMap {
-		var wrkIdx = 0
-		for ndId := range workers {
-			if wrkIdx%ptnLen == ptnIdx {
-				ptn.NodeSet[ndId] = &node.NodeSlim{Id: ndId}
-			}
-			wrkIdx++
-		}
-		ptnIdx++
-	}
+	////var ptnLen = len(partitionInfo.PtnMap)
+	////var ptnIdx = 0
+	////for _, ptn := range partitionInfo.PtnMap {
+	////	var wrkIdx = 0
+	////	for ndId := range workers {
+	////		if wrkIdx%ptnLen == ptnIdx {
+	////			ptn.NodeSet[ndId] = &node.NodeSlim{Id: ndId}
+	////		}
+	////		wrkIdx++
+	////	}
+	////	ptnIdx++
+	////}
 
 	// 3. reshard to assign Slots
 	err = ReShard()
