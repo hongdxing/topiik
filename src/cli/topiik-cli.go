@@ -157,21 +157,29 @@ func response(conn *net.TCPConn, cmd string) error {
 				fmt.Println("(err):")
 			}
 			if resType == resp.String {
-				res := buf[resp.RESPONSE_HEADER_SIZE:]
-				fmt.Printf("%s\n", res)
+				val := buf[resp.RESPONSE_HEADER_SIZE:]
+				if string(val) == proto.Nil {
+					fmt.Printf("(err):nil\n")
+				} else {
+					fmt.Printf("%s\n", val)
+				}
 			} else if resType == resp.StringArray {
 				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]
-				var rslt []string
+				var vals []string
 
-				err = json.Unmarshal(bufSlice, &rslt)
+				err = json.Unmarshal(bufSlice, &vals)
 				if err != nil {
 					fmt.Printf("(err):%s\n", err.Error())
 				}
 				if cmd == command.INIT_CLUSTER {
 					fmt.Println("Partitions:")
 				}
-				for i, v := range rslt {
-					fmt.Printf("%v: %s\n", i, v)
+				for i, v := range vals {
+					if string(v) == proto.Nil {
+						fmt.Printf("%v) (err):nil\n", i+1)
+					} else {
+						fmt.Printf("%v) %s\n", i+1, v)
+					}
 				}
 			} else if resType == resp.Integer {
 				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]

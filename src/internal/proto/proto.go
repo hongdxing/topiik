@@ -9,6 +9,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// var lineFeed = byte('\n')
+
+const (
+	Nil           = "\r\n"
+	CarrigeReturn = byte('\r')
+	LineFeed      = byte('\n')
+)
+
 // Encode
 func Encode(message string) ([]byte, error) {
 	// Lenght of message, int32(4 bytes)
