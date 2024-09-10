@@ -45,7 +45,7 @@ func ParseServerConfig(configPath string) (*ServerConfig, error) {
 		Listen: "localhost:8301",
 	}
 	serverConfig := ServerConfig{}
-	theConfigPath := "server.env"
+	theConfigPath := "server.conf"
 	if configPath != "" {
 		_, err := os.Stat(configPath)
 		if err != nil {
@@ -54,6 +54,7 @@ func ParseServerConfig(configPath string) (*ServerConfig, error) {
 		}
 		theConfigPath = configPath
 	}
+	viper.SetConfigType("env")
 	viper.SetConfigFile(theConfigPath)
 	if err := viper.ReadInConfig(); err != nil {
 		l.Err(err).Msgf("Error reading config file %s, %s", theConfigPath, err)
