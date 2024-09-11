@@ -174,12 +174,16 @@ func response(conn *net.TCPConn, cmd string) error {
 				if cmd == command.INIT_CLUSTER {
 					fmt.Println("Partitions:")
 				}
-				for i, v := range vals {
-					if string(v) == proto.Nil {
-						fmt.Printf("%v) (err):nil\n", i+1)
-					} else {
-						fmt.Printf("%v) %s\n", i+1, v)
+				if len(vals) > 0 {
+					for i, v := range vals {
+						if string(v) == proto.Nil {
+							fmt.Printf("%v) (err):nil\n", i+1)
+						} else {
+							fmt.Printf("%v) %s\n", i+1, v)
+						}
 					}
+				} else {
+					fmt.Println("[]")
 				}
 			} else if resType == resp.Integer {
 				bufSlice = buf[resp.RESPONSE_HEADER_SIZE:]

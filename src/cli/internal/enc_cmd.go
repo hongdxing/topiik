@@ -144,8 +144,8 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 		}
 		icmd = command.LLEN_I
 		req.Keys = append(req.Keys, []byte(pieces[1]))
-	} else if cmd == command.GET_CTLADDR { /* Get Cluster Leader Addr for client to redirect */
-		// no additional data
+	} else if cmd == command.LSLICE {
+		return encLslice(pieces)
 	} else if cmd == command.DEL { // KEY COMMANDS START
 		return encDEL(pieces)
 	} else if cmd == command.EXISTS {
@@ -156,6 +156,8 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 		}
 		req.Args = pieces[1]
 		icmd = command.KEYS_I
+	} else if cmd == command.GET_CTLADDR { //Get Cluster Leader Addr for client to redirect
+		// no additional data
 	} else {
 		return nil, errors.New("syntax error")
 	}
@@ -173,11 +175,6 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 	return result, nil
 
 }
-
-// String---------------------------------------------------------------------
-
-
-// List-----------------------------------------------------------------------
 
 func errResult(e string) ([]byte, error) {
 	return nil, errors.New(e)

@@ -39,7 +39,8 @@ const (
 	LPUSHR = "LPUSHR"
 	LPOPR  = "LPOPR"
 	LLEN   = "LLEN"
-	LRANGE = "LRANGE"
+	//LRANGE = "LRANGE"
+	LSLICE = "LSLICE"
 	LSET   = "LSET"
 
 	LPUSH_I  uint8 = 32
@@ -47,7 +48,8 @@ const (
 	LPUSHR_I uint8 = 34
 	LPOPR_I  uint8 = 35
 	LLEN_I   uint8 = 36
-	LRANGE_I uint8 = 37
+	//LRANGE_I uint8 = 37
+	LSLICE_I uint8 = 37
 	LSET_I   uint8 = 38
 
 	// List blocking

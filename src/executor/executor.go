@@ -250,8 +250,8 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 			return resp.ErrResponse(err)
 		}
 		finalRes = resp.IntResponse(int64(result))
-	} else if icmd == command.LRANGE_I {
-		rslt, err := list.Rang(req)
+	} else if icmd == command.LSLICE_I {
+		rslt, err := list.Slice(req)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
