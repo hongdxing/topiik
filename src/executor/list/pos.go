@@ -5,6 +5,7 @@ package list
 
 import "topiik/internal/datatype"
 
+//syntax: LPOS Key [RANK rank] [COUNT count-matches]
 func Pos(req datatype.Req) (rslt int, err error) {
 
 	return rslt, err

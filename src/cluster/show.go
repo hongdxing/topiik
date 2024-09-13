@@ -17,8 +17,8 @@ func Show() string {
 		ptnData := datatype.PartitionData{
 			Id: ptn.Id,
 		}
-		ptnData.SlotFrom = ptn.SlotFrom
-		ptnData.SlotTo = ptn.SlotTo
+		//ptnData.SlotFrom = ptn.SlotFrom
+		//ptnData.SlotTo = ptn.SlotTo
 		for _, nd := range ptn.NodeSet {
 			ptnData.Workers = append(ptnData.Workers, datatype.NodeData{Id: nd.Id, Address: nd.Addr})
 		}

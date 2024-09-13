@@ -40,8 +40,14 @@ func addPartition(workers map[string]string) {
 		NodeSet: make(map[string]*node.NodeSlim),
 		// The SlotFrom and SlotTo leave to not set, Till RESHARD executed
 	}
+	i := 0
 	for ndId := range workers {
+		// set first node to leader
+		if i == 0 {
+			newPartition.LeaderNodeId = ndId
+		}
 		newPartition.NodeSet[ndId] = &node.NodeSlim{Id: ndId}
+		i++
 	}
 	partitionInfo.PtnMap[ptnId] = newPartition
 }
@@ -69,8 +75,11 @@ func ReShard() (err error) {
 			} else {
 				to = (i+1)*(consts.SLOTS/ptnCount) - 1 // p=2--> i=0: 511, i=1: 1024
 			}
-			ptn.SlotFrom = uint16(from)
-			ptn.SlotTo = uint16(to)
+			//ptn.SlotFrom = uint16(from)
+			//ptn.SlotTo = uint16(to)
+			for i := from; i < to; i++ {
+				partitionInfo.Slots[uint16(i)] = ptn.Id
+			}
 			i++
 		}
 	} else {

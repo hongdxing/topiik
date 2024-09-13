@@ -10,6 +10,7 @@ package cluster
 import (
 	"encoding/json"
 	"os"
+	"topiik/internal/consts"
 	"topiik/internal/util"
 	"topiik/node"
 )
@@ -18,7 +19,7 @@ import (
 var term int
 var controllerInfo = &NodesInfo{Nodes: make(map[string]node.NodeSlim)}
 var workerInfo = &NodesInfo{Nodes: make(map[string]node.NodeSlim)}
-var partitionInfo = &PartitionInfo{PtnMap: make(map[string]*node.Partition)}
+var partitionInfo = &PartitionInfo{PtnMap: make(map[string]*node.Partition), Slots: make(map[uint16]string, consts.SLOTS)}
 var nodeStatus = &NodeStatus{Role: RAFT_FOLLOWER, Term: 0}
 
 const (
@@ -26,6 +27,7 @@ const (
 	dataDIR = "data"
 )
 
+// Load controller info on each node, including controller and worker
 func LoadControllerInfo() (err error) {
 	l.Info().Msg("Loading controller info begin")
 	// whether the file exist
@@ -51,6 +53,7 @@ func LoadControllerInfo() (err error) {
 	return nil
 }
 
+// Load metadata on controller node
 func LoadMetadata() (err error) {
 	exist := false // whether the file exist
 
@@ -93,6 +96,21 @@ func LoadMetadata() (err error) {
 		err = json.Unmarshal(data, &partitionInfo)
 		if err != nil {
 			l.Panic().Msg(err.Error())
+		}
+		//validate slots
+		if len(partitionInfo.Slots) != consts.SLOTS {
+			l.Panic().Msg("Slots broken")
+		}
+		if _, ok := partitionInfo.Slots[1]; !ok {
+			l.Panic().Msg("Slots broken")
+		}
+		if _, ok := partitionInfo.Slots[consts.SLOTS]; !ok {
+			l.Panic().Msg("Slots broken")
+		}
+	} else {
+		// init Slots to empty node id
+		for i := 1; i <= consts.SLOTS; i++ {
+			partitionInfo.Slots[uint16(i)] = ""
 		}
 	}
 
@@ -141,6 +159,23 @@ func GetNodeStatus() NodeStatus {
 
 func GetTerm() int {
 	return term
+}
+
+func GetWorkerByKeyHash(keyHash uint16) node.NodeSlim {
+	empty := node.NodeSlim{}
+	if ptnId, ok := partitionInfo.Slots[keyHash]; ok {
+		if ptn, ok := partitionInfo.PtnMap[ptnId]; ok {
+			if worker, ok := workerInfo.Nodes[ptn.LeaderNodeId]; ok {
+				return worker
+			} else {
+				return empty
+			}
+		} else {
+			return empty
+		}
+	} else {
+		return empty
+	}
 }
 
 /* metadata file path */

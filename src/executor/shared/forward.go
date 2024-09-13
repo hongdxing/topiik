@@ -77,6 +77,7 @@ func getWorker(key []byte) (worker node.NodeSlim) {
 	var keyHash = crc32.Checksum(key, crc32.IEEETable)
 	keyHash = keyHash % consts.SLOTS
 	//fmt.Printf("key hash %v\n", keyHash)
+	/*
 	for _, partition := range cluster.GetPartitionInfo().PtnMap {
 		if partition.SlotFrom <= uint16(keyHash) && partition.SlotTo >= uint16(keyHash) {
 			worker = cluster.GetWorkerInfo().Nodes[partition.LeaderNodeId]
@@ -85,7 +86,8 @@ func getWorker(key []byte) (worker node.NodeSlim) {
 		if len(worker.Id) > 0 {
 			break
 		}
-	}
+	}*/
+	worker = cluster.GetWorkerByKeyHash(uint16(keyHash))
 	return worker
 }
 

@@ -26,7 +26,7 @@ type Partition struct {
 	Id           string               // partition id
 	LeaderNodeId string               // partition leader node id
 	NodeSet      map[string]*NodeSlim // member nodes
-	SlotFrom     uint16
-	SlotTo       uint16
-	Status       string
+	//SlotFrom     uint16
+	//SlotTo       uint16
+	Status string
 }

@@ -24,6 +24,7 @@ type NodesInfo struct {
 type PartitionInfo struct {
 	ClusterId string
 	PtnMap    map[string]*node.Partition
+	Slots     map[uint16]string
 }
 
 // store dynamic node status in runtime

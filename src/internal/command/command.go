@@ -42,6 +42,7 @@ const (
 	//LRANGE = "LRANGE"
 	LSLICE = "LSLICE"
 	LSET   = "LSET"
+	LPOS   = "LPOS"
 
 	LPUSH_I  uint8 = 32
 	LPOP_I   uint8 = 33
@@ -51,6 +52,7 @@ const (
 	//LRANGE_I uint8 = 37
 	LSLICE_I uint8 = 37
 	LSET_I   uint8 = 38
+	LPOS_I   uint8 = 39
 
 	// List blocking
 	LPUSHB  = "LPUSHB"
