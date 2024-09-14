@@ -17,7 +17,7 @@ func online(pieces []string) (string, error) {
 	if _, ok := cluster.GetControllerInfo().Nodes[ndId]; ok {
 		return resp.RES_OK, nil
 	}
-	if _, ok := cluster.GetWorkerInfo().Nodes[ndId]; ok {
+	if _, ok := cluster.GetControllerInfo().Nodes[ndId]; ok {
 		return resp.RES_OK, nil
 	}
 

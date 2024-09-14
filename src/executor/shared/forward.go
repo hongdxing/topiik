@@ -17,19 +17,16 @@ import (
 	"topiik/resp"
 )
 
-// Conn cache from Controller to Workers
+// Conn cache from leader to leader
 var ctlwkrConnCache = make(map[string]*net.TCPConn)
 
 func ForwardByKey(key []byte, msg []byte) []byte {
-	if len(cluster.GetWorkerInfo().Nodes) == 0 {
-		return resp.ErrResponse(errors.New(resp.RES_NO_WORKER))
-	}
 	if len(cluster.GetPartitionInfo().PtnMap) == 0 {
 		return resp.ErrResponse(errors.New(resp.RES_NO_PARTITION))
 	}
 	var err error
 	// find worker base on key partition, and get LeaderWorkerId
-	targetWorker := getWorker(key)
+	targetWorker := getLeaderNode(key)
 	if len(targetWorker.Id) == 0 {
 		l.Warn().Msg("forward::Forward no slot available")
 		return resp.ErrResponse(errors.New(resp.RES_NO_WORKER))
@@ -54,7 +51,7 @@ func ForwardByKey(key []byte, msg []byte) []byte {
 			delete(ctlwkrConnCache, targetWorker.Id)
 		}
 		// try reconnect
-		targetWorker := getWorker(key) // the worker may changed because of Worker Leader fail
+		targetWorker := getLeaderNode(key) // the worker may changed because of Worker Leader fail
 		conn, err = util.PreapareSocketClient(targetWorker.Addr)
 		if err != nil {
 			l.Err(err).Msg(err.Error())
@@ -73,22 +70,11 @@ func ForwardByKey(key []byte, msg []byte) []byte {
 	return responseBytes
 }
 
-func getWorker(key []byte) (worker node.NodeSlim) {
+func getLeaderNode(key []byte) (node node.NodeSlim) {
 	var keyHash = crc32.Checksum(key, crc32.IEEETable)
 	keyHash = keyHash % consts.SLOTS
-	//fmt.Printf("key hash %v\n", keyHash)
-	/*
-	for _, partition := range cluster.GetPartitionInfo().PtnMap {
-		if partition.SlotFrom <= uint16(keyHash) && partition.SlotTo >= uint16(keyHash) {
-			worker = cluster.GetWorkerInfo().Nodes[partition.LeaderNodeId]
-			break
-		}
-		if len(worker.Id) > 0 {
-			break
-		}
-	}*/
-	worker = cluster.GetWorkerByKeyHash(uint16(keyHash))
-	return worker
+	node = cluster.GetNodeByKeyHash(uint16(keyHash))
+	return node
 }
 
 func ForwardByWorker(targetWorker node.NodeSlim, msg []byte) []byte {

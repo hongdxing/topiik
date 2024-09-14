@@ -1,9 +1,5 @@
-/*
-* author: duan hongxing
-* data: 6 Jul 2024
-* desc:
-*
- */
+///author: duan hongxing
+///data: 6 Jul 2024
 
 package cluster
 
@@ -18,7 +14,6 @@ import (
 // var clusterInfo = &Cluster{Ctls: make(map[string]node.NodeSlim), Wkrs: make(map[string]node.NodeSlim)}
 var term int
 var controllerInfo = &NodesInfo{Nodes: make(map[string]node.NodeSlim)}
-var workerInfo = &NodesInfo{Nodes: make(map[string]node.NodeSlim)}
 var partitionInfo = &PartitionInfo{PtnMap: make(map[string]*node.Partition), Slots: make(map[uint16]string, consts.SLOTS)}
 var nodeStatus = &NodeStatus{Role: RAFT_FOLLOWER, Term: 0}
 
@@ -57,29 +52,8 @@ func LoadControllerInfo() (err error) {
 func LoadMetadata() (err error) {
 	exist := false // whether the file exist
 
-	// Load worker info
-	fpath := getWorkerFilePath()
-	exist, err = util.PathExists(fpath)
-	if err != nil {
-		l.Panic().Msg(err.Error())
-	}
-	if exist {
-		data, err := util.ReadBinaryFile(fpath)
-		if err != nil {
-			l.Panic().Msg(err.Error())
-		}
-
-		if err != nil {
-			l.Panic().Msg(err.Error())
-		}
-		err = json.Unmarshal(data, &workerInfo)
-		if err != nil {
-			l.Panic().Msg(err.Error())
-		}
-	}
-
 	// Load partition info
-	fpath = GetPatitionFilePath()
+	fpath := GetPatitionFilePath()
 	exist, err = util.PathExists(fpath)
 	if err != nil {
 		l.Panic().Msg(err.Error())
@@ -131,26 +105,12 @@ func GetControllerInfo() NodesInfo {
 	return *controllerInfo
 }
 
-func SetWorkerInfo(workers *NodesInfo) {
-	workerInfo = workers
-	saveWorkerInfo()
-}
-
-/*
-	func GetClusterInfo() Cluster {
-		return *clusterInfo
-	}
-*/
-func GetWorkerInfo() NodesInfo {
-	return *workerInfo
-}
-
-func GetWorkerLeaders() (workers []node.NodeSlim) {
+func GetPtnLeaders() (controllers []node.NodeSlim) {
 	for _, ptn := range partitionInfo.PtnMap {
-		worker := workerInfo.Nodes[ptn.LeaderNodeId]
-		workers = append(workers, worker)
+		controller := controllerInfo.Nodes[ptn.LeaderNodeId]
+		controllers = append(controllers, controller)
 	}
-	return workers
+	return controllers
 }
 
 func GetNodeStatus() NodeStatus {
@@ -161,11 +121,11 @@ func GetTerm() int {
 	return term
 }
 
-func GetWorkerByKeyHash(keyHash uint16) node.NodeSlim {
+func GetNodeByKeyHash(keyHash uint16) node.NodeSlim {
 	empty := node.NodeSlim{}
 	if ptnId, ok := partitionInfo.Slots[keyHash]; ok {
 		if ptn, ok := partitionInfo.PtnMap[ptnId]; ok {
-			if worker, ok := workerInfo.Nodes[ptn.LeaderNodeId]; ok {
+			if worker, ok := controllerInfo.Nodes[ptn.LeaderNodeId]; ok {
 				return worker
 			} else {
 				return empty
@@ -222,49 +182,10 @@ func saveControllerInfo() (err error) {
 	return nil
 }
 
-func saveWorkerInfo() (err error) {
-	data, err := json.Marshal(workerInfo)
-	if err != nil {
-		l.Err(err).Msgf("cluster::saveWorkerInfo %s", err.Error())
-		return err
-	}
-
-	fpath := getWorkerFilePath()
-	exist, _ := util.PathExists(fpath)
-	if exist {
-		err = os.Truncate(fpath, 0) // TODO: backup first
-		if err != nil {
-			l.Err(err)
-			return err
-		}
-	}
-
-	err = os.WriteFile(fpath, data, 0644)
-	if err != nil {
-		l.Err(err)
-		return err
-	}
-	return nil
-}
-
-/*
-func notifyMetadataChanged() {
-	l.Info().Msg("metadata::notifyMetadataChanged begin")
-	cluUpdCh <- struct{}{}
-	l.Info().Msg("metadata::notifyMetadataChanged end")
-}
-*/
-
 func notifyControllerChanged() {
 	l.Info().Msg("metadata::notifyControllerChanged begin")
 	ctlUpdCh <- struct{}{}
 	l.Info().Msg("metadata::notifyControllerChanged end")
-}
-
-func notifyWorkerChanged() {
-	l.Info().Msg("metadata::notifyWorkerChanged begin")
-	wrkUpdCh <- struct{}{}
-	l.Info().Msg("metadata::notifyWorkerChanged end")
 }
 
 func notifyPtnChanged() {

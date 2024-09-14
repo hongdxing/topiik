@@ -32,8 +32,8 @@ func NewPartition(workers map[string]string) (ptnId string, err error) {
 }
 
 // add partition
-// workers: map of node id and addr
-func addPartition(workers map[string]string) {
+// controllers: map of node id and addr
+func addPartition(controllers map[string]string) {
 	ptnId := strings.ToLower(util.RandStringRunes(10))
 	newPartition := &node.Partition{
 		Id:      ptnId,
@@ -41,7 +41,7 @@ func addPartition(workers map[string]string) {
 		// The SlotFrom and SlotTo leave to not set, Till RESHARD executed
 	}
 	i := 0
-	for ndId := range workers {
+	for ndId := range controllers {
 		// set first node to leader
 		if i == 0 {
 			newPartition.LeaderNodeId = ndId

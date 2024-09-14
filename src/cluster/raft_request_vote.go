@@ -70,9 +70,9 @@ func RequestVote() {
 		for _, v := range controllerInfo.Nodes {
 			addr2List = append(addr2List, v.Addr2)
 		}
-		for _, v := range workerInfo.Nodes {
-			addr2List = append(addr2List, v.Addr2)
-		}
+		//for _, v := range workerInfo.Nodes {
+		//	addr2List = append(addr2List, v.Addr2)
+		//}
 
 		nodeStatus.Role = RAFT_CANDIDATOR
 		nodeStatus.Term += 1
@@ -116,7 +116,6 @@ func RequestVote() {
 
 			/* when new Leader selected, try to sync cluster metadata */
 			notifyControllerChanged()
-			notifyWorkerChanged()
 			notifyPtnChanged()
 
 			/* Print Selected Leader */

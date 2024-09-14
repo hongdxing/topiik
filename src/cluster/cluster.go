@@ -22,16 +22,11 @@ func AddNode(ndId string, addr string, addr2 string, role string, ptnId string) 
 	if strings.ToUpper(role) == node.ROLE_CONTROLLER {
 		controllerInfo.Nodes[ndId] = node.NodeSlim{Id: ndId, Addr: addr, Addr2: addr2}
 		saveControllerInfo()
-	} else if strings.ToUpper(role) == node.ROLE_WORKER {
-		workerInfo.Nodes[ndId] = node.NodeSlim{Id: ndId, Addr: addr, Addr2: addr2}
-		saveWorkerInfo()
-		addNode2Partition(ptnId, ndId)
 	} else {
 		return errors.New("")
 	}
 
 	notifyControllerChanged()
-	notifyWorkerChanged()
 	notifyPtnChanged()
 
 	return nil
@@ -52,38 +47,6 @@ func RemoveNode(ndId string) (err error) {
 		delete(controllerInfo.Nodes, ndId)
 		saveControllerInfo()
 		notifyControllerChanged()
-	} else if _, ok := workerInfo.Nodes[ndId]; ok {
-		/* if this is the only worker node, then reject */
-		if len(workerInfo.Nodes) == 1 {
-			return errors.New(resp.RES_REJECTED)
-		}
-		/* if is partition leader, then reject */
-		for _, ptn := range partitionInfo.PtnMap {
-			if ndId == ptn.LeaderNodeId {
-				return errors.New(resp.RES_REJECTED)
-			}
-		}
-
-		for _, ptn := range partitionInfo.PtnMap {
-			if _, ok := ptn.NodeSet[ndId]; ok {
-				if len(ptn.NodeSet) == 1 {
-					return errors.New(resp.RES_REJECTED)
-				}
-			}
-			delete(ptn.NodeSet, ndId)
-		}
-		delete(workerInfo.Nodes, ndId)
-
-		go rpcRemoveNode(ndId)
-
-		saveWorkerInfo()
-		notifyWorkerChanged()
-
-		err = savePartition()
-		notifyPtnChanged()
-		if err != nil {
-			return err
-		}
 	} else {
 		return errors.New(resp.RES_NIL)
 	}
@@ -140,8 +103,6 @@ func saveClusterInfo() (err error) {
 func rpcRemoveNode(ndId string) {
 	var addr2 string
 	if nd, ok := controllerInfo.Nodes[ndId]; ok {
-		addr2 = nd.Addr2
-	} else if nd, ok := workerInfo.Nodes[ndId]; ok {
 		addr2 = nd.Addr2
 	}
 	if addr2 == "" {

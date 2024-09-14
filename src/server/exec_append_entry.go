@@ -1,9 +1,5 @@
-/***
-** author: duan hongxing
-** data: 3 Jul 2024
-** desc:
-**
-**/
+// author: duan hongxing
+// data: 3 Jul 2024
 package server
 
 import (
@@ -19,14 +15,10 @@ import (
 	"topiik/node"
 )
 
-/*
-* Raft Append Entry
-*
-* Parameter:
-* 	entry: 1 byte of entry type + entry
-*
-*
- */
+// Raft Append Entry
+// Parameter:
+//
+//	entry: 1 byte of entry type + entry
 func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 	// In case of multi Leader, if node can receive appendEntry,
 	// and role is RAFT_LEADER, then step back
@@ -79,16 +71,6 @@ func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 			}
 			cluster.SetControllerInfo(controllerInfo)
 			l.Info().Msg("rpc_append_entry::appendEntry controller end")
-		} else if entryType == cluster.ENTRY_TYPE_WRK {
-			l.Info().Msg("rpc_append_entry::appendEntry worker begin")
-			var workerInfo = &cluster.NodesInfo{}
-			err := json.Unmarshal(entry[1:], workerInfo)
-			if err != nil {
-				l.Err(err)
-				return err
-			}
-			cluster.SetWorkerInfo(workerInfo)
-			l.Info().Msg("rpc_append_entry::appendEntry worker end")
 		} else if entryType == cluster.ENTRY_TYPE_PTNS {
 			l.Info().Msg("rpc_append_entry::appendEntry partition begin")
 			var ptnInfo cluster.PartitionInfo

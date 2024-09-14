@@ -30,7 +30,7 @@ func Del(req datatype.Req) (rslt int64, err error) {
 // forward del command to each partition
 func ForwardDel(msg []byte) (rslt int64) {
 	var err error
-	for _, worker := range cluster.GetWorkerLeaders() {
+	for _, worker := range cluster.GetPtnLeaders() {
 		buf := shared.ForwardByWorker(worker, msg) // get keys from each worker leader
 		if len(buf) > 4 {
 			bbuf := bytes.NewBuffer(buf[4:5])

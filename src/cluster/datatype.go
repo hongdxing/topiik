@@ -8,6 +8,17 @@ import (
 	"topiik/node"
 )
 
+type WorkerGroup struct {
+	LeaderNodeId string            // dynamic update
+	Nodes        []*node.NodeSlim  // nodes in the group
+	Slots        map[uint16]string // partition slots of group
+}
+
+type Persistors struct {
+	LeaderNodeId string
+	Nodes        []*node.NodeSlim
+}
+
 type Cluster struct {
 	Id   string // auto generated when INIT a cluster
 	Ver  uint   // compare which is more lastest

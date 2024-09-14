@@ -39,7 +39,7 @@ func ForwardExists(msg []byte, keyCount int) (rslt []string) {
 		rslt[i] = "F"
 	}
 
-	for _, worker := range cluster.GetWorkerLeaders() {
+	for _, worker := range cluster.GetPtnLeaders() {
 		buf := shared.ForwardByWorker(worker, msg) // get keys from each worker leader
 		if len(buf) > 4 {
 			bbuf := bytes.NewBuffer(buf[4:5])

@@ -61,7 +61,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 	}
 
 	if icmd == command.INIT_CLUSTER_I {
-		err := clus.ClusterInit(req, serverConfig.Listen)
+		err := clus.ClusterInit(req, serverConfig.Persistors)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}

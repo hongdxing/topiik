@@ -24,27 +24,25 @@ import (
 // Params:
 //   - addr: current node addr
 //
-// Syntax: INIT-CLUSTER partition count [controller host:port[,host:port]] worker host:port[,host:port]
-func ClusterInit(req datatype.Req, addr string) (err error) {
+// Syntax: INIT-CLUSTER host:port[,host:port] partitions num
+func ClusterInit(req datatype.Req, persistorAddr string) (err error) {
 	pieces := strings.Split(req.Args, consts.SPACE)
 	// if node already in a cluster, return error
 	if len(node.GetNodeInfo().ClusterId) > 0 {
 		return errors.New("current node already in cluster: " + node.GetNodeInfo().ClusterId)
 	}
 
-	// at least have paritition and worker
-	if len(pieces) != 4 && len(pieces) != 6 {
+	// at least have paritition(2), or controller address(es)
+	if len(pieces) != 2 && len(pieces) != 3 {
 		return errors.New(resp.RES_SYNTAX_ERROR)
 	}
 
-	var argv = make([]string, 2)
-	// partition
-	argv = pieces[:2]
-	if strings.ToLower(string(argv[0])) != "partition" {
+	if strings.ToLower(pieces[1]) != "partitions" {
 		return errors.New(resp.RES_SYNTAX_ERROR)
 	}
+
 	var ptnCount int
-	ptnCount, err = strconv.Atoi(string(argv[1]))
+	ptnCount, err = strconv.Atoi(string(pieces[2]))
 	if err != nil {
 		return err
 	}
@@ -53,33 +51,14 @@ func ClusterInit(req datatype.Req, addr string) (err error) {
 		return errors.New(resp.RES_SYNTAX_ERROR)
 	}
 
-	var (
-		controllers []string
-		workers     []string
-	)
 	// controller and worker
-	argv = pieces[2:4]
-	if argv[0] == "controller" {
-		controllers = strings.Split(argv[1], ",")
-	} else if argv[0] == "worker" {
-		workers = strings.Split(argv[1], ",")
-	}
+	controllers := strings.Split(pieces[1], ",")
+	persistors := strings.Split(persistorAddr, ",")
 
-	if len(pieces) == 6 {
-		argv = pieces[4:]
-		if argv[0] == "controller" {
-			controllers = strings.Split(argv[1], ",")
-		} else if argv[0] == "worker" {
-			workers = strings.Split(argv[1], ",")
-		}
+	// validate persistors
+	if len(persistors) == 0 || len(persistors) < ptnCount {
+		return errors.New(resp.RES_NO_PERSISTOR)
 	}
-
-	// validate workers
-	if len(workers) == 0 || len(workers) < ptnCount {
-		return errors.New(resp.RES_NEED_MORE_WORKER)
-	}
-
-	controllers = append(controllers, addr)
 
 	// connective check for controllers
 	ctlNodeIdAddr, ctlNodeIdAddr2 := checkConnection(controllers)
@@ -89,16 +68,16 @@ func ClusterInit(req datatype.Req, addr string) (err error) {
 		return errors.New(resp.RES_NODE_NA)
 	}
 
-	// connective check for workers
-	wrkNodeIdAddr, wrkNodeIdAddr2 := checkConnection(workers)
-	if len(wrkNodeIdAddr) != len(workers) {
-		unaccessibleAddr := workers[len(wrkNodeIdAddr)]
+	// connective check for persistors
+	pstNodeIdAddr, _ := checkConnection(persistors)
+	if len(pstNodeIdAddr) != len(persistors) {
+		unaccessibleAddr := persistors[len(pstNodeIdAddr)]
 		l.Err(nil).Msgf("Invalid address: %s not accessible", unaccessibleAddr)
 		return errors.New(resp.RES_NODE_NA)
 	}
 
 	// init cluster
-	err = cluster.InitCluster(ctlNodeIdAddr, wrkNodeIdAddr, ptnCount)
+	err = cluster.InitCluster(ctlNodeIdAddr, ptnCount)
 	if err != nil {
 		l.Err(err).Msgf("executor::clusterInit %s", err.Error())
 		/* TODO: clean cluster info if failed */
@@ -114,9 +93,9 @@ func ClusterInit(req datatype.Req, addr string) (err error) {
 	}
 
 	// update worker
-	for _, addr2 := range wrkNodeIdAddr2 {
-		rpcAddNode(addr2, node.ROLE_WORKER)
-	}
+	//for _, addr2 := range pstNodeIdAddr2 {
+	//	rpcAddNode(addr2, node.ROLE_WORKER)
+	//}
 
 	return nil
 }

@@ -36,7 +36,6 @@ func AppendEntries() {
 	ptnTicker = time.NewTicker(time.Duration(ptnTickerDur) * time.Millisecond)
 	defer close(ptnUpdCh)
 	defer close(ctlUpdCh)
-	defer close(wrkUpdCh)
 
 	//dialErrorCounter := 0 // this not 'thread' safe, but it's not important
 	for {
@@ -47,8 +46,6 @@ func AppendEntries() {
 			appendPtn()
 		case <-ctlUpdCh:
 			appendControllerInfo()
-		case <-wrkUpdCh:
-			appendWorkerInfo()
 		case <-ptnUpdCh:
 			appendPartitionInfo()
 		}
@@ -75,7 +72,7 @@ func appendClusterInfo() {
 	}
 }*/
 
-// sync controller info to controllers and workers
+// sync controller info to controllers
 func appendControllerInfo() {
 	var buf []byte
 	var bbuf = new(bytes.Buffer)
@@ -84,32 +81,6 @@ func appendControllerInfo() {
 		l.Err(err).Msg(err.Error())
 	} else {
 		binary.Write(bbuf, binary.LittleEndian, ENTRY_TYPE_CTL)
-		buf = append(buf, bbuf.Bytes()...)
-		buf = append(buf, data...)
-		for _, controller := range controllerInfo.Nodes {
-			if controller.Id == node.GetNodeInfo().Id {
-				continue
-			}
-			send(controller.Addr2, controller.Id, buf)
-		}
-		for _, worker := range workerInfo.Nodes {
-			if worker.Id == node.GetNodeInfo().Id {
-				continue
-			}
-			send(worker.Addr2, worker.Id, buf)
-		}
-	}
-}
-
-// sync worker info to controllers
-func appendWorkerInfo() {
-	var buf []byte
-	var bbuf = new(bytes.Buffer)
-	data, err := json.Marshal(workerInfo)
-	if err != nil {
-		l.Err(err).Msg(err.Error())
-	} else {
-		binary.Write(bbuf, binary.LittleEndian, ENTRY_TYPE_WRK)
 		buf = append(buf, bbuf.Bytes()...)
 		buf = append(buf, data...)
 		for _, controller := range controllerInfo.Nodes {
@@ -148,7 +119,7 @@ func appendHeartbeat() {
 		go send(controller.Addr2, controller.Id, []byte{})
 	}
 
-	for _, worker := range workerInfo.Nodes {
+	for _, worker := range controllerInfo.Nodes {
 		if worker.Id == node.GetNodeInfo().Id {
 			continue
 		}
@@ -165,9 +136,9 @@ func appendPtn() {
 		if ptn.LeaderNodeId == "" { // no leader yet
 			electPtnLeader(ptn)
 		} else {
-			if ptnLeader, ok := workerInfo.Nodes[ptn.LeaderNodeId]; ok { // get the leader Worker
+			if ptnLeader, ok := controllerInfo.Nodes[ptn.LeaderNodeId]; ok { // get the leader Worker
 				for ndId, nd := range ptn.NodeSet {
-					if wrk, ok := workerInfo.Nodes[ndId]; ok {
+					if wrk, ok := controllerInfo.Nodes[ndId]; ok {
 						nd.Id = ndId
 						nd.Addr = wrk.Addr
 						nd.Addr2 = wrk.Addr2
@@ -219,7 +190,7 @@ func electPtnLeader(ptn *node.Partition) {
 		// notice here not execlude the leader, in case it's recovered and give it last chance
 		for ndId := range ptn.NodeSet {
 			wg.Add(1)
-			if wrk, ok := workerInfo.Nodes[ndId]; ok {
+			if wrk, ok := controllerInfo.Nodes[ndId]; ok {
 				go getWorkerBinlogSeq(wrk.Id, wrk.Addr2, &wg, &seqMap)
 			} else {
 				wg.Done()
@@ -238,7 +209,7 @@ func electPtnLeader(ptn *node.Partition) {
 	}
 
 	// l.Info().Msgf("new LeaderId: %s", newLeaderId)
-	if _, ok := workerInfo.Nodes[newLeaderId]; ok {
+	if _, ok := controllerInfo.Nodes[newLeaderId]; ok {
 		l.Info().Msgf("Partition %s has new leader: %s", ptn.Id, newLeaderId)
 		ptn.LeaderNodeId = newLeaderId
 		//ptnUpdCh <- struct{}{} // sync partition to followers

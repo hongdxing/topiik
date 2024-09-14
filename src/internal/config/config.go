@@ -13,6 +13,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"topiik/internal/logger"
 
 	"github.com/spf13/viper"
@@ -21,12 +22,14 @@ import (
 var l = logger.Get()
 
 type envConfig struct {
-	Listen     string
-	SaveMillis uint // Persistent Job interval
+	Listen     string // current node listen address
+	Persistors string // set persistors if current node is controller
+	SaveMillis uint   // Persistent Job interval
 }
 
 type ServerConfig struct {
 	Listen     string
+	Persistors string
 	SaveMillis uint // Persistent Job interval
 
 	/*** Internal Use Only***/
@@ -42,7 +45,7 @@ type ServerConfig struct {
 
 func ParseServerConfig(configPath string) (*ServerConfig, error) {
 	config := envConfig{
-		Listen: "localhost:8301",
+		//Listen: "localhost:8301",
 	}
 	serverConfig := ServerConfig{}
 	theConfigPath := "server.conf"
@@ -54,7 +57,10 @@ func ParseServerConfig(configPath string) (*ServerConfig, error) {
 		}
 		theConfigPath = configPath
 	}
+
 	viper.SetConfigType("env")
+	replacer := strings.NewReplacer(".", "")
+	viper.SetEnvKeyReplacer(replacer)
 	viper.SetConfigFile(theConfigPath)
 	if err := viper.ReadInConfig(); err != nil {
 		l.Err(err).Msgf("Error reading config file %s, %s", theConfigPath, err)
@@ -68,6 +74,7 @@ func ParseServerConfig(configPath string) (*ServerConfig, error) {
 	l.Info().Msgf("Using config file: %s", theConfigPath)
 
 	serverConfig.Listen = config.Listen
+	serverConfig.Persistors = config.Persistors
 	serverConfig.SaveMillis = config.SaveMillis
 
 	// set PORT2 to PORT + 10000

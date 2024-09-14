@@ -55,7 +55,7 @@ func Keys(req datatype.Req) (result []string, err error) {
 
 func ForwardKeys(msg []byte) (res []string) {
 	var err error
-	for _, worker := range cluster.GetWorkerLeaders() {
+	for _, worker := range cluster.GetPtnLeaders() {
 		buf := shared.ForwardByWorker(worker, msg) // get keys from each worker leader
 		if len(buf) > 4 {
 			bufSlice := buf[4:5]

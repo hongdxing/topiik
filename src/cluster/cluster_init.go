@@ -11,12 +11,12 @@ import (
 )
 
 // Execute command INIT-CLUSTER
-func InitCluster(controllers map[string]string, workers map[string]string, ptnCount int) (err error) {
+func InitCluster(controllers map[string]string, ptnCount int) (err error) {
 	l.Info().Msg("cluster::ClusterInit start")
 
 	// 0. init cluster
 	// generate cluster id, set controllers, set workers
-	err = doInit(controllers, workers)
+	err = doInit(controllers)
 	if err != nil {
 		return err
 	}
@@ -25,7 +25,7 @@ func InitCluster(controllers map[string]string, workers map[string]string, ptnCo
 	for ptnIdx := range ptnCount {
 		var wrkIdx = 0
 		var nodes = make(map[string]string)
-		for ndId, addr := range workers {
+		for ndId, addr := range controllers {
 			if wrkIdx%ptnCount == ptnIdx {
 				nodes[ndId] = addr
 			}
@@ -34,32 +34,6 @@ func InitCluster(controllers map[string]string, workers map[string]string, ptnCo
 		addPartition(nodes)
 		ptnIdx++
 	}
-
-	// 1. create partition
-	//NewPartition(ptnCount)
-
-	// 2. assign worker(s) to partition(s)
-	// the algorithm is, use worker index in workers, mode lenght of partition,
-	// if the mod result ecquals to partition index in PtnMap, then assign the worker to the partition
-	// example:
-	// let's say there are 2 partitions and 3 workers, the first partition will assign 2 workers,
-	// and the second partition will assign only 1 worker; this un-even workers for each partition is just for example,
-	// in real environment, best to set even number of worker(s) for each partition
-	// 1)          ptnLen: 2, index: 0, 1
-	// 2)         workers: 3, index: 0, 1, 2
-	// 3) wrkIdx % ptnLen: 0 % 2 = 0, 1 % 2 = 1, 2 % 2 = 0
-	////var ptnLen = len(partitionInfo.PtnMap)
-	////var ptnIdx = 0
-	////for _, ptn := range partitionInfo.PtnMap {
-	////	var wrkIdx = 0
-	////	for ndId := range workers {
-	////		if wrkIdx%ptnLen == ptnIdx {
-	////			ptn.NodeSet[ndId] = &node.NodeSlim{Id: ndId}
-	////		}
-	////		wrkIdx++
-	////	}
-	////	ptnIdx++
-	////}
 
 	// 3. reshard to assign Slots
 	err = ReShard()
@@ -71,7 +45,6 @@ func InitCluster(controllers map[string]string, workers map[string]string, ptnCo
 
 	// 4. send notification to sync meta data to other controller(s) and worker(s)
 	notifyControllerChanged()
-	notifyWorkerChanged()
 	notifyPtnChanged()
 
 	// 5. after init, the node default is LEADER, and start to AppendEntries()
@@ -81,7 +54,7 @@ func InitCluster(controllers map[string]string, workers map[string]string, ptnCo
 	return nil
 }
 
-func doInit(controllers map[string]string, workers map[string]string) error {
+func doInit(controllers map[string]string) error {
 	if len(node.GetNodeInfo().ClusterId) > 0 {
 		return errors.New("current node already in cluster: " + node.GetNodeInfo().Id)
 	}
@@ -103,20 +76,6 @@ func doInit(controllers map[string]string, workers map[string]string) error {
 		}
 	}
 
-	// set workerInfo
-	workerInfo.ClusterId = clusterId
-	for ndId, addr := range workers {
-		host, _, port2, err := util.SplitAddress2(addr)
-		if err != nil {
-			l.Panic().Msg(err.Error())
-		}
-		workerInfo.Nodes[ndId] = node.NodeSlim{
-			Id:    ndId,
-			Addr:  addr,
-			Addr2: host + ":" + port2,
-		}
-	}
-
 	// update current(controller) node
 	node.InitCluster(clusterId)
 
@@ -125,6 +84,5 @@ func doInit(controllers map[string]string, workers map[string]string) error {
 
 	// save controllerInfo and workerInfo
 	saveControllerInfo()
-	saveWorkerInfo()
 	return nil
 }

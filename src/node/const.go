@@ -5,7 +5,8 @@ package node
 
 const (
 	ROLE_CONTROLLER string = "CONTROLLER"
-	ROLE_WORKER     string = "WORKER"
+	ROLE_PERSISTOR  string = "PERSISTOR"
+	ROLE_WORKER     string = "WORKER" //to be removed
 )
 
 const (
