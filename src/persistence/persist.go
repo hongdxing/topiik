@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"container/list"
 	"encoding/binary"
-	"fmt"
 	"io"
 	"net"
 	"os"
@@ -40,8 +39,8 @@ var pstConn *net.TCPConn
 var batchSyncing = false
 
 var msgQ list.List
-var lock sync.Locker
-var dequeueCh time.Ticker = *time.NewTicker(time.Millisecond * 1000)
+var lock sync.Mutex
+var dequeueTicker time.Ticker
 
 // enqueue msg pending persist to persistor server
 func Enqueue(msg []byte) {
@@ -51,8 +50,9 @@ func Enqueue(msg []byte) {
 }
 
 func Dequeue() {
-	select {
-	case <-dequeueCh.C:
+	dequeueTicker = *time.NewTicker(time.Millisecond * 1000)
+	for {
+		<-dequeueTicker.C
 		doDequeue()
 	}
 }
@@ -67,12 +67,14 @@ func doDequeue() {
 			break
 		}
 		buf := msgQ.Back().Value.([]byte)
+		msgQ.Remove(msgQ.Back())
 		binlogs = append(binlogs, buf...)
 		if len(binlogs) > batchSyncSize { // limit batch size
 			break
 		}
 	}
 
+	// todo: if connection failed???
 	if pstConn == nil {
 		addr := node.GetConfig().Persistors[0]
 		host, _, port2, _ := util.SplitAddress2(addr)
@@ -86,10 +88,9 @@ func doDequeue() {
 	doSync(pstConn, binlogs)
 }
 
-func msgId() string {
-
-	return fmt.Sprintf("%s%v", node.GetNodeInfo().GroupId, util.GetUtcEpoch())
-}
+//func msgId() string {
+//	return fmt.Sprintf("%s%v", node.GetNodeInfo().GroupId, util.GetUtcEpoch())
+//}
 
 // Append msg to binary log
 func Append(msg []byte) (err error) {

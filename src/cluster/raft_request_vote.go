@@ -18,6 +18,7 @@ import (
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/node"
+	"topiik/persistence"
 	"topiik/resp"
 )
 
@@ -112,6 +113,7 @@ func RequestVote() {
 
 			// Leader start to AppendEntries
 			go AppendEntries(wrkGrp)
+			go persistence.Dequeue()
 			/* make sure channel are ready */
 			//time.Sleep(500 * time.Millisecond)
 

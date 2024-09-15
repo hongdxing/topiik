@@ -138,8 +138,8 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 	finalRes = forward(icmd, req, msg)
 
 	if slices.Contains(persistCmds, icmd) {
-		//PersistenceCh <- msg
-		persistence.Append(msg)
+		//persistence.Append(msg)
+		persistence.Enqueue(msg)
 	}
 	return finalRes
 }
