@@ -11,6 +11,7 @@ import (
 	"net"
 	"topiik/cluster"
 	"topiik/internal/consts"
+	"topiik/internal/datatype"
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/node"
@@ -20,13 +21,19 @@ import (
 // Conn cache from leader to leader
 var ctlwkrConnCache = make(map[string]*net.TCPConn)
 
-func ForwardByKey(key []byte, msg []byte) []byte {
-	if len(cluster.GetPartitionInfo().PtnMap) == 0 {
-		return resp.ErrResponse(errors.New(resp.RES_NO_PARTITION))
+type ExeFn func(uint8, datatype.Req) []byte
+
+func ExecuteOrForward(targetWorker node.NodeSlim, execute ExeFn, icmd uint8, req datatype.Req, msg []byte) (finalRes []byte) {
+	if targetWorker.Id == node.GetNodeInfo().Id {
+		return execute(icmd, req)
+	} else {
+		//return shared.ForwardByKey(key, msg, targetWorker)
+		return ForwardByWorker(targetWorker, msg)
 	}
+}
+
+func ForwardByKey(key []byte, msg []byte, targetWorker node.NodeSlim) []byte {
 	var err error
-	// find worker base on key partition, and get LeaderWorkerId
-	targetWorker := getLeaderNode(key)
 	if len(targetWorker.Id) == 0 {
 		l.Warn().Msg("forward::Forward no slot available")
 		return resp.ErrResponse(errors.New(resp.RES_NO_WORKER))
@@ -51,7 +58,10 @@ func ForwardByKey(key []byte, msg []byte) []byte {
 			delete(ctlwkrConnCache, targetWorker.Id)
 		}
 		// try reconnect
-		targetWorker := getLeaderNode(key) // the worker may changed because of Worker Leader fail
+		targetWorker, err := GetLeaderNode(key) // the worker may changed because of Worker Leader fail
+		if err != nil {
+			return resp.ErrResponse(err)
+		}
 		conn, err = util.PreapareSocketClient(targetWorker.Addr)
 		if err != nil {
 			l.Err(err).Msg(err.Error())
@@ -70,11 +80,10 @@ func ForwardByKey(key []byte, msg []byte) []byte {
 	return responseBytes
 }
 
-func getLeaderNode(key []byte) (node node.NodeSlim) {
+func GetLeaderNode(key []byte) (node node.NodeSlim, err error) {
 	var keyHash = crc32.Checksum(key, crc32.IEEETable)
 	keyHash = keyHash % consts.SLOTS
-	node = cluster.GetNodeByKeyHash(uint16(keyHash))
-	return node
+	return cluster.GetNodeByKeyHash(uint16(keyHash))
 }
 
 func ForwardByWorker(targetWorker node.NodeSlim, msg []byte) []byte {
@@ -105,7 +114,6 @@ func ForwardByWorker(targetWorker node.NodeSlim, msg []byte) []byte {
 		}
 		conn.Write(msg)
 	}
-
 	reader := bufio.NewReader(conn)
 	responseBytes, err := proto.Decode(reader)
 	if err != nil {

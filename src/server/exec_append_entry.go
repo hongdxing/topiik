@@ -7,11 +7,9 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"math/rand/v2"
-	"os"
 	"time"
 	"topiik/cluster"
 	"topiik/internal/config"
-	"topiik/internal/util"
 	"topiik/node"
 )
 
@@ -22,7 +20,7 @@ import (
 func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 	// In case of multi Leader, if node can receive appendEntry,
 	// and role is RAFT_LEADER, then step back
-	if node.IsController() && cluster.GetNodeStatus().Role == cluster.RAFT_LEADER {
+	if node.IsWorker() && cluster.GetNodeStatus().Role == cluster.RAFT_LEADER {
 		//cluster.GetNodeStatus().Role = cluster.RAFT_FOLLOWER
 		cluster.SetRole(cluster.RAFT_FOLLOWER)
 		go cluster.RequestVote()
@@ -61,37 +59,6 @@ func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 			/* set cluster info in memory */
 			//cluster.SetClusterInfo(clusterInfo)
 			l.Info().Msg("rpc_append_entry::appendEntry metadata end")
-		} else if entryType == cluster.ENTRY_TYPE_CTL {
-			l.Info().Msg("rpc_append_entry::appendEntry controller begin")
-			var controllerInfo = &cluster.NodesInfo{}
-			err := json.Unmarshal(entry[1:], controllerInfo)
-			if err != nil {
-				l.Err(err)
-				return err
-			}
-			cluster.SetControllerInfo(controllerInfo)
-			l.Info().Msg("rpc_append_entry::appendEntry controller end")
-		} else if entryType == cluster.ENTRY_TYPE_PTNS {
-			l.Info().Msg("rpc_append_entry::appendEntry partition begin")
-			var ptnInfo cluster.PartitionInfo
-			err := json.Unmarshal(entry[1:], &ptnInfo) // verify
-			if err != nil {
-				l.Err(err).Msg(err.Error())
-				return err
-			}
-			//partitionInfo = &ptnInfo
-			cluster.SetPtnInfo(&ptnInfo)
-			fpath := cluster.GetPatitionFilePath()
-			exist, _ := util.PathExists(fpath)
-			if exist {
-				os.Rename(fpath, fpath+"old") // rename
-			}
-			err = util.WriteBinaryFile(fpath, entry[1:])
-			if err != nil {
-				l.Err(err).Msg(err.Error())
-				return err
-			}
-			l.Info().Msg("rpc_append_entry::appendEntry partition end")
 		}
 	}
 

@@ -3,11 +3,6 @@
 
 package node
 
-const (
-	ROLE_CONTROLLER string = "CONTROLLER"
-	ROLE_PERSISTOR  string = "PERSISTOR"
-	ROLE_WORKER     string = "WORKER" //to be removed
-)
 
 const (
 	PTN_STS_ACTIVE  = "ACTIVE"  // Ready to use

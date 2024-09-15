@@ -45,7 +45,7 @@ func EncodeCmd(input string, theCMD *string) (result []byte, err error) {
 	var icmd uint8 = 0
 	var ver uint8 = 0
 	req := datatype.Req{Keys: datatype.Abytes{}, Vals: datatype.Abytes{}}
-	if cmd == command.INIT_CLUSTER { // INIT-CLUSTER partitions count
+	if cmd == command.CREATE_CLUSTER { // INIT-CLUSTER partitions count
 		return encInitCluster(pieces)
 	} else if cmd == command.ADD_CONTROLLER { // ADD-CONTROLLER host:port
 		if len(pieces) != 2 {

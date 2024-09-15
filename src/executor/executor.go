@@ -6,6 +6,7 @@ package executor
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"slices"
 	"topiik/cluster"
 	"topiik/executor/clus"
@@ -60,7 +61,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 		return resp.ErrResponse(err)
 	}
 
-	if icmd == command.INIT_CLUSTER_I {
+	if icmd == command.CREATE_CLUSTER_I {
 		err := clus.ClusterInit(req, serverConfig.Persistors)
 		if err != nil {
 			return resp.ErrResponse(err)
@@ -69,12 +70,6 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 	} else if icmd == command.SHOW_I {
 		rslt := clus.Show(req)
 		return resp.StrResponse(rslt)
-	} else if icmd == command.ADD_CONTROLLER_I {
-		_, err := clus.AddController(req)
-		if err != nil {
-			return resp.ErrResponse(err)
-		}
-		return resp.StrResponse(resp.RES_OK)
 	} else if icmd == command.ADD_WORKER_I {
 		_, err := clus.AddWorker(req)
 		if err != nil {
@@ -100,41 +95,47 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 		}
 		return resp.StrResponse(result)
 	} else if icmd == command.GET_CTLADDR_I {
-		l.Info().Msg("get controller address")
+		l.Info().Msg("get leader address")
+
+		// allow connection ONLY when node in a cluster
+		if node.GetNodeInfo().ClusterId == "" {
+			return resp.ErrResponse(fmt.Errorf("%s %s", resp.RES_NO_CLUSTER, "please create cluster"))
+		}
+
 		var address string
 		if cluster.GetNodeStatus().Role == cluster.RAFT_LEADER { // if is leader, then just return leader's address
 			address = serverConfig.Listen
 		} else {
-			address = cluster.GetNodeStatus().LeaderControllerAddr
+			leader := cluster.GetWrkGroupLeader(node.GetNodeInfo().Id)
+			address = leader.Addr
 		}
 		// if not current not controller leader, nor in any cluster, i.e. LeaderControllerAddr is empty
 		// then use listen address
 		if address == "" {
-			if len(node.GetNodeInfo().ClusterId) == 0 {
-				address = serverConfig.Listen
-			} else {
-				return resp.ErrResponse(errors.New(resp.RES_NO_CTL))
-			}
+			return resp.ErrResponse(fmt.Errorf("%s %s", resp.RES_NO_CLUSTER, "please create cluster"))
+			/*
+				if len(node.GetNodeInfo().ClusterId) == 0 {
+					address = serverConfig.Listen
+				} else {
+					return resp.ErrResponse(errors.New(resp.RES_NO_CTL))
+				}
+			*/
 		}
 		return resp.StrResponse(address)
 	}
 
 	// if is Controller, forward to worker(s)
-	if node.IsController() {
-		return forward(icmd, req, msg)
-	}
+	//if node.IsController() {
+	//	return forward(icmd, req, msg)
+	//}
 
 	// node must be in a cluster
 	if len(node.GetNodeInfo().ClusterId) == 0 {
 		return resp.ErrResponse(errors.New(resp.RES_NO_CLUSTER))
 	}
-	// allow cmd only from Controller Leader, and TODO: allow from Partition Leader
-	err = srcFilter(srcAddr)
-	if err != nil {
-		return resp.ErrResponse(err)
-	}
 
-	finalRes = Execute1(icmd, req)
+	//finalRes = Execute1(icmd, req)
+	finalRes = forward(icmd, req, msg)
 
 	if slices.Contains(persistCmds, icmd) {
 		//PersistenceCh <- msg
@@ -160,7 +161,7 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 			msgN, _ := proto.EncodeHeader(command.SET_I, 1)                                      // msg header
 			msgN = append(msgN, reqBytesN...)                                                    // combine msg header and req bytes
 			msgN, _ = proto.EncodeB(msgN)                                                        // encode msg
-			shared.ForwardByKey(key, msgN)
+			executeOrForward(key, command.SET_I, reqN, msgN)
 		}
 		return resp.StrResponse(resp.RES_OK)
 	} else if icmd == command.GETM_I {
@@ -172,7 +173,7 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 			msgN, _ := proto.EncodeHeader(command.GET_I, 1)                           // msg header
 			msgN = append(msgN, reqBytesN...)                                         // combine msg header and req bytes
 			msgN, _ = proto.EncodeB(msgN)                                             // encode msg
-			resN := shared.ForwardByKey(key, msgN)
+			resN := executeOrForward(key, command.GET_I, reqN, msgN)
 			flag := resp.ParseResFlag(resN)
 			if flag != resp.Success {
 				res = append(res, "")
@@ -181,13 +182,13 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 		}
 		return resp.StrArrResponse(res)
 	} else if icmd == command.DEL_I {
-		rslt := keyy.ForwardDel(msg)
+		rslt := keyy.ForwardDel(Execute1, req, msg)
 		return resp.IntResponse(rslt)
 	} else if icmd == command.EXISTS_I {
-		rslt := keyy.ForwardExists(msg, len(req.Keys))
+		rslt := keyy.ForwardExists(Execute1, req, msg, len(req.Keys))
 		return resp.StrArrResponse(rslt)
 	} else if icmd == command.KEYS_I {
-		res := keyy.ForwardKeys(msg)
+		res := keyy.ForwardKeys(Execute1, req, msg)
 		return resp.StrArrResponse(res)
 	}
 
@@ -196,7 +197,15 @@ func forward(icmd uint8, req datatype.Req, msg []byte) []byte {
 		return resp.ErrResponse(errors.New(resp.RES_EMPTY_KEY))
 	}
 	key := req.Keys[0]
-	return shared.ForwardByKey(key, msg)
+	return executeOrForward(key, icmd, req, msg)
+}
+
+func executeOrForward(key []byte, icmd uint8, req datatype.Req, msg []byte) []byte {
+	targetWorker, err := shared.GetLeaderNode(key)
+	if err != nil {
+		return resp.ErrResponse(err)
+	}
+	return shared.ExecuteOrForward(targetWorker, Execute1, icmd, req, msg)
 }
 
 // Execute Memory commands
@@ -295,30 +304,4 @@ func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
 		return resp.ErrResponse(errors.New(consts.RES_INVALID_CMD))
 	}
 	return finalRes
-}
-
-func srcFilter(srcAddr string) error {
-	// if node member of cluster
-	if len(node.GetNodeInfo().ClusterId) > 0 {
-		if !node.IsController() {
-			//fmt.Printf("remote address: %s\n", srcAddr)
-
-			/*addrSplit, err := util.SplitAddress(srcAddr)
-			if err != nil {
-				return errors.New(consts.RES_INVLID_OP_ON_WORKER)
-			}*/
-
-			// TOTO: if source host is not Leader's host, also reject
-			// if source port is not forward port, also reject
-			/* having problem using the same port
-			if addrSplit[1] != cluster.CONTROLLER_FORWORD_PORT {
-				fmt.Println(addrSplit[1])
-				return errors.New(consts.RES_INVLID_OP_ON_WORKER)
-			}*/
-		}
-	}
-	return nil
-	/*if cluster.GetNodeStatus().Role == cluster.RAFT_FOLLOWER {
-
-	}*/
 }

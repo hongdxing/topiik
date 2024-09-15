@@ -1,9 +1,6 @@
-/*
-* author: duan hongxing
-* date: 21 Jun 2024
-* desc: Server configuration types
-*
- */
+//author: duan hongxing
+//date: 21 Jun 2024
+//desc: Server configuration types
 
 package config
 
@@ -15,21 +12,30 @@ import (
 	"strconv"
 	"strings"
 	"topiik/internal/logger"
+	"topiik/resp"
 
 	"github.com/spf13/viper"
 )
 
 var l = logger.Get()
 
+// node role
+const (
+	ROLE_WORKER    string = "worker"
+	ROLE_PERSISTOR string = "persistor"
+)
+
 type envConfig struct {
+	Role       string
 	Listen     string // current node listen address
 	Persistors string // set persistors if current node is controller
 	SaveMillis uint   // Persistent Job interval
 }
 
 type ServerConfig struct {
+	Role       string
 	Listen     string
-	Persistors string
+	Persistors []string
 	SaveMillis uint // Persistent Job interval
 
 	/*** Internal Use Only***/
@@ -66,26 +72,35 @@ func ParseServerConfig(configPath string) (*ServerConfig, error) {
 		l.Err(err).Msgf("Error reading config file %s, %s", theConfigPath, err)
 	}
 
+	// parse config
 	err := viper.Unmarshal(&config)
 	if err != nil {
 		fmt.Println(err)
 	}
+	fmt.Println(config)
 
 	l.Info().Msgf("Using config file: %s", theConfigPath)
 
+	serverConfig.Role = config.Role
 	serverConfig.Listen = config.Listen
-	serverConfig.Persistors = config.Persistors
+	serverConfig.Persistors = strings.Split(config.Persistors, ",")
 	serverConfig.SaveMillis = config.SaveMillis
+
+	// validate role
+	if strings.TrimSpace(serverConfig.Role) == "" ||
+		(strings.ToLower(serverConfig.Role) != ROLE_WORKER && strings.ToLower(serverConfig.Role) != ROLE_PERSISTOR) {
+		return nil, errors.New(resp.RES_SYNTAX_ERROR + "invalid role")
+	}
 
 	// set PORT2 to PORT + 10000
 	reg := regexp.MustCompile(`(.*)((?::))((?:[0-9]+))$`)
 	pieces := reg.FindStringSubmatch(serverConfig.Listen)
 	if len(pieces) != 4 {
-		return nil, errors.New("Invalid Listen format: " + serverConfig.Listen)
+		return nil, errors.New(resp.RES_SYNTAX_ERROR + serverConfig.Listen)
 	}
 	iPort, err := strconv.Atoi(pieces[3])
 	if err != nil {
-		return nil, errors.New("Invalid Listen format: " + serverConfig.Listen)
+		return nil, errors.New(resp.RES_SYNTAX_ERROR + serverConfig.Listen)
 	}
 	serverConfig.Port2 = strconv.Itoa(10000 + iPort)
 	serverConfig.Host = pieces[1]

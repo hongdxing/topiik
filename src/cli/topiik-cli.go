@@ -9,6 +9,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"net"
@@ -27,9 +28,36 @@ var pass string
 
 // Syntax: topiik-cli(.exe) --host localhost:8301 [--pass password]
 func main() {
+	var (
+		cluster    string
+		workers    string
+		partitions uint
+		host       string
+	)
+
+	flag.StringVar(&cluster, "cluster", "", "topiik-cli --cluster create")
+	flag.StringVar(&workers, "workers", "", "")
+	flag.UintVar(&partitions, "partitions", 1, "")
+	flag.StringVar(&host, "host", "localhost:8301", "")
+	flag.Parse()
+
+	fmt.Printf("%s, %s\n", cluster, workers)
+
+	if strings.TrimSpace(cluster) != "" {
+		cluster = strings.ToLower(strings.TrimSpace(cluster))
+		if cluster == "create" {
+			if strings.TrimSpace(workers) == "" {
+				fmt.Println("missing workers")
+			}
+		}
+		err := internal.CreateCluster(workers, partitions)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		return
+	}
+
 	// Connect to the server
-	//conn, err := net.Dial("tcp", "localhost:8302")
-	host = "localhost:8301"
 	pass = ""
 	const invalidArgs = "invalid args"
 	fmt.Println(os.Args)
@@ -171,7 +199,7 @@ func response(conn *net.TCPConn, cmd string) error {
 				if err != nil {
 					fmt.Printf("(err):%s\n", err.Error())
 				}
-				if cmd == command.INIT_CLUSTER {
+				if cmd == command.CREATE_CLUSTER {
 					fmt.Println("Partitions:")
 				}
 				if len(vals) > 0 {

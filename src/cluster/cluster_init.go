@@ -11,32 +11,18 @@ import (
 )
 
 // Execute command INIT-CLUSTER
-func InitCluster(controllers map[string]string, ptnCount int) (err error) {
+func InitCluster(workers map[string]string, ptnCount int) (err error) {
 	l.Info().Msg("cluster::ClusterInit start")
 
 	// 0. init cluster
-	// generate cluster id, set controllers, set workers
-	err = doInit(controllers)
+	// generate cluster id, set workers
+	err = doInit(workers, ptnCount)
 	if err != nil {
 		return err
 	}
 
-	//var ptnIdx = 0
-	for ptnIdx := range ptnCount {
-		var wrkIdx = 0
-		var nodes = make(map[string]string)
-		for ndId, addr := range controllers {
-			if wrkIdx%ptnCount == ptnIdx {
-				nodes[ndId] = addr
-			}
-			wrkIdx++
-		}
-		addPartition(nodes)
-		ptnIdx++
-	}
-
 	// 3. reshard to assign Slots
-	err = ReShard()
+	err = ReShard(true)
 	if err != nil {
 		l.Err(err).Msgf("executor::clusterInit %s", err.Error())
 		/* TODO: clean cluster info and partition */
@@ -44,45 +30,50 @@ func InitCluster(controllers map[string]string, ptnCount int) (err error) {
 	}
 
 	// 4. send notification to sync meta data to other controller(s) and worker(s)
-	notifyControllerChanged()
-	notifyPtnChanged()
+	notifyWorkerGroupChanged()
 
 	// 5. after init, the node default is LEADER, and start to AppendEntries()
-	go AppendEntries()
+	//go AppendEntries()
+	go RequestVote()
 	//ptnUpdCh <- struct{}{} // sync partition to followers
 	l.Info().Msg("cluster::ClusterInit end")
 	return nil
 }
 
-func doInit(controllers map[string]string) error {
+func doInit(workers map[string]string, ptnCount int) error {
 	if len(node.GetNodeInfo().ClusterId) > 0 {
 		return errors.New("current node already in cluster: " + node.GetNodeInfo().Id)
 	}
 
 	// generate cluster id
 	clusterId := strings.ToLower(util.RandStringRunes(10))
+	workerGroupInfo.ClusterId = clusterId
 
 	// set controllerInfo
-	controllerInfo.ClusterId = clusterId
-	for ndId, addr := range controllers {
-		host, _, port2, err := util.SplitAddress2(addr)
-		if err != nil {
-			l.Panic().Msg(err.Error())
-		}
-		controllerInfo.Nodes[ndId] = node.NodeSlim{
-			Id:    ndId,
-			Addr:  addr,
-			Addr2: host + ":" + port2,
+	var addrIdx = 0
+	for i := 0; i < ptnCount; i++ {
+		addrIdx = 0
+		for ndId, addr := range workers {
+			workerGroup := WorkerGroup{Nodes: make(map[string]node.NodeSlim)}
+			if addrIdx%int(ptnCount) == i {
+				host, _, port2, _ := util.SplitAddress2(addr)
+				workerGroup.Nodes[ndId] = node.NodeSlim{Id: ndId, Addr: addr, Addr2: host + ":" + port2}
+				// set first to leader
+				if len(workerGroup.Nodes) == 1 {
+					workerGroup.LeaderNodeId = ndId
+				}
+			}
+			wgId := strings.ToLower(util.RandStringRunes(10))
+			workerGroup.Id = wgId
+			workerGroupInfo.Groups[wgId] = &workerGroup
+			addrIdx++
 		}
 	}
 
 	// update current(controller) node
 	node.InitCluster(clusterId)
 
-	// set current Role to Raft Leader
-	nodeStatus.Role = RAFT_LEADER
-
 	// save controllerInfo and workerInfo
-	saveControllerInfo()
+	saveWorkerGroups()
 	return nil
 }

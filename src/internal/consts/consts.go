@@ -51,4 +51,4 @@ const (
 	PTN_ID_LEN     = 10
 )
 
-const SLOTS = 1024
+const SLOTS = 256

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"topiik/cluster"
 	"topiik/executor/shared"
+	"topiik/internal/command"
 	"topiik/internal/datatype"
 	"topiik/memo"
 	"topiik/resp"
@@ -28,8 +29,8 @@ func Exists(req datatype.Req) (rslt []string, err error) {
 	return rslt, err
 }
 
-// forward exists command to each partition
-func ForwardExists(msg []byte, keyCount int) (rslt []string) {
+// forward EXISTS command to each group
+func ForwardExists(execute shared.ExeFn, req datatype.Req, msg []byte, keyCount int) (rslt []string) {
 	var err error
 	var assemble [][]string
 	rslt = make([]string, keyCount)
@@ -39,8 +40,9 @@ func ForwardExists(msg []byte, keyCount int) (rslt []string) {
 		rslt[i] = "F"
 	}
 
-	for _, worker := range cluster.GetPtnLeaders() {
-		buf := shared.ForwardByWorker(worker, msg) // get keys from each worker leader
+	for _, worker := range cluster.GetWrkGrpLeaders() {
+		//buf := shared.ForwardByWorker(worker, msg) // get keys from each worker leader
+		buf := shared.ExecuteOrForward(worker, execute, command.EXISTS_I, req, msg)
 		if len(buf) > 4 {
 			bbuf := bytes.NewBuffer(buf[4:5])
 			var flag resp.RespFlag

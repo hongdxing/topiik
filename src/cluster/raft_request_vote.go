@@ -1,9 +1,5 @@
-/*
-* author: duan hongxing
-* data: 3 Jul 2024
-* desc:
-*
- */
+//author: duan hongxing
+//data: 3 Jul 2024
 
 package cluster
 
@@ -30,20 +26,22 @@ var wgRequestVote sync.WaitGroup
 
 const requestVoteInterval = 100
 
-/*
-* Request vote self to controller leader
-* Parameters:
-*	-
-* Follower(s) issue RequestVote RPCs to Controller(s) and Worker(s) to request for votes.
- */
+// Request vote self to controller leader
+// Parameters:
+// Follower(s) issue RequestVote RPCs to Controller(s) and Worker(s) to request for votes.
 func RequestVote() {
-	if nodeStatus.Role == RAFT_LEADER || !node.IsController() {
+	if nodeStatus.Role == RAFT_LEADER {
+		return
+	}
+	wrkGrp := getWorkGroup(node.GetNodeInfo().Id)
+	if wrkGrp.Id == "" {
+		l.Warn().Msgf("RequestVote Invalid worker group")
 		return
 	}
 
-	if len(controllerInfo.Nodes) == 1 { // if this is the only Controller, then it alawys Leader
+	if len(wrkGrp.Nodes) == 1 { // if this is the only worker in group, then it alawys Leader
 		nodeStatus.Role = RAFT_LEADER
-		go AppendEntries()
+		go AppendEntries(wrkGrp)
 		return
 	}
 
@@ -67,12 +65,13 @@ func RequestVote() {
 		}
 		// merge controller and woker address2
 		var addr2List = []string{}
-		for _, v := range controllerInfo.Nodes {
+		for _, v := range wrkGrp.Nodes {
 			addr2List = append(addr2List, v.Addr2)
 		}
-		//for _, v := range workerInfo.Nodes {
-		//	addr2List = append(addr2List, v.Addr2)
-		//}
+
+		// use persistor as voter
+		// todo: what if Persistor[0] down???
+		addr2List = append(addr2List, node.GetConfig().Persistors[0])
 
 		nodeStatus.Role = RAFT_CANDIDATOR
 		nodeStatus.Term += 1
@@ -110,13 +109,13 @@ func RequestVote() {
 			nodeStatus.Role = RAFT_LEADER
 
 			/* Leader start to AppendEntries */
-			go AppendEntries()
+			go AppendEntries(wrkGrp)
 			/* make sure channel are ready */
 			//time.Sleep(500 * time.Millisecond)
 
 			/* when new Leader selected, try to sync cluster metadata */
-			notifyControllerChanged()
-			notifyPtnChanged()
+			notifyWorkerGroupChanged()
+			//notifyPtnChanged()
 
 			/* Print Selected Leader */
 			l.Info().Msgf("[TOPIIK] ~!~ selected as new leader")

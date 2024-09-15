@@ -10,7 +10,7 @@ import (
 )
 
 func encInitCluster(pieces []string) ([]byte, error) {
-	builder := CmdBuilder{Cmd: command.INIT_CLUSTER_I, Ver: 1}
+	builder := CmdBuilder{Cmd: command.CREATE_CLUSTER_I, Ver: 1}
 	// The first piece must be partition
 	if strings.ToLower(pieces[1]) != "partition" {
 		return syntaxErr()

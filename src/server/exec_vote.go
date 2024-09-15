@@ -30,7 +30,7 @@ import (
 func vote(cTerm int) string {
 	//fmt.Printf("vote():: current node role: %v\n", nodeStatus.Role)
 
-	if node.IsController() {
+	if node.IsWorker() {
 		if cluster.GetNodeStatus().Role == cluster.RAFT_LEADER {
 			return consts.VOTE_REJECTED + ":L"
 		}

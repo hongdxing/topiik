@@ -2,7 +2,7 @@ package command
 
 const (
 	// CLUSTER(1-15)
-	INIT_CLUSTER           = "INIT-CLUSTER"
+	CREATE_CLUSTER         = "CREATE-CLUSTER"
 	SHOW                   = "SHOW"
 	ADD_WORKER             = "ADD-WORKER"
 	ADD_CONTROLLER         = "ADD-CONTROLLER"
@@ -11,7 +11,7 @@ const (
 	REMOVE_PARTITION       = "REMOVE-PARTITION"
 	RESHARD                = "RESHARD"
 	GET_CTLADDR            = "GET-CTLADDR"
-	INIT_CLUSTER_I   uint8 = 1
+	CREATE_CLUSTER_I uint8 = 1
 	SHOW_I           uint8 = 2
 	ADD_WORKER_I     uint8 = 3
 	ADD_CONTROLLER_I uint8 = 4

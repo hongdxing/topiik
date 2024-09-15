@@ -13,6 +13,7 @@ import (
 	"strings"
 	"topiik/cluster"
 	"topiik/executor/shared"
+	"topiik/internal/command"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/memo"
@@ -53,10 +54,12 @@ func Keys(req datatype.Req) (result []string, err error) {
 	return keys, nil
 }
 
-func ForwardKeys(msg []byte) (res []string) {
+// forward KEYS command to each group
+func ForwardKeys(execute shared.ExeFn, req datatype.Req, msg []byte) (res []string) {
 	var err error
-	for _, worker := range cluster.GetPtnLeaders() {
-		buf := shared.ForwardByWorker(worker, msg) // get keys from each worker leader
+	for _, worker := range cluster.GetWrkGrpLeaders() {
+		//buf := shared.ForwardByWorker(worker, msg) // get keys from each worker leader
+		buf := shared.ExecuteOrForward(worker, execute, command.KEYS_I, req, msg)
 		if len(buf) > 4 {
 			bufSlice := buf[4:5]
 			byteBuf := bytes.NewBuffer(bufSlice)

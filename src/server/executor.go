@@ -14,7 +14,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"topiik/cluster"
 	"topiik/executor"
 	"topiik/internal/config"
 	"topiik/internal/consts"
@@ -96,15 +95,12 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 		return resp.StrResponse(result)
 	} else if icmd == consts.RPC_VOTE {
 		/*
-		* RPC from controller leader by request vote
+		* RPC from worker leader by request vote
 		 */
 		pieces := string(dataBytes)
 		// Check if the request node id in the controllerInfo.Nodes
 		// If no, then Reject
-		ndId := pieces[:consts.NODE_ID_LEN]
-		if _, ok := cluster.GetControllerInfo().Nodes[ndId]; !ok {
-			return resp.ErrResponse(errors.New(resp.RES_REJECTED))
-		}
+		//ndId := pieces[:consts.NODE_ID_LEN]
 		cTerm, err := strconv.Atoi(pieces[consts.CLUSTER_ID_LEN:])
 		if err != nil {
 			return resp.ErrResponse(errors.New(resp.RES_SYNTAX_ERROR))

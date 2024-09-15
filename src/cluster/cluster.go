@@ -7,51 +7,11 @@ package cluster
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
-	"strings"
 	"topiik/internal/consts"
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/node"
-	"topiik/resp"
 )
-
-// Client issue command ADD-WORKER or ADD-CONTROLLER
-// After the target node accepted, Controller add node to metadata
-func AddNode(ndId string, addr string, addr2 string, role string, ptnId string) (err error) {
-	if strings.ToUpper(role) == node.ROLE_CONTROLLER {
-		controllerInfo.Nodes[ndId] = node.NodeSlim{Id: ndId, Addr: addr, Addr2: addr2}
-		saveControllerInfo()
-	} else {
-		return errors.New("")
-	}
-
-	notifyControllerChanged()
-	notifyPtnChanged()
-
-	return nil
-}
-
-// Remove node, Controller or Worker from cluster
-// Syntax: REMOVE-NODE nodeId
-func RemoveNode(ndId string) (err error) {
-	if nd, ok := controllerInfo.Nodes[ndId]; ok {
-		/* if there is only one Controller in cluster, then reject */
-		if len(controllerInfo.Nodes) == 1 {
-			return errors.New(resp.RES_REJECTED)
-		}
-		/* if trying to remove current node and current node is Controller Leader, then reject */
-		if nd.Id == node.GetNodeInfo().Id && nodeStatus.Role == RAFT_LEADER {
-			return errors.New(resp.RES_REJECTED)
-		}
-		delete(controllerInfo.Nodes, ndId)
-		saveControllerInfo()
-		notifyControllerChanged()
-	} else {
-		return errors.New(resp.RES_NIL)
-	}
-	return nil
-}
 
 func SetRole(role uint8) {
 	nodeStatus.Role = role
@@ -61,13 +21,30 @@ func SetLeaderCtlAddr(addr string) {
 	nodeStatus.LeaderControllerAddr = addr
 }
 
-func SetPtnInfo(ptnInfo *PartitionInfo) {
-	partitionInfo = ptnInfo
-}
-
 func SetHeartbeat(heartbeat uint16, heartbeatAt int64) {
 	nodeStatus.Heartbeat = heartbeat
 	nodeStatus.HeartbeatAt = heartbeatAt
+}
+
+func GetWrkGrpLeaders() (workers []node.NodeSlim) {
+	for _, group := range workerGroupInfo.Groups {
+		leader := group.Nodes[group.LeaderNodeId]
+		workers = append(workers, leader)
+	}
+	return workers
+}
+
+func GetWrkGroupLeader(ndId string) (leader node.NodeSlim) {
+	for _, group := range workerGroupInfo.Groups {
+		if _, ok := group.Nodes[ndId]; ok {
+			if group.LeaderNodeId != "" {
+				leader = group.Nodes[group.LeaderNodeId]
+				break
+			}
+		}
+	}
+	// safe? what if leader still empty???
+	return leader
 }
 
 /*pivate func----------------------------------------------------------------*/
@@ -102,9 +79,9 @@ func saveClusterInfo() (err error) {
 // RPC to remove cluster info of the node
 func rpcRemoveNode(ndId string) {
 	var addr2 string
-	if nd, ok := controllerInfo.Nodes[ndId]; ok {
-		addr2 = nd.Addr2
-	}
+	//if nd, ok := controllerInfo.Nodes[ndId]; ok {
+	//	addr2 = nd.Addr2
+	//}
 	if addr2 == "" {
 		return
 	}

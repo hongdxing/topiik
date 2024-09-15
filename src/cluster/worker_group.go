@@ -7,6 +7,7 @@ package cluster
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"strings"
 	"topiik/internal/consts"
@@ -58,15 +59,13 @@ func RemovePartition(ptnId string) error {
 }
 
 // Reshard partition
-// The new Partition always take slots from the last slot, i.e. the one end with 1023
-// And then slide from the first to next make slots even
-func ReShard() (err error) {
+func ReShard(isCreate bool) (err error) {
 	// brand new cluster without partition yet
-	if len(partitionInfo.ClusterId) == 0 {
-		partitionInfo.ClusterId = controllerInfo.ClusterId
-		var ptnCount = len(partitionInfo.PtnMap)
+	if isCreate {
+		var ptnCount = len(workerGroupInfo.Groups)
 		var i int = 0
-		for _, ptn := range partitionInfo.PtnMap {
+		for _, group := range workerGroupInfo.Groups {
+			group.Slots = map[uint16]bool{}
 			var from int
 			var to int
 			from = i * (consts.SLOTS / ptnCount) // p=2--> i=0: 0, i=1: 512
@@ -75,71 +74,42 @@ func ReShard() (err error) {
 			} else {
 				to = (i+1)*(consts.SLOTS/ptnCount) - 1 // p=2--> i=0: 511, i=1: 1024
 			}
-			//ptn.SlotFrom = uint16(from)
-			//ptn.SlotTo = uint16(to)
 			for i := from; i < to; i++ {
-				partitionInfo.Slots[uint16(i)] = ptn.Id
+				group.Slots[uint16(i)] = true
 			}
 			i++
 		}
+		fmt.Println(workerGroupInfo)
 	} else {
 		//
 	}
 
-	// Notify
-	notifyPtnChanged()
+	saveWorkerGroups()
 
-	// Persist
-	err = savePartition()
 	return err
 }
 
-// Add node to NodeSet of partition
-func addNode2Partition(ptnId string, ndId string) {
-	if ptn, ok := partitionInfo.PtnMap[ptnId]; ok {
-		if len(ptn.NodeSet) == 0 {
-			/* if ndId is the first node, set to Leader */
-			ptn.LeaderNodeId = ndId
-			ptn.NodeSet[ndId] = &node.NodeSlim{
-				Id: ndId,
-			}
-		} else if _, ok := ptn.NodeSet[ndId]; !ok {
-			ptn.NodeSet[ndId] = &node.NodeSlim{
-				Id: ndId,
-			}
-		}
-	}
-	savePartition()
-}
-
-func GetPartitionInfo() PartitionInfo {
-	return *partitionInfo
-}
-
-// Save partition info to disk
-func savePartition() (err error) {
-	fpath := GetPatitionFilePath()
-	exist, err := util.PathExists(fpath)
+// save worker group
+func saveWorkerGroups() (err error) {
+	data, err := json.Marshal(workerGroupInfo)
 	if err != nil {
-		l.Err(err).Msgf("savePartition: %s", err.Error())
+		l.Err(err).Msgf("cluster::saveControllerInfo %s", err.Error())
 		return err
 	}
+
+	fpath := getWorkerGroupFilePath()
+	exist, _ := util.PathExists(fpath)
 	if exist { // rename to old for backup
 		err = os.Rename(fpath, fpath+"old")
 		if err != nil {
-			l.Err(err).Msgf("savePartition: %s", err.Error())
+			l.Err(err).Msgf("saveWorkerGroups: %s", err.Error())
 			return err
 		}
-	}
-	data, err := json.Marshal(partitionInfo)
-	if err != nil {
-		l.Err(err).Msgf("savePartition: %s", err.Error())
-		return err
 	}
 
 	err = util.WriteBinaryFile(fpath, data)
 	if err != nil {
-		l.Err(err).Msgf("savePartition: %s", err.Error())
+		l.Err(err).Msgf("saveWorkerGroups: %s", err.Error())
 		return err
 	}
 	return nil

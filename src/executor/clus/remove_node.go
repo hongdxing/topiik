@@ -9,7 +9,6 @@ package clus
 import (
 	"errors"
 	"strings"
-	"topiik/cluster"
 	"topiik/internal/datatype"
 	"topiik/resp"
 )
@@ -23,6 +22,6 @@ func RemoveNode(req datatype.Req) error {
 	if len(ndId) == 0 {
 		return errors.New(resp.RES_SYNTAX_ERROR)
 	}
-
-	return cluster.RemoveNode(ndId)
+	return nil
+	//return cluster.RemoveNode(ndId)
 }

@@ -112,7 +112,7 @@ func InitCluster(clusterId string) (err error) {
 		return errors.New("current node already in a cluster:" + nodeInfo.ClusterId)
 	}
 	nodeInfo.ClusterId = clusterId
-	nodeInfo.Role = ROLE_CONTROLLER
+	nodeInfo.Role = config.ROLE_WORKER
 
 	// 4. marshal
 	buf2, _ := json.Marshal(nodeInfo)
@@ -150,6 +150,14 @@ func JoinCluster(clusterId string, role string) (err error) {
 	return nil
 }
 
+func SetConfig(svrConfig config.ServerConfig) {
+	serverConfig = &svrConfig
+}
+
+func GetConfig() config.ServerConfig {
+	return *serverConfig
+}
+
 /* sync to avoid fatal error: concurrent map writes */
 var setPtnMu sync.Mutex
 
@@ -175,6 +183,10 @@ func GetNodeFilePath() string {
 	return util.GetMainPath() + slash + dataDIR + slash + "__metadata_node__"
 }
 
-func IsController() bool {
-	return nodeInfo.Role == ROLE_CONTROLLER
+func IsWorker() bool {
+	return nodeInfo.Role == config.ROLE_WORKER
+}
+
+func IsPersistor() bool {
+	return nodeInfo.Role == config.ROLE_PERSISTOR
 }

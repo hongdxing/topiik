@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"topiik/cluster"
 	"topiik/executor/shared"
+	"topiik/internal/command"
 	"topiik/internal/datatype"
 	"topiik/memo"
 	"topiik/resp"
@@ -27,11 +28,12 @@ func Del(req datatype.Req) (rslt int64, err error) {
 	return rslt, err
 }
 
-// forward del command to each partition
-func ForwardDel(msg []byte) (rslt int64) {
+// forward DEL command to each group
+func ForwardDel(execute shared.ExeFn, req datatype.Req, msg []byte) (rslt int64) {
 	var err error
-	for _, worker := range cluster.GetPtnLeaders() {
-		buf := shared.ForwardByWorker(worker, msg) // get keys from each worker leader
+	for _, worker := range cluster.GetWrkGrpLeaders() {
+		//buf := shared.ForwardByWorker(worker, msg) // get keys from each worker leader
+		buf := shared.ExecuteOrForward(worker, execute, command.DEL_I, req, msg)
 		if len(buf) > 4 {
 			bbuf := bytes.NewBuffer(buf[4:5])
 			var flag resp.RespFlag

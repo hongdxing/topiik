@@ -33,16 +33,11 @@ func addNode(pieces []string) (string, error) {
 	clusterId := pieces[0]
 	role := strings.ToUpper(pieces[1])
 
-	if role != node.ROLE_CONTROLLER && role != node.ROLE_WORKER {
-		return "", errors.New("invalid role: " + role)
-	}
-
 	node.JoinCluster(clusterId, role)
 
-	/* if join controller succeed, will start to RequestVote */
-	if role == node.ROLE_CONTROLLER {
-		go cluster.RequestVote()
-	}
+	// start to RequestVote */
+	go cluster.RequestVote()
+
 	// return nodeId to controller
 	return node.GetNodeInfo().Id, nil
 }

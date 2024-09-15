@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"topiik/cluster"
@@ -23,47 +22,32 @@ import (
 // Init a Topiik cluster
 // Params:
 //   - addr: current node addr
-//
-// Syntax: INIT-CLUSTER host:port[,host:port] partitions num
-func ClusterInit(req datatype.Req, persistorAddr string) (err error) {
+func ClusterInit(req datatype.Req, persistors []string) (err error) {
 	pieces := strings.Split(req.Args, consts.SPACE)
+	l.Info().Msg(req.Args)
+	if len(pieces) != 2 {
+		return errors.New(resp.RES_SYNTAX_ERROR)
+	}
 	// if node already in a cluster, return error
 	if len(node.GetNodeInfo().ClusterId) > 0 {
 		return errors.New("current node already in cluster: " + node.GetNodeInfo().ClusterId)
 	}
 
-	// at least have paritition(2), or controller address(es)
-	if len(pieces) != 2 && len(pieces) != 3 {
-		return errors.New(resp.RES_SYNTAX_ERROR)
-	}
-
-	if strings.ToLower(pieces[1]) != "partitions" {
-		return errors.New(resp.RES_SYNTAX_ERROR)
-	}
-
-	var ptnCount int
-	ptnCount, err = strconv.Atoi(string(pieces[2]))
+	workers := strings.Split(pieces[0], ",")
+	ptnCount, err := strconv.Atoi(pieces[1])
 	if err != nil {
 		return err
 	}
-	if ptnCount <= 0 {
-		fmt.Printf("partition: %v", ptnCount)
-		return errors.New(resp.RES_SYNTAX_ERROR)
-	}
-
-	// controller and worker
-	controllers := strings.Split(pieces[1], ",")
-	persistors := strings.Split(persistorAddr, ",")
 
 	// validate persistors
 	if len(persistors) == 0 || len(persistors) < ptnCount {
 		return errors.New(resp.RES_NO_PERSISTOR)
 	}
 
-	// connective check for controllers
-	ctlNodeIdAddr, ctlNodeIdAddr2 := checkConnection(controllers)
-	if len(ctlNodeIdAddr) != len(controllers) {
-		unaccessibleAddr := controllers[len(ctlNodeIdAddr)]
+	// connective check for workers
+	ctlNodeIdAddr, _ := checkConnection(workers)
+	if len(ctlNodeIdAddr) != len(workers) {
+		unaccessibleAddr := workers[len(ctlNodeIdAddr)]
 		l.Err(nil).Msgf("Invalid address: %s not accessible", unaccessibleAddr)
 		return errors.New(resp.RES_NODE_NA)
 	}
@@ -82,14 +66,6 @@ func ClusterInit(req datatype.Req, persistorAddr string) (err error) {
 		l.Err(err).Msgf("executor::clusterInit %s", err.Error())
 		/* TODO: clean cluster info if failed */
 		return err
-	}
-
-	// update controllers
-	for ndId, addr2 := range ctlNodeIdAddr2 {
-		if ndId == node.GetNodeInfo().Id {
-			continue
-		}
-		rpcAddNode(addr2, node.ROLE_CONTROLLER)
 	}
 
 	// update worker

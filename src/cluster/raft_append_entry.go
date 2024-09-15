@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
-	"errors"
 	"io"
 	"net"
 	"sync"
@@ -23,31 +22,25 @@ import (
 const ptnTickerDur int = 500
 const ptnLeaderDownMaxMills int = 3000
 
-var hbTicker *time.Ticker  // heartbeat ticker
-var ptnTicker *time.Ticker // partition ticker
+var hbTicker *time.Ticker // heartbeat ticker
 // var cluUpdCh chan struct{}
 
 var connCache = make(map[string]*net.TCPConn)
 
 // Controller issues AppendEntries RPCs to replicate metadata to follower,
 // or send heartbeats (AppendEntries RPCs that carry no data)
-func AppendEntries() {
+func AppendEntries(wrkGrp WorkerGroup) {
 	hbTicker = time.NewTicker(200 * time.Millisecond)
-	ptnTicker = time.NewTicker(time.Duration(ptnTickerDur) * time.Millisecond)
 	defer close(ptnUpdCh)
-	defer close(ctlUpdCh)
+	defer close(wrkGrpUpdCh)
 
 	//dialErrorCounter := 0 // this not 'thread' safe, but it's not important
 	for {
 		select {
 		case <-hbTicker.C:
-			appendHeartbeat()
-		case <-ptnTicker.C:
-			appendPtn()
-		case <-ctlUpdCh:
-			appendControllerInfo()
-		case <-ptnUpdCh:
-			appendPartitionInfo()
+			appendHeartbeat(wrkGrp)
+		case <-wrkGrpUpdCh:
+			appendWrkGrpInfo()
 		}
 	}
 }
@@ -72,54 +65,37 @@ func appendClusterInfo() {
 	}
 }*/
 
-// sync controller info to controllers
-func appendControllerInfo() {
+// sync worker group info to workers
+func appendWrkGrpInfo() {
 	var buf []byte
 	var bbuf = new(bytes.Buffer)
-	data, err := json.Marshal(controllerInfo)
+	data, err := json.Marshal(workerGroupInfo)
 	if err != nil {
 		l.Err(err).Msg(err.Error())
 	} else {
 		binary.Write(bbuf, binary.LittleEndian, ENTRY_TYPE_CTL)
 		buf = append(buf, bbuf.Bytes()...)
 		buf = append(buf, data...)
-		for _, controller := range controllerInfo.Nodes {
-			if controller.Id == node.GetNodeInfo().Id {
-				continue
+		for _, wrkGrp := range workerGroupInfo.Groups {
+			for _, worker := range wrkGrp.Nodes {
+				if worker.Id == node.GetNodeInfo().Id {
+					continue
+				}
+				send(worker.Addr2, worker.Id, buf)
 			}
-			send(controller.Addr2, controller.Id, buf)
 		}
 	}
 }
 
-func appendPartitionInfo() {
-	var buf []byte
-	var bbuf = new(bytes.Buffer)
-	data, err := json.Marshal(partitionInfo)
-	if err != nil {
-		l.Err(err).Msg(err.Error())
-	} else {
-		binary.Write(bbuf, binary.LittleEndian, ENTRY_TYPE_PTNS)
-		buf = append(buf, bbuf.Bytes()...)
-		buf = append(buf, data...)
-		for _, controller := range controllerInfo.Nodes {
-			if controller.Id == node.GetNodeInfo().Id {
-				continue
-			}
-			send(controller.Addr2, controller.Id, buf)
-		}
-	}
-}
-
-func appendHeartbeat() {
-	for _, controller := range controllerInfo.Nodes {
+func appendHeartbeat(wrkGrp WorkerGroup) {
+	for _, controller := range wrkGrp.Nodes {
 		if controller.Id == node.GetNodeInfo().Id {
 			continue
 		}
 		go send(controller.Addr2, controller.Id, []byte{})
 	}
 
-	for _, worker := range controllerInfo.Nodes {
+	for _, worker := range wrkGrp.Nodes {
 		if worker.Id == node.GetNodeInfo().Id {
 			continue
 		}
@@ -129,92 +105,6 @@ func appendHeartbeat() {
 
 // when partition leader not available, the accoumulated milli seconds retried
 var ptnLeaderDownMills = make(map[string]int)
-
-// healthcheck partition leader, and sync follower(s) to leader
-func appendPtn() {
-	for _, ptn := range partitionInfo.PtnMap {
-		if ptn.LeaderNodeId == "" { // no leader yet
-			electPtnLeader(ptn)
-		} else {
-			if ptnLeader, ok := controllerInfo.Nodes[ptn.LeaderNodeId]; ok { // get the leader Worker
-				for ndId, nd := range ptn.NodeSet {
-					if wrk, ok := controllerInfo.Nodes[ndId]; ok {
-						nd.Id = ndId
-						nd.Addr = wrk.Addr
-						nd.Addr2 = wrk.Addr2
-					}
-				}
-
-				var buf []byte
-				bbuf := new(bytes.Buffer)
-				binary.Write(bbuf, binary.LittleEndian, ENTRY_TYPE_PTN)
-				buf = append(buf, bbuf.Bytes()...)
-				//flrb, err := json.Marshal(followers)
-				ptnb, err := json.Marshal(ptn)
-				if err != nil {
-					l.Err(err).Msgf(err.Error())
-					continue
-				}
-				buf = append(buf, ptnb...)
-				err = send(ptnLeader.Addr2, ptnLeader.Id, buf)
-				if err != nil {
-					//l.Err(err).Msg(err.Error())
-					var ne net.Error
-					if errors.As(err, &ne) { // if the leader not available from controller
-						l.Warn().Msgf("worker %s not accessible", ptnLeader.Addr2)
-						ptnLeaderDownMills[ptn.Id] += ptnTickerDur
-						if ptnLeaderDownMills[ptn.Id] >= ptnLeaderDownMaxMills { // to elect new partition leader
-							electPtnLeader(ptn)
-						}
-					}
-				} else {
-					ptnLeaderDownMills[ptn.Id] = 0
-				}
-			}
-		}
-	}
-}
-
-func electPtnLeader(ptn *node.Partition) {
-	seqMap := make(map[string]int64)
-	var wg sync.WaitGroup
-	var newLeaderId string
-
-	// set init value to first node id
-	for _, nd := range ptn.NodeSet {
-		newLeaderId = nd.Id
-		break
-	}
-
-	if len(ptn.NodeSet) > 1 {
-		// notice here not execlude the leader, in case it's recovered and give it last chance
-		for ndId := range ptn.NodeSet {
-			wg.Add(1)
-			if wrk, ok := controllerInfo.Nodes[ndId]; ok {
-				go getWorkerBinlogSeq(wrk.Id, wrk.Addr2, &wg, &seqMap)
-			} else {
-				wg.Done()
-			}
-		}
-		wg.Wait()
-
-		// get worker that have max seq
-		var maxSeq int64
-		for ndId, seq := range seqMap {
-			if seq > maxSeq {
-				newLeaderId = ndId
-				maxSeq = seq
-			}
-		}
-	}
-
-	// l.Info().Msgf("new LeaderId: %s", newLeaderId)
-	if _, ok := controllerInfo.Nodes[newLeaderId]; ok {
-		l.Info().Msgf("Partition %s has new leader: %s", ptn.Id, newLeaderId)
-		ptn.LeaderNodeId = newLeaderId
-		//ptnUpdCh <- struct{}{} // sync partition to followers
-	}
-}
 
 var mu sync.Mutex
 

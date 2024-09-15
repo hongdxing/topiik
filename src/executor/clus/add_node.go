@@ -10,7 +10,6 @@ import (
 	"errors"
 	"regexp"
 	"strings"
-	"topiik/cluster"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/internal/proto"
@@ -22,9 +21,6 @@ import (
 // Add worker to cluster
 // Syntax: ADD-WORKER host:port partition {ptnId}
 func AddWorker(req datatype.Req) (ndId string, err error) {
-	if !node.IsController() {
-		return ndId, errors.New("add-worker can only run on controller node")
-	}
 	pieces, err := util.SplitCommandLine(req.Args)
 	if err != nil {
 		return "", errors.New(resp.RES_SYNTAX_ERROR)
@@ -43,40 +39,11 @@ func AddWorker(req datatype.Req) (ndId string, err error) {
 		return ndId, errors.New(resp.RES_SYNTAX_ERROR)
 	}
 
-	// make sure the ptnId is valid
-	ptnId := pieces[2]
-	if _, ok := cluster.GetPartitionInfo().PtnMap[ptnId]; !ok {
-		return ndId, errors.New(resp.RES_INVALID_PARTITION_ID)
-	}
-
-	ndId, err = addNode(nodeAddr, node.ROLE_WORKER, ptnId)
-	if err != nil {
-		return ndId, err
-	}
+	//ndId, err = addNode(nodeAddr, config.ROLE_WORKER, ptnId)
+	//if err != nil {
+	//	return ndId, err
+	//}
 	return ndId, err
-}
-
-// Add controller to cluster
-// Syntax: ADD-CONTROLLER host:port
-func AddController(req datatype.Req) (rslt string, err error) {
-	if !node.IsController() {
-		return rslt, errors.New("add-controller can only run on controller node")
-	}
-	pieces, err := util.SplitCommandLine(req.Args)
-	if err != nil {
-		return "", errors.New(resp.RES_SYNTAX_ERROR)
-	}
-	if len(pieces) != 1 { // must have target address
-		return "", errors.New(resp.RES_SYNTAX_ERROR)
-	}
-	nodeAddr := pieces[0]
-	// validate host
-	reg, _ := regexp.Compile(consts.HOST_PATTERN)
-	if !reg.MatchString(nodeAddr) {
-		return "", errors.New("invalide address format")
-	}
-	rslt, err = addNode(nodeAddr, node.ROLE_CONTROLLER, "")
-	return rslt, err
 }
 
 // Run from controller leader, to add new node to cluster
@@ -121,7 +88,7 @@ func addNode(nodeAddr string, role string, ptnId string) (result string, err err
 
 	if flag == resp.Success {
 		l.Info().Msgf("executor::addNode succeed: %s", ndId)
-		cluster.AddNode(ndId, nodeAddr, nodeAddr2, role, ptnId)
+		//cluster.AddNode(ndId, nodeAddr, nodeAddr2, role, ptnId)
 
 	} else {
 		l.Err(nil).Msg("executor::addNode failed")

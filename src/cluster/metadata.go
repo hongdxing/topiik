@@ -1,10 +1,12 @@
-///author: duan hongxing
-///data: 6 Jul 2024
+//author: duan hongxing
+//data: 6 Jul 2024
 
 package cluster
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 	"topiik/internal/consts"
 	"topiik/internal/util"
@@ -13,7 +15,10 @@ import (
 
 // var clusterInfo = &Cluster{Ctls: make(map[string]node.NodeSlim), Wkrs: make(map[string]node.NodeSlim)}
 var term int
-var controllerInfo = &NodesInfo{Nodes: make(map[string]node.NodeSlim)}
+
+var workerGroupInfo = &WorkerGroupInfo{Groups: make(map[string]*WorkerGroup)}
+
+// var controllerInfo = &NodesInfo{Nodes: make(map[string]node.NodeSlim)}
 var partitionInfo = &PartitionInfo{PtnMap: make(map[string]*node.Partition), Slots: make(map[uint16]string, consts.SLOTS)}
 var nodeStatus = &NodeStatus{Role: RAFT_FOLLOWER, Term: 0}
 
@@ -23,13 +28,13 @@ const (
 )
 
 // Load controller info on each node, including controller and worker
-func LoadControllerInfo() (err error) {
+func LoadWorkerGroupInfo() (err error) {
 	l.Info().Msg("Loading controller info begin")
 	// whether the file exist
 	exist := false
 
 	// Load controller info
-	fpath := getControllerFilePath()
+	fpath := getWorkerGroupFilePath()
 	exist, err = util.PathExists(fpath)
 	if err != nil {
 		l.Panic().Msg(err.Error())
@@ -39,7 +44,7 @@ func LoadControllerInfo() (err error) {
 		if err != nil {
 			l.Panic().Msg(err.Error())
 		}
-		err = json.Unmarshal([]byte(jsonStr), &controllerInfo)
+		err = json.Unmarshal([]byte(jsonStr), &workerGroupInfo)
 		if err != nil {
 			l.Panic().Msg(err.Error())
 		}
@@ -48,69 +53,13 @@ func LoadControllerInfo() (err error) {
 	return nil
 }
 
-// Load metadata on controller node
-func LoadMetadata() (err error) {
-	exist := false // whether the file exist
-
-	// Load partition info
-	fpath := GetPatitionFilePath()
-	exist, err = util.PathExists(fpath)
-	if err != nil {
-		l.Panic().Msg(err.Error())
-	}
-	if exist {
-		data, err := util.ReadBinaryFile(fpath)
-		if err != nil {
-			l.Panic().Msg(err.Error())
-		}
-
-		if err != nil {
-			l.Panic().Msg(err.Error())
-		}
-		err = json.Unmarshal(data, &partitionInfo)
-		if err != nil {
-			l.Panic().Msg(err.Error())
-		}
-		//validate slots
-		if len(partitionInfo.Slots) != consts.SLOTS {
-			l.Panic().Msg("Slots broken")
-		}
-		if _, ok := partitionInfo.Slots[1]; !ok {
-			l.Panic().Msg("Slots broken")
-		}
-		if _, ok := partitionInfo.Slots[consts.SLOTS]; !ok {
-			l.Panic().Msg("Slots broken")
-		}
-	} else {
-		// init Slots to empty node id
-		for i := 1; i <= consts.SLOTS; i++ {
-			partitionInfo.Slots[uint16(i)] = ""
+func getWorkGroup(ndId string) WorkerGroup {
+	for _, wg := range workerGroupInfo.Groups {
+		if _, ok := wg.Nodes[ndId]; ok {
+			return *wg
 		}
 	}
-
-	//
-	if node.GetNodeInfo().Role == node.ROLE_CONTROLLER {
-		go RequestVote()
-	}
-
-	return nil
-}
-
-func SetControllerInfo(controllers *NodesInfo) {
-	controllerInfo = controllers
-	saveControllerInfo()
-}
-
-func GetControllerInfo() NodesInfo {
-	return *controllerInfo
-}
-
-func GetPtnLeaders() (controllers []node.NodeSlim) {
-	for _, ptn := range partitionInfo.PtnMap {
-		controller := controllerInfo.Nodes[ptn.LeaderNodeId]
-		controllers = append(controllers, controller)
-	}
-	return controllers
+	return WorkerGroup{}
 }
 
 func GetNodeStatus() NodeStatus {
@@ -121,75 +70,25 @@ func GetTerm() int {
 	return term
 }
 
-func GetNodeByKeyHash(keyHash uint16) node.NodeSlim {
-	empty := node.NodeSlim{}
-	if ptnId, ok := partitionInfo.Slots[keyHash]; ok {
-		if ptn, ok := partitionInfo.PtnMap[ptnId]; ok {
-			if worker, ok := controllerInfo.Nodes[ptn.LeaderNodeId]; ok {
-				return worker
-			} else {
-				return empty
-			}
-		} else {
-			return empty
+func GetNodeByKeyHash(keyHash uint16) (node.NodeSlim, error) {
+	for _, group := range workerGroupInfo.Groups {
+		if _, ok := group.Slots[keyHash]; ok {
+			return group.Nodes[group.LeaderNodeId], nil
 		}
-	} else {
-		return empty
 	}
+	return node.NodeSlim{}, errors.New(fmt.Sprintf("Cannot find worker for key hash %v", keyHash))
 }
 
-/* metadata file path */
-/*
-func GetClusterFilePath() string {
-	return util.GetMainPath() + slash + dataDIR + slash + "__metadata_cluster__"
-}*/
-
-func getControllerFilePath() string {
-	return util.GetMainPath() + slash + dataDIR + slash + "__metadata_controller__"
+func getWorkerGroupFilePath() string {
+	return util.GetMainPath() + slash + dataDIR + slash + "__metadata_wg__"
 }
 
 func getWorkerFilePath() string {
 	return util.GetMainPath() + slash + dataDIR + slash + "__metadata_worker__"
 }
 
-func GetPatitionFilePath() string {
-	return util.GetMainPath() + slash + dataDIR + slash + "__metadata_partition__"
-}
-
-/* save meatadata */
-func saveControllerInfo() (err error) {
-	data, err := json.Marshal(controllerInfo)
-	if err != nil {
-		l.Err(err).Msgf("cluster::saveControllerInfo %s", err.Error())
-		return err
-	}
-
-	fpath := getControllerFilePath()
-	exist, _ := util.PathExists(fpath)
-	if exist {
-		err = os.Truncate(fpath, 0) // TODO: backup first
-		if err != nil {
-			l.Err(err)
-			return err
-		}
-	}
-
-	err = os.WriteFile(fpath, data, 0644)
-	if err != nil {
-		l.Err(err)
-		return err
-	}
-	return nil
-}
-
-func notifyControllerChanged() {
-	l.Info().Msg("metadata::notifyControllerChanged begin")
-	ctlUpdCh <- struct{}{}
-	l.Info().Msg("metadata::notifyControllerChanged end")
-}
-
-func notifyPtnChanged() {
-	l.Info().Msg("metadata::notifyPtnChange begin")
-	ptnUpdCh <- struct{}{}
-	l.Info().Msg("metadata::notifyPtnChange end")
+func notifyWorkerGroupChanged() {
+	l.Info().Msg("metadata::notifyWorkerGroupChanged begin")
+	wrkGrpUpdCh <- struct{}{}
+	l.Info().Msg("metadata::notifyWorkerGroupChanged end")
 }

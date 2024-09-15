@@ -1,8 +1,5 @@
-/*
-* author: duan hongxing
-* date: 19 Jun, 2024
-* desc:
- */
+//author: duan hongxing
+//date: 19 Jun, 2024
 
 package main
 
@@ -33,6 +30,7 @@ func main() {
 	printBanner()
 	var err error
 	serverConfig, err = readConfig()
+	node.SetConfig(*serverConfig)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -45,36 +43,23 @@ func main() {
 	}
 
 	// load controller info on each node
-	err = cluster.LoadControllerInfo()
-	if err != nil {
-		l.Panic().Msg(err.Error())
-	}
-
-	/*
-		// online check
-		err = online()
-		if err != nil {
-			l.Panic().Msg(err.Error())
-		}*/
-
-	// load metadata
-	if node.IsController() {
-		err = cluster.LoadMetadata()
+	if node.IsWorker() {
+		err = cluster.LoadWorkerGroupInfo()
 		if err != nil {
 			l.Panic().Msg(err.Error())
 		}
+		cluster.RequestVote()
+	}
+
+	// load data
+	if node.IsPersistor() {
+		persistence.Load(executor.Execute1)
 	}
 
 	// Listen for incoming connections
 	ln, err := net.Listen("tcp", serverConfig.Listen)
 	if err != nil {
 		l.Panic().Msg(err.Error())
-	}
-
-	// Start routines
-	if !node.IsController() {
-		persistence.Load(executor.Execute1)
-		//go persistence.Sync()    // sync from Partition Leader
 	}
 
 	go server.StartServer(serverConfig.Host+":"+serverConfig.Port2, serverConfig)
@@ -122,90 +107,6 @@ func handleConnection(conn net.Conn) {
 func printBanner() {
 	l.Info().Msg("[TOPIIK] Starting Topiik Server...")
 }
-
-/*
-// check if node still valid in the cluster
-func online() error {
-	// if current node is controller, and the only controller
-	if node.GetNodeInfo().Role == node.ROLE_CONTROLLER && len(cluster.GetControllerInfo().Nodes) == 1 {
-		return nil
-	}
-	var connFailCount = 0
-	var count = len(cluster.GetControllerInfo().Nodes)
-	for _, controller := range cluster.GetControllerInfo().Nodes {
-		if node.GetNodeInfo().Id == controller.Id {
-			count--
-			continue
-		}
-
-		err := doOnline(controller.Addr2)
-		if err != nil {
-			if err.Error() == "CONNECTION" {
-				connFailCount++
-			}
-			continue
-		} else {
-			return nil
-		}
-	}
-	// if connFailCount ecquals controller count, then this is the first node to start
-	if connFailCount == count {
-		return nil
-	}
-	return errors.New(resp.RES_REJECTED)
-}
-
-func doOnline(addr2 string) error {
-	conn, err := util.PreapareSocketClient(addr2)
-	if err != nil {
-		l.Warn().Msgf("online connect to controller %s failed", addr2)
-		return errors.New("CONNECTION")
-	}
-	defer conn.Close()
-
-	var buf []byte
-	var bbuf = new(bytes.Buffer)
-	if err != nil {
-		l.Err(err).Msg(err.Error())
-	} else {
-		binary.Write(bbuf, binary.LittleEndian, consts.RPC_ONLINE)
-		buf = append(buf, bbuf.Bytes()...)
-		buf = append(buf, []byte(node.GetNodeInfo().ClusterId)...)
-	}
-	// Enocde
-	buf, err = proto.EncodeB(buf)
-	if err != nil {
-		l.Err(err)
-		return err
-	}
-
-	// Send
-	_, err = conn.Write(buf)
-	if err != nil {
-		l.Err(err)
-		return err
-	}
-
-	// Read
-	reader := bufio.NewReader(conn)
-	buf, err = proto.Decode(reader)
-	if err != nil {
-		if err == io.EOF {
-			l.Err(err).Msgf("online %s\n", err)
-		}
-	}
-	if len(buf) < resp.RESPONSE_HEADER_SIZE {
-		l.Err(err)
-		return err
-	}
-	rslt := string(buf[resp.RESPONSE_HEADER_SIZE:])
-	if rslt == resp.RES_REJECTED {
-		l.Warn().Err(errors.New(resp.RES_REJECTED))
-		return err
-	}
-	return nil
-}
-*/
 
 // Read config values from server.env
 func readConfig() (*config.ServerConfig, error) {

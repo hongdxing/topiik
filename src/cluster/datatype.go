@@ -8,10 +8,16 @@ import (
 	"topiik/node"
 )
 
+type WorkerGroupInfo struct {
+	ClusterId string
+	Groups    map[string]*WorkerGroup
+}
+
 type WorkerGroup struct {
-	LeaderNodeId string            // dynamic update
-	Nodes        []*node.NodeSlim  // nodes in the group
-	Slots        map[uint16]string // partition slots of group
+	Id           string
+	LeaderNodeId string                   // dynamic update
+	Nodes        map[string]node.NodeSlim // nodes in the group
+	Slots        map[uint16]bool          // partition slots of group, the bool value is not important
 }
 
 type Persistors struct {
