@@ -53,8 +53,11 @@ func doInit(workers map[string]string, ptnCount int) error {
 	var addrIdx = 0
 	for i := 0; i < ptnCount; i++ {
 		addrIdx = 0
+		workerGroup := WorkerGroup{Nodes: make(map[string]node.NodeSlim)}
+		wgId := strings.ToLower(util.RandStringRunes(10))
+		workerGroup.Id = wgId
+		workerGroupInfo.Groups[wgId] = &workerGroup
 		for ndId, addr := range workers {
-			workerGroup := WorkerGroup{Nodes: make(map[string]node.NodeSlim)}
 			if addrIdx%int(ptnCount) == i {
 				host, _, port2, _ := util.SplitAddress2(addr)
 				workerGroup.Nodes[ndId] = node.NodeSlim{Id: ndId, Addr: addr, Addr2: host + ":" + port2}
@@ -63,9 +66,6 @@ func doInit(workers map[string]string, ptnCount int) error {
 					workerGroup.LeaderNodeId = ndId
 				}
 			}
-			wgId := strings.ToLower(util.RandStringRunes(10))
-			workerGroup.Id = wgId
-			workerGroupInfo.Groups[wgId] = &workerGroup
 			addrIdx++
 		}
 	}

@@ -7,6 +7,8 @@ package cluster
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
+	"fmt"
 	"topiik/internal/consts"
 	"topiik/internal/proto"
 	"topiik/internal/util"
@@ -19,6 +21,13 @@ func SetRole(role uint8) {
 
 func SetLeaderCtlAddr(addr string) {
 	nodeStatus.LeaderControllerAddr = addr
+}
+
+func SetWorkerGroupInfo(data []byte) error {
+	err := json.Unmarshal(data, &workerGroupInfo)
+	fmt.Println(workerGroupInfo)
+	saveWorkerGroups()
+	return err
 }
 
 func SetHeartbeat(heartbeat uint16, heartbeatAt int64) {

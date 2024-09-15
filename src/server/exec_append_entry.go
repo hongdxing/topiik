@@ -59,6 +59,11 @@ func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 			/* set cluster info in memory */
 			//cluster.SetClusterInfo(clusterInfo)
 			l.Info().Msg("rpc_append_entry::appendEntry metadata end")
+		} else if entryType == cluster.ENTRY_TYPE_WRKGRP {
+			l.Info().Msg("rpc_append_entry::appendEntry worker group begin")
+			err := cluster.SetWorkerGroupInfo(entry[1:])
+			l.Err(err)
+			l.Info().Msg("rpc_append_entry::appendEntry worker group end")
 		}
 	}
 

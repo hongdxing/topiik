@@ -63,7 +63,7 @@ func RequestVote() {
 			}
 			continue
 		}
-		// merge controller and woker address2
+		// merge worker and persistor
 		var addr2List = []string{}
 		for _, v := range wrkGrp.Nodes {
 			addr2List = append(addr2List, v.Addr2)
@@ -71,7 +71,9 @@ func RequestVote() {
 
 		// use persistor as voter
 		// todo: what if Persistor[0] down???
-		addr2List = append(addr2List, node.GetConfig().Persistors[0])
+		pstAddr := node.GetConfig().Persistors[0]
+		host, _, port2, _ := util.SplitAddress2(pstAddr)
+		addr2List = append(addr2List, host+":"+port2)
 
 		nodeStatus.Role = RAFT_CANDIDATOR
 		nodeStatus.Term += 1
@@ -105,17 +107,16 @@ func RequestVote() {
 			}
 		}
 		if canPromote {
-			/* promote to Controller */
+			// promote to Leader
 			nodeStatus.Role = RAFT_LEADER
 
-			/* Leader start to AppendEntries */
+			// Leader start to AppendEntries
 			go AppendEntries(wrkGrp)
 			/* make sure channel are ready */
 			//time.Sleep(500 * time.Millisecond)
 
-			/* when new Leader selected, try to sync cluster metadata */
+			// when new Leader selected, try to sync cluster metadata
 			notifyWorkerGroupChanged()
-			//notifyPtnChanged()
 
 			/* Print Selected Leader */
 			l.Info().Msgf("[TOPIIK] ~!~ selected as new leader")

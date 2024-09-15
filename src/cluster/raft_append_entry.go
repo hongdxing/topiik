@@ -73,7 +73,7 @@ func appendWrkGrpInfo() {
 	if err != nil {
 		l.Err(err).Msg(err.Error())
 	} else {
-		binary.Write(bbuf, binary.LittleEndian, ENTRY_TYPE_CTL)
+		binary.Write(bbuf, binary.LittleEndian, ENTRY_TYPE_WRKGRP)
 		buf = append(buf, bbuf.Bytes()...)
 		buf = append(buf, data...)
 		for _, wrkGrp := range workerGroupInfo.Groups {

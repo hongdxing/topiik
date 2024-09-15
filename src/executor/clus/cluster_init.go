@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"topiik/cluster"
@@ -51,6 +52,7 @@ func ClusterInit(req datatype.Req, persistors []string) (err error) {
 		l.Err(nil).Msgf("Invalid address: %s not accessible", unaccessibleAddr)
 		return errors.New(resp.RES_NODE_NA)
 	}
+	fmt.Println(ctlNodeIdAddr)
 
 	// connective check for persistors
 	pstNodeIdAddr, _ := checkConnection(persistors)
