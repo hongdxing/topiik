@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"topiik/cluster"
@@ -46,13 +45,12 @@ func ClusterInit(req datatype.Req, persistors []string) (err error) {
 	}
 
 	// connective check for workers
-	ctlNodeIdAddr, _ := checkConnection(workers)
-	if len(ctlNodeIdAddr) != len(workers) {
-		unaccessibleAddr := workers[len(ctlNodeIdAddr)]
+	wrkNodeIdAddr, _ := checkConnection(workers)
+	if len(wrkNodeIdAddr) != len(workers) {
+		unaccessibleAddr := workers[len(wrkNodeIdAddr)]
 		l.Err(nil).Msgf("Invalid address: %s not accessible", unaccessibleAddr)
 		return errors.New(resp.RES_NODE_NA)
 	}
-	fmt.Println(ctlNodeIdAddr)
 
 	// connective check for persistors
 	pstNodeIdAddr, _ := checkConnection(persistors)
@@ -63,17 +61,12 @@ func ClusterInit(req datatype.Req, persistors []string) (err error) {
 	}
 
 	// init cluster
-	err = cluster.InitCluster(ctlNodeIdAddr, ptnCount)
+	err = cluster.InitCluster(wrkNodeIdAddr, ptnCount)
 	if err != nil {
 		l.Err(err).Msgf("executor::clusterInit %s", err.Error())
 		/* TODO: clean cluster info if failed */
 		return err
 	}
-
-	// update worker
-	//for _, addr2 := range pstNodeIdAddr2 {
-	//	rpcAddNode(addr2, node.ROLE_WORKER)
-	//}
 
 	return nil
 }

@@ -29,7 +29,6 @@ func CreateCluster(workers string, partitions uint) error {
 	}
 
 	args := workers + consts.SPACE + strconv.Itoa(int(partitions))
-	fmt.Printf("args: %s\n", args)
 	build := &CmdBuilder{Cmd: command.CREATE_CLUSTER_I, Ver: 1}
 	data, _ := build.BuildM(Abytes{}, Abytes{}, args)
 	return doCreateCluster(addrs[0], data)

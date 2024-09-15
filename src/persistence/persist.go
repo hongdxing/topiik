@@ -6,10 +6,14 @@ package persistence
 import (
 	"bufio"
 	"bytes"
+	"container/list"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"net"
 	"os"
+	"sync"
+	"time"
 	"topiik/internal/consts"
 	"topiik/internal/proto"
 	"topiik/internal/util"
@@ -30,9 +34,62 @@ var activeLF *os.File
 
 // cache tcp conn to follower
 var connCache = make(map[string]*net.TCPConn)
+var pstConn *net.TCPConn
 
 // is batch syncing in progress
 var batchSyncing = false
+
+var msgQ list.List
+var lock sync.Locker
+var dequeueCh time.Ticker = *time.NewTicker(time.Millisecond * 1000)
+
+// enqueue msg pending persist to persistor server
+func Enqueue(msg []byte) {
+	lock.Lock()
+	defer lock.Unlock()
+	msgQ.PushFront(msg)
+}
+
+func Dequeue() {
+	select {
+	case <-dequeueCh.C:
+		doDequeue()
+	}
+}
+
+func doDequeue() {
+	lock.Lock()
+	defer lock.Unlock()
+
+	var binlogs []byte
+	for {
+		if msgQ.Len() == 0 {
+			break
+		}
+		buf := msgQ.Back().Value.([]byte)
+		binlogs = append(binlogs, buf...)
+		if len(binlogs) > batchSyncSize { // limit batch size
+			break
+		}
+	}
+
+	if pstConn == nil {
+		addr := node.GetConfig().Persistors[0]
+		host, _, port2, _ := util.SplitAddress2(addr)
+		conn, err := util.PreapareSocketClient(host + ":" + port2)
+		pstConn = conn
+		if err != nil {
+			l.Err(err).Msgf("persistence::doDequeue conn: %s", err.Error())
+		}
+	}
+
+	doSync(pstConn, binlogs)
+}
+
+func msgId() string {
+
+	return fmt.Sprintf("%s%v", node.GetNodeInfo().GroupId, util.GetUtcEpoch())
+}
 
 // Append msg to binary log
 func Append(msg []byte) (err error) {
@@ -68,7 +125,7 @@ func Append(msg []byte) (err error) {
 }
 
 func syncOne(binlogs []byte) {
-	var err error
+	/*var err error
 	for _, nd := range node.GetPnt().NodeSet {
 		var conn *net.TCPConn
 		if nd.Id == node.GetNodeInfo().Id { // not sync current node
@@ -90,7 +147,7 @@ func syncOne(binlogs []byte) {
 		if flrSeq < binlogSeq && !batchSyncing {
 			go syncBatch(conn, flrSeq+1)
 		}
-	}
+	}*/
 }
 
 const batchSyncSize = 1024 * 1024 //

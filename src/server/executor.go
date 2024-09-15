@@ -49,28 +49,6 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 	dataBytes := msg[1:]
 
 	if icmd == consts.RPC_SYNC_BINLOG {
-		/*
-		* RPC from worker slave to worker leader
-		* To fetching(sync) binary log
-		* The follow send it's binlogSeq to Leader
-		 */
-		/*if len(dataBytes) < consts.NODE_ID_LEN {
-			return resp.ErrResponse(errors.New(resp.RES_SYNTAX_ERROR))
-		}
-		followerId := string(dataBytes[:consts.NODE_ID_LEN])
-		var seq int64
-		byteBuf := bytes.NewBuffer(dataBytes[consts.NODE_ID_LEN:])
-		err := binary.Read(byteBuf, binary.LittleEndian, &seq)
-		if err != nil {
-			l.Err(err).Msg(err.Error())
-			return resp.ErrResponse(errors.New(resp.RES_SYNTAX_ERROR))
-		}
-		res := persistence.Fetch(followerId, seq)
-		*/
-
-		/*
-		* RPC from Partition Leader sync binlog to follower
-		 */
 		res, err := persistence.ReceiveBinlog(dataBytes, executor.Execute1)
 		if err != nil {
 			return resp.ErrResponse(err)
@@ -131,6 +109,12 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 	} else if icmd == consts.RPC_TEST_CONN {
 		ndId := testConn()
 		return resp.StrResponse(ndId)
+	} else if icmd == consts.RPC_PERSIST {
+		rslt, err := persist(dataBytes)
+		if err != nil {
+			return resp.ErrResponse(err)
+		}
+		return resp.StrResponse(rslt)
 	} else if icmd == consts.RPC_ONLINE {
 		pieces := strings.Split(string(dataBytes), consts.SPACE)
 		rslt, err := online(pieces)

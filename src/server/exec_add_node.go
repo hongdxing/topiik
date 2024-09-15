@@ -1,26 +1,19 @@
-/*
-* author: duan hongxing
-* date: 21 Jul 2024
-* desc:
-*
- */
+//author: duan hongxing
+//date: 21 Jul 2024
 
 package server
 
 import (
 	"errors"
-	"strings"
 	"topiik/cluster"
 	"topiik/node"
 	"topiik/resp"
 )
 
-/*
-* Controller send ADD-WORKER|ADD-CONTROLLER RPC to current node
-* Parameters:
-*	- pieces[0]: clusterId
-*	- pieces[1]: role
- */
+// Controller send ADD-WORKER|ADD-CONTROLLER RPC to current node
+// Parameters:
+//   - pieces[0]: clusterId
+//   - pieces[1]: role
 func addNode(pieces []string) (string, error) {
 	/* validate: make sure node not belongs to any cluster yet */
 	if node.GetNodeInfo().ClusterId != "" {
@@ -31,9 +24,9 @@ func addNode(pieces []string) (string, error) {
 		return "", errors.New(resp.RES_SYNTAX_ERROR)
 	}
 	clusterId := pieces[0]
-	role := strings.ToUpper(pieces[1])
+	wrkGrpId := pieces[1]
 
-	node.JoinCluster(clusterId, role)
+	node.JoinCluster(clusterId, wrkGrpId)
 
 	// start to RequestVote */
 	go cluster.RequestVote()

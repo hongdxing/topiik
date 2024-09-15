@@ -80,11 +80,8 @@ func InitNode(serverConfig config.ServerConfig) (err error) {
 	return nil
 }
 
-/*
-* Update Node clusterId when init cluster
-*
- */
-func InitCluster(clusterId string) (err error) {
+// Update Node clusterId when init cluster
+func InitCluster(clusterId string, wrkGrpId string) (err error) {
 	// 1. open node file
 	fpath := GetNodeFilePath()
 
@@ -112,6 +109,7 @@ func InitCluster(clusterId string) (err error) {
 		return errors.New("current node already in a cluster:" + nodeInfo.ClusterId)
 	}
 	nodeInfo.ClusterId = clusterId
+	nodeInfo.GroupId = wrkGrpId
 	nodeInfo.Role = config.ROLE_WORKER
 
 	// 4. marshal
@@ -125,14 +123,12 @@ func InitCluster(clusterId string) (err error) {
 	return nil
 }
 
-/*
-* Initialized by command ADD-WORKER|ADD-CONTROLLER
-* Update clusterId when Controller try to add current node to the cluster
- */
-func JoinCluster(clusterId string, role string) (err error) {
+// Initialized by command ADD-WORKER|ADD-CONTROLLER
+// Update clusterId when Controller try to add current node to the cluster
+func JoinCluster(clusterId string, wrkGrpId string) (err error) {
 	/* update node cluster id and role */
 	nodeInfo.ClusterId = clusterId
-	nodeInfo.Role = role
+	nodeInfo.GroupId = wrkGrpId
 
 	nodePath := GetNodeFilePath()
 	buf, err := json.Marshal(nodeInfo)
@@ -169,10 +165,6 @@ func SetPtn(buf []byte) {
 		l.Err(err).Msg(err.Error())
 	}
 	//l.Info().Msg(string(buf))
-}
-
-func GetPnt() Partition {
-	return partition
 }
 
 func GetNodeInfo() Node {

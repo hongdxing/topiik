@@ -4,10 +4,16 @@
 package cluster
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/binary"
 	"errors"
 	"strings"
+	"topiik/internal/consts"
+	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/node"
+	"topiik/resp"
 )
 
 // Execute command INIT-CLUSTER
@@ -21,7 +27,7 @@ func InitCluster(workers map[string]string, ptnCount int) (err error) {
 		return err
 	}
 
-	// 3. reshard to assign Slots
+	// 1. reshard to assign Slots
 	err = ReShard(true)
 	if err != nil {
 		l.Err(err).Msgf("executor::clusterInit %s", err.Error())
@@ -29,13 +35,22 @@ func InitCluster(workers map[string]string, ptnCount int) (err error) {
 		return err
 	}
 
-	// 4. send notification to sync meta data to other controller(s) and worker(s)
+	// 2. rpc update workers
+	for _, group := range workerGroupInfo.Groups {
+		for _, nd := range group.Nodes {
+			if nd.Id == node.GetNodeInfo().Id {
+				continue
+			}
+			rpcAddNode(nd.Addr2, workerGroupInfo.ClusterId, group.Id)
+		}
+	}
+
+	// 3. send notification to sync worker group to other workers
 	notifyWorkerGroupChanged()
 
-	// 5. after init, the node default is LEADER, and start to AppendEntries()
-	//go AppendEntries()
+	// 4. after init, start RequestVote
 	go RequestVote()
-	//ptnUpdCh <- struct{}{} // sync partition to followers
+
 	l.Info().Msg("cluster::ClusterInit end")
 	return nil
 }
@@ -51,6 +66,7 @@ func doInit(workers map[string]string, ptnCount int) error {
 
 	// set controllerInfo
 	var addrIdx = 0
+	var currentNodeWgId string
 	for i := 0; i < ptnCount; i++ {
 		addrIdx = 0
 		workerGroup := WorkerGroup{Nodes: make(map[string]node.NodeSlim)}
@@ -58,6 +74,9 @@ func doInit(workers map[string]string, ptnCount int) error {
 		workerGroup.Id = wgId
 		workerGroupInfo.Groups[wgId] = &workerGroup
 		for ndId, addr := range workers {
+			if ndId == node.GetNodeInfo().Id {
+				currentNodeWgId = wgId
+			}
 			if addrIdx%int(ptnCount) == i {
 				host, _, port2, _ := util.SplitAddress2(addr)
 				workerGroup.Nodes[ndId] = node.NodeSlim{Id: ndId, Addr: addr, Addr2: host + ":" + port2}
@@ -71,9 +90,51 @@ func doInit(workers map[string]string, ptnCount int) error {
 	}
 
 	// update current(controller) node
-	node.InitCluster(clusterId)
+	node.InitCluster(clusterId, currentNodeWgId)
 
 	// save controllerInfo and workerInfo
 	saveWorkerGroups()
 	return nil
+}
+
+func rpcAddNode(addr2 string, clusterId string, grpId string) (string, error) {
+	conn, err := util.PreapareSocketClient(addr2)
+	if err != nil {
+		return "", errors.New(resp.RES_NODE_NA)
+	}
+	defer conn.Close()
+
+	var buf []byte
+	var bbuf = new(bytes.Buffer) // int to byte buf
+	_ = binary.Write(bbuf, binary.LittleEndian, consts.RPC_ADD_NODE)
+	buf = append(buf, bbuf.Bytes()...)
+	//line = clusterid role
+	line := clusterId + consts.SPACE + grpId
+	buf = append(buf, []byte(line)...)
+
+	// encode
+	data, err := proto.EncodeB(buf)
+	if err != nil {
+		l.Err(err).Msg(err.Error())
+	}
+
+	// write
+	_, err = conn.Write(data)
+	if err != nil {
+		l.Err(err).Msg(err.Error())
+	}
+
+	// read
+	reader := bufio.NewReader(conn)
+	buf, err = proto.Decode(reader)
+	if err != nil {
+		return "", errors.New(resp.RES_NODE_NA)
+	}
+
+	flag := resp.ParseResFlag(buf)
+	if flag == resp.Success {
+		ndId := string(buf[resp.RESPONSE_HEADER_SIZE:]) // the node id
+		return ndId, nil
+	}
+	return "", errors.New(resp.RES_NODE_NA)
 }

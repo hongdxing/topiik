@@ -41,8 +41,6 @@ func main() {
 	flag.StringVar(&host, "host", "localhost:8301", "")
 	flag.Parse()
 
-	fmt.Printf("%s, %s\n", cluster, workers)
-
 	if strings.TrimSpace(cluster) != "" {
 		cluster = strings.ToLower(strings.TrimSpace(cluster))
 		if cluster == "create" {

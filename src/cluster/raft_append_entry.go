@@ -19,11 +19,7 @@ import (
 	"topiik/resp"
 )
 
-const ptnTickerDur int = 500
-const ptnLeaderDownMaxMills int = 3000
-
 var hbTicker *time.Ticker // heartbeat ticker
-// var cluUpdCh chan struct{}
 
 var connCache = make(map[string]*net.TCPConn)
 
