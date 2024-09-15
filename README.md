@@ -2,13 +2,17 @@
 A middleware that for both Key/Value store and Message broker
 
 ## How Topiik works
-### Controller Plane
-Controller Plane maintain health of Topiik cluster, and forward requests to Workers
+
 ### Workers
-Workers in charge of processing commands, managing memory, and persisting data
+Maintain Topiik cluster, manage worker groups(partitions), execute commands, memory storage of key/value
+
+### Persistors
+Centralized persistence of binary logs, make scale out/in faster by reduce files copy between worker groups
 
 ## Dev environment
+For setup minimus Topiik environment, need two nodes(or use different port number on same host), one Worker node and one Persistor node
+![alt text](src/resource/dev_architecture.png)
 
-## Minimum PROD node setting
+## Cluster
 
-![alt text](src/resource/minimum_prod_architecture.png)
+![alt text](src/resource/prod_architecture.png)
