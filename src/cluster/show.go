@@ -13,7 +13,7 @@ import (
 func Show() string {
 	cluData := datatype.ClusterData{}
 
-	for _, ptn := range partitionInfo.PtnMap {
+	/*for _, ptn := range partitionInfo.PtnMap {
 		ptnData := datatype.PartitionData{
 			Id: ptn.Id,
 		}
@@ -23,7 +23,7 @@ func Show() string {
 			ptnData.Workers = append(ptnData.Workers, datatype.NodeData{Id: nd.Id, Address: nd.Addr})
 		}
 		cluData.Partitions = append(cluData.Partitions, ptnData)
-	}
+	}*/
 
 	rslt, err := json.MarshalIndent(cluData, "", "    ")
 	if err != nil {

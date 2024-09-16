@@ -25,18 +25,17 @@ var connCache = make(map[string]*net.TCPConn)
 
 // Controller issues AppendEntries RPCs to replicate metadata to follower,
 // or send heartbeats (AppendEntries RPCs that carry no data)
-func AppendEntries(wrkGrp WorkerGroup) {
+func AppendEntries(ptn Partition) {
 	hbTicker = time.NewTicker(200 * time.Millisecond)
 	defer close(ptnUpdCh)
-	defer close(wrkGrpUpdCh)
 
 	//dialErrorCounter := 0 // this not 'thread' safe, but it's not important
 	for {
 		select {
 		case <-hbTicker.C:
-			appendHeartbeat(wrkGrp)
-		case <-wrkGrpUpdCh:
-			appendWrkGrpInfo()
+			appendHeartbeat(ptn)
+		case <-ptnUpdCh:
+			appendPtnInfo()
 		}
 	}
 }
@@ -62,18 +61,18 @@ func appendClusterInfo() {
 }*/
 
 // sync worker group info to workers
-func appendWrkGrpInfo() {
+func appendPtnInfo() {
 	var buf []byte
 	var bbuf = new(bytes.Buffer)
-	data, err := json.Marshal(workerGroupInfo)
+	data, err := json.Marshal(partitionInfo)
 	if err != nil {
 		l.Err(err).Msg(err.Error())
 	} else {
 		binary.Write(bbuf, binary.LittleEndian, ENTRY_TYPE_WRKGRP)
 		buf = append(buf, bbuf.Bytes()...)
 		buf = append(buf, data...)
-		for _, wrkGrp := range workerGroupInfo.Groups {
-			for _, worker := range wrkGrp.Nodes {
+		for _, ptn := range partitionInfo.Ptns {
+			for _, worker := range ptn.Nodes {
 				if worker.Id == node.GetNodeInfo().Id {
 					continue
 				}
@@ -83,15 +82,15 @@ func appendWrkGrpInfo() {
 	}
 }
 
-func appendHeartbeat(wrkGrp WorkerGroup) {
-	for _, controller := range wrkGrp.Nodes {
+func appendHeartbeat(ptn Partition) {
+	for _, controller := range ptn.Nodes {
 		if controller.Id == node.GetNodeInfo().Id {
 			continue
 		}
 		go send(controller.Addr2, controller.Id, []byte{})
 	}
 
-	for _, worker := range wrkGrp.Nodes {
+	for _, worker := range ptn.Nodes {
 		if worker.Id == node.GetNodeInfo().Id {
 			continue
 		}

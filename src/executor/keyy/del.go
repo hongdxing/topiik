@@ -31,7 +31,7 @@ func Del(req datatype.Req) (rslt int64, err error) {
 // forward DEL command to each group
 func ForwardDel(execute shared.ExeFn, req datatype.Req, msg []byte) (rslt int64) {
 	var err error
-	for _, worker := range cluster.GetWrkGrpLeaders() {
+	for _, worker := range cluster.GetPtnLeaders() {
 		//buf := shared.ForwardByWorker(worker, msg) // get keys from each worker leader
 		buf := shared.ExecuteOrForward(worker, execute, command.DEL_I, req, msg)
 		if len(buf) > 4 {

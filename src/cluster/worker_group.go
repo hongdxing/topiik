@@ -50,7 +50,7 @@ func addPartition(controllers map[string]string) {
 		newPartition.NodeSet[ndId] = &node.NodeSlim{Id: ndId}
 		i++
 	}
-	partitionInfo.PtnMap[ptnId] = newPartition
+	//partitionInfo.PtnMap[ptnId] = newPartition
 }
 
 // Remove partition
@@ -62,10 +62,10 @@ func RemovePartition(ptnId string) error {
 func ReShard(isCreate bool) (err error) {
 	// brand new cluster without partition yet
 	if isCreate {
-		var ptnCount = len(workerGroupInfo.Groups)
+		var ptnCount = len(partitionInfo.Ptns)
 		var i int = 0
-		for _, group := range workerGroupInfo.Groups {
-			group.Slots = map[uint16]bool{}
+		for _, ptn := range partitionInfo.Ptns {
+			ptn.Slots = map[uint16]bool{}
 			var from int
 			var to int
 			from = i * (consts.SLOTS / ptnCount) // p=2--> i=0: 0, i=1: 512
@@ -75,23 +75,23 @@ func ReShard(isCreate bool) (err error) {
 				to = (i+1)*(consts.SLOTS/ptnCount) - 1 // p=2--> i=0: 511, i=1: 1024
 			}
 			for i := from; i < to; i++ {
-				group.Slots[uint16(i)] = true
+				ptn.Slots[uint16(i)] = true
 			}
 			i++
 		}
-		fmt.Println(workerGroupInfo)
+		fmt.Println(partitionInfo)
 	} else {
 		//
 	}
 
-	saveWorkerGroups()
+	savePartitions()
 
 	return err
 }
 
 // save worker group
-func saveWorkerGroups() (err error) {
-	data, err := json.Marshal(workerGroupInfo)
+func savePartitions() (err error) {
+	data, err := json.Marshal(partitionInfo)
 	if err != nil {
 		l.Err(err).Msgf("cluster::saveControllerInfo %s", err.Error())
 		return err

@@ -34,7 +34,7 @@ func RequestVote() {
 	if nodeStatus.Role == RAFT_LEADER {
 		return
 	}
-	wrkGrp := getWorkGroup(node.GetNodeInfo().Id)
+	wrkGrp := getPartition(node.GetNodeInfo().Id)
 	if wrkGrp.Id == "" {
 		l.Warn().Msgf("RequestVote Invalid worker group")
 		return
@@ -118,7 +118,7 @@ func RequestVote() {
 			//time.Sleep(500 * time.Millisecond)
 
 			// when new Leader selected, try to sync cluster metadata
-			notifyWorkerGroupChanged()
+			notifyPartitionChanged()
 
 			/* Print Selected Leader */
 			l.Info().Msgf("[TOPIIK] ~!~ selected as new leader")

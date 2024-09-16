@@ -36,17 +36,17 @@ func InitCluster(workers map[string]string, ptnCount int) (err error) {
 	}
 
 	// 2. rpc update workers
-	for _, group := range workerGroupInfo.Groups {
+	for _, group := range partitionInfo.Ptns {
 		for _, nd := range group.Nodes {
 			if nd.Id == node.GetNodeInfo().Id {
 				continue
 			}
-			rpcAddNode(nd.Addr2, workerGroupInfo.ClusterId, group.Id)
+			rpcAddNode(nd.Addr2, partitionInfo.ClusterId, group.Id)
 		}
 	}
 
 	// 3. send notification to sync worker group to other workers
-	notifyWorkerGroupChanged()
+	notifyPartitionChanged()
 
 	// 4. after init, start RequestVote
 	go RequestVote()
@@ -62,17 +62,17 @@ func doInit(workers map[string]string, ptnCount int) error {
 
 	// generate cluster id
 	clusterId := strings.ToLower(util.RandStringRunes(10))
-	workerGroupInfo.ClusterId = clusterId
+	partitionInfo.ClusterId = clusterId
 
 	// set controllerInfo
 	var addrIdx = 0
 	var currentNodeWgId string
 	for i := 0; i < ptnCount; i++ {
 		addrIdx = 0
-		workerGroup := WorkerGroup{Nodes: make(map[string]node.NodeSlim)}
+		workerGroup := Partition{Nodes: make(map[string]node.NodeSlim)}
 		wgId := strings.ToLower(util.RandStringRunes(10))
 		workerGroup.Id = wgId
-		workerGroupInfo.Groups[wgId] = &workerGroup
+		partitionInfo.Ptns[wgId] = &workerGroup
 		for ndId, addr := range workers {
 			if ndId == node.GetNodeInfo().Id {
 				currentNodeWgId = wgId
@@ -93,7 +93,7 @@ func doInit(workers map[string]string, ptnCount int) error {
 	node.InitCluster(clusterId, currentNodeWgId)
 
 	// save controllerInfo and workerInfo
-	saveWorkerGroups()
+	savePartitions()
 	return nil
 }
 

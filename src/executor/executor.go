@@ -106,7 +106,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 		if cluster.GetNodeStatus().Role == cluster.RAFT_LEADER { // if is leader, then just return leader's address
 			address = serverConfig.Listen
 		} else {
-			leader := cluster.GetWrkGroupLeader(node.GetNodeInfo().Id)
+			leader := cluster.GetPtnLeader(node.GetNodeInfo().Id)
 			address = leader.Addr
 		}
 		// if not current not controller leader, nor in any cluster, i.e. LeaderControllerAddr is empty

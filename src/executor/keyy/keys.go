@@ -57,7 +57,7 @@ func Keys(req datatype.Req) (result []string, err error) {
 // forward KEYS command to each group
 func ForwardKeys(execute shared.ExeFn, req datatype.Req, msg []byte) (res []string) {
 	var err error
-	for _, worker := range cluster.GetWrkGrpLeaders() {
+	for _, worker := range cluster.GetPtnLeaders() {
 		//buf := shared.ForwardByWorker(worker, msg) // get keys from each worker leader
 		buf := shared.ExecuteOrForward(worker, execute, command.KEYS_I, req, msg)
 		if len(buf) > 4 {

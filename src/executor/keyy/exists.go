@@ -40,7 +40,7 @@ func ForwardExists(execute shared.ExeFn, req datatype.Req, msg []byte, keyCount 
 		rslt[i] = "F"
 	}
 
-	for _, worker := range cluster.GetWrkGrpLeaders() {
+	for _, worker := range cluster.GetPtnLeaders() {
 		//buf := shared.ForwardByWorker(worker, msg) // get keys from each worker leader
 		buf := shared.ExecuteOrForward(worker, execute, command.EXISTS_I, req, msg)
 		if len(buf) > 4 {

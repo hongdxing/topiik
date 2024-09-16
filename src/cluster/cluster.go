@@ -24,9 +24,9 @@ func SetLeaderCtlAddr(addr string) {
 }
 
 func SetWorkerGroupInfo(data []byte) error {
-	err := json.Unmarshal(data, &workerGroupInfo)
-	fmt.Println(workerGroupInfo)
-	saveWorkerGroups()
+	err := json.Unmarshal(data, &partitionInfo)
+	fmt.Println(partitionInfo)
+	savePartitions()
 	return err
 }
 
@@ -35,19 +35,19 @@ func SetHeartbeat(heartbeat uint16, heartbeatAt int64) {
 	nodeStatus.HeartbeatAt = heartbeatAt
 }
 
-func GetWrkGrpLeaders() (workers []node.NodeSlim) {
-	for _, group := range workerGroupInfo.Groups {
-		leader := group.Nodes[group.LeaderNodeId]
+func GetPtnLeaders() (workers []node.NodeSlim) {
+	for _, ptn := range partitionInfo.Ptns {
+		leader := ptn.Nodes[ptn.LeaderNodeId]
 		workers = append(workers, leader)
 	}
 	return workers
 }
 
-func GetWrkGroupLeader(ndId string) (leader node.NodeSlim) {
-	for _, group := range workerGroupInfo.Groups {
-		if _, ok := group.Nodes[ndId]; ok {
-			if group.LeaderNodeId != "" {
-				leader = group.Nodes[group.LeaderNodeId]
+func GetPtnLeader(ndId string) (leader node.NodeSlim) {
+	for _, ptn := range partitionInfo.Ptns {
+		if _, ok := ptn.Nodes[ndId]; ok {
+			if ptn.LeaderNodeId != "" {
+				leader = ptn.Nodes[ptn.LeaderNodeId]
 				break
 			}
 		}

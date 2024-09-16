@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"topiik/internal/consts"
 	"topiik/internal/util"
 	"topiik/node"
 )
@@ -16,10 +15,7 @@ import (
 // var clusterInfo = &Cluster{Ctls: make(map[string]node.NodeSlim), Wkrs: make(map[string]node.NodeSlim)}
 var term int
 
-var workerGroupInfo = &WorkerGroupInfo{Groups: make(map[string]*WorkerGroup)}
-
-// var controllerInfo = &NodesInfo{Nodes: make(map[string]node.NodeSlim)}
-var partitionInfo = &PartitionInfo{PtnMap: make(map[string]*node.Partition), Slots: make(map[uint16]string, consts.SLOTS)}
+var partitionInfo = &PartitionInfo{Ptns: make(map[string]*Partition)}
 var nodeStatus = &NodeStatus{Role: RAFT_FOLLOWER, Term: 0}
 
 const (
@@ -44,7 +40,7 @@ func LoadWorkerGroupInfo() (err error) {
 		if err != nil {
 			l.Panic().Msg(err.Error())
 		}
-		err = json.Unmarshal([]byte(jsonStr), &workerGroupInfo)
+		err = json.Unmarshal([]byte(jsonStr), &partitionInfo)
 		if err != nil {
 			l.Panic().Msg(err.Error())
 		}
@@ -53,13 +49,13 @@ func LoadWorkerGroupInfo() (err error) {
 	return nil
 }
 
-func getWorkGroup(ndId string) WorkerGroup {
-	for _, wg := range workerGroupInfo.Groups {
+func getPartition(ndId string) Partition {
+	for _, wg := range partitionInfo.Ptns {
 		if _, ok := wg.Nodes[ndId]; ok {
 			return *wg
 		}
 	}
-	return WorkerGroup{}
+	return Partition{}
 }
 
 func GetNodeStatus() NodeStatus {
@@ -71,7 +67,7 @@ func GetTerm() int {
 }
 
 func GetNodeByKeyHash(keyHash uint16) (node.NodeSlim, error) {
-	for _, group := range workerGroupInfo.Groups {
+	for _, group := range partitionInfo.Ptns {
 		if _, ok := group.Slots[keyHash]; ok {
 			return group.Nodes[group.LeaderNodeId], nil
 		}
@@ -87,8 +83,8 @@ func getWorkerFilePath() string {
 	return util.GetMainPath() + slash + dataDIR + slash + "__metadata_worker__"
 }
 
-func notifyWorkerGroupChanged() {
-	l.Info().Msg("metadata::notifyWorkerGroupChanged begin")
-	wrkGrpUpdCh <- struct{}{}
-	l.Info().Msg("metadata::notifyWorkerGroupChanged end")
+func notifyPartitionChanged() {
+	l.Info().Msg("metadata::notifyPartitionChanged begin")
+	ptnUpdCh <- struct{}{}
+	l.Info().Msg("metadata::notifyPartitionChanged end")
 }

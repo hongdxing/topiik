@@ -1,6 +1,6 @@
 // ©2024 www.topiik.com
 // author: Duan Hongxing
-// data: 3 Jul 2024
+// data: 3 Jul, 2024
 
 package cluster
 
@@ -8,12 +8,12 @@ import (
 	"topiik/node"
 )
 
-type WorkerGroupInfo struct {
+type PartitionInfo struct {
 	ClusterId string
-	Groups    map[string]*WorkerGroup
+	Ptns    map[string]*Partition
 }
 
-type WorkerGroup struct {
+type Partition struct {
 	Id           string
 	LeaderNodeId string                   // dynamic update
 	Nodes        map[string]node.NodeSlim // nodes in the group
@@ -30,18 +30,6 @@ type Cluster struct {
 	Ver  uint   // compare which is more lastest
 	Ctls map[string]node.NodeSlim
 	Wkrs map[string]node.NodeSlim
-}
-
-// datatype of ControllerInfo and WorkerInfo
-type NodesInfo struct {
-	ClusterId string
-	Nodes     map[string]node.NodeSlim
-}
-
-type PartitionInfo struct {
-	ClusterId string
-	PtnMap    map[string]*node.Partition
-	Slots     map[uint16]string
 }
 
 // store dynamic node status in runtime
