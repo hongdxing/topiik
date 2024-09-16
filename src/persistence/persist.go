@@ -84,8 +84,17 @@ func doDequeue() {
 			l.Err(err).Msgf("persistence::doDequeue conn: %s", err.Error())
 		}
 	}
+	if pstConn == nil {
+		l.Warn().Msg("persist::doDequeue No PERSISTOR available!!!")
+		return
+	}
 
-	doSync(pstConn, binlogs)
+	// if connection closed by remote persistor, then set pstConn to nil,
+	// so that next time can re-connect
+	_, err := doSync(pstConn, binlogs)
+	if err != nil && err == net.ErrClosed {
+		pstConn = nil
+	}
 }
 
 //func msgId() string {
