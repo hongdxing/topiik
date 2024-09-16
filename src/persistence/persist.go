@@ -15,6 +15,7 @@ import (
 	"time"
 	"topiik/internal/consts"
 	"topiik/internal/proto"
+	"topiik/internal/rorre"
 	"topiik/internal/util"
 	"topiik/node"
 	"topiik/resp"
@@ -31,12 +32,8 @@ import (
 // active log file
 var activeLF *os.File
 
-// cache tcp conn to follower
-var connCache = make(map[string]*net.TCPConn)
+// cache tcp conn to persistor
 var pstConn *net.TCPConn
-
-// is batch syncing in progress
-var batchSyncing = false
 
 var msgQ list.List
 var lock sync.Mutex
@@ -92,8 +89,14 @@ func doDequeue() {
 	// if connection closed by remote persistor, then set pstConn to nil,
 	// so that next time can re-connect
 	_, err := doSync(pstConn, binlogs)
-	if err != nil && err == net.ErrClosed {
-		pstConn = nil
+	if err != nil {
+		switch err.(type) {
+		case *rorre.SoketError:
+			if pstConn != nil {
+				pstConn.Close()
+			}
+			pstConn = nil
+		}
 	}
 }
 
@@ -166,11 +169,6 @@ const batchSyncSize = 1024 * 1024 //
 // max 64kb for each batch
 func syncBatch(conn *net.TCPConn, startSeq int64) {
 	l.Info().Msgf("persistence::syncBach start")
-
-	batchSyncing = true
-	defer func() {
-		batchSyncing = false
-	}()
 
 	//
 	fpath := getActiveBinlogFile()
@@ -247,7 +245,7 @@ func doSync(conn *net.TCPConn, binlogs []byte) (flrSeq int64, err error) {
 	_, err = conn.Write(msg)
 	if err != nil {
 		l.Err(err).Msgf("persistence::sync send: %s", err.Error())
-		return flrSeq, err
+		return flrSeq, &rorre.SoketError{}
 	}
 
 	// get follower's seq
