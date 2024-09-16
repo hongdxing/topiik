@@ -1,0 +1,30 @@
+# TOPIIK config file
+
+# ###############################################
+# role
+# ###############################################
+# Topiik segregate the memory storage and 
+# persistence to two types of servers,
+# use role setting to determine whether the server
+# is worker or persistor
+# role=worker|persistor
+
+
+# ###############################################
+# listen
+# ###############################################
+# listen is current node address and port 
+# if not set, the default value is localhost:8301
+# listen=localhost:8301
+
+
+# ###############################################
+# persistors
+# ###############################################
+# Topiik segregate the memory storage and 
+# persistence to two types of servers, 
+#  1) worker, where store in-memory data
+#  2) persistor, where persistent data
+# Worker nodes must set server address
+# of persistence server(s)
+# persistors=localhost:8301

@@ -10,7 +10,7 @@ Maintain Topiik cluster, manage worker groups(partitions), execute commands, mem
 Centralized persistence of binary logs, make scale out/in faster by reduce files copy between worker groups
 
 ## Dev environment
-For setup minimus Topiik environment, need two nodes(or use different port number on same host), one Worker node and one Persistor node
+For setup minimum Topiik environment, need two nodes(or use different port number on same host), one Worker node and one Persistor node
 ![alt text](src/resource/dev_architecture.png)
 
 ## Cluster
