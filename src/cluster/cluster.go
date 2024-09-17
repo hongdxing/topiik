@@ -56,6 +56,16 @@ func GetPtnLeader(ndId string) (leader node.NodeSlim) {
 	return leader
 }
 
+func GetPtnByNodeId(ndId string) (partition Partition) {
+	for _, ptn := range partitionInfo.Ptns {
+		if _, ok := ptn.Nodes[ndId]; ok {
+			partition = *ptn
+			break
+		}
+	}
+	return partition
+}
+
 /*pivate func----------------------------------------------------------------*/
 
 /*

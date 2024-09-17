@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"slices"
 	"topiik/cluster"
 	"topiik/executor/clus"
 	"topiik/executor/keyy"
@@ -20,27 +19,10 @@ import (
 	"topiik/internal/datatype"
 	"topiik/internal/proto"
 	"topiik/node"
-	"topiik/persistence"
 	"topiik/resp"
 )
 
 // var PersistenceCh = make(chan []byte)
-var persistCmds = []uint8{
-	// String
-	command.SET_I,
-	command.SETM_I,
-	command.INCR_I,
-	// List
-	command.LPUSH_I,
-	command.LPUSHR_I,
-	command.LPOP_I,
-	command.LPOPR_I,
-
-	//command.LPUSHB_I,
-	//command.LPUSHRB_I,
-	command.DEL_I,
-	command.TTL_I, //??
-}
 
 func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (finalRes []byte) {
 	msgBytes := msg[4:] // strip the lenght header
@@ -137,10 +119,6 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 	//finalRes = Execute1(icmd, req)
 	finalRes = forward(icmd, req, msg)
 
-	if slices.Contains(persistCmds, icmd) {
-		//persistence.Append(msg)
-		persistence.Enqueue(msg)
-	}
 	return finalRes
 }
 
@@ -209,99 +187,100 @@ func executeOrForward(key []byte, icmd uint8, req datatype.Req, msg []byte) []by
 }
 
 // Execute Memory commands
-func Execute1(icmd uint8, req datatype.Req) (finalRes []byte) {
+func Execute1(icmd uint8, req datatype.Req) (finalRes []byte, err error) {
 	if icmd == command.GET_I { /*** STRING COMMANDS ***/
 		result, err := str.Get(req)
 		if err != nil {
-			return resp.ErrResponse(err)
+			return resp.ErrResponse(err), err
 		}
 		finalRes = resp.StrResponse(result)
 	} else if icmd == command.SET_I {
 		result, err := str.Set(req)
 		if err != nil {
-			return resp.ErrResponse(err)
+			return resp.ErrResponse(err), err
 		}
 		finalRes = resp.StrResponse(result)
 	} else if icmd == command.GETM_I {
 		result, err := str.GetM(req)
 		if err != nil {
-			return resp.ErrResponse(err)
+			return resp.ErrResponse(err), err
 		}
 		finalRes = resp.StrArrResponse(result)
 	} else if icmd == command.SETM_I {
 		result, err := str.SetM(req)
 		if err != nil {
-			return resp.ErrResponse(err)
+			return resp.ErrResponse(err), err
 		}
 		finalRes = resp.IntResponse(int64(result))
 	} else if icmd == command.INCR_I {
 		result, err := str.Incr(req)
 		if err != nil {
-			return resp.ErrResponse(err)
+			return resp.ErrResponse(err), err
 		}
 		finalRes = resp.IntResponse(result)
 	} else if icmd == command.LPUSH_I || icmd == command.LPUSHR_I { // LIST COMMANDS
 		result, err := list.Push(req, icmd)
 		if err != nil {
-			return resp.ErrResponse(err)
+			return resp.ErrResponse(err), err
 		}
 		finalRes = resp.IntResponse(int64(result))
 	} else if icmd == command.LPOP_I || icmd == command.LPOPR_I {
 		rslt, err := list.Pop(req, icmd)
 		if err != nil {
-			return resp.ErrResponse(err)
+			return resp.ErrResponse(err), err
 		}
 		// finalRes = resp.StrArrResponse(result)
 		finalRes = resp.StrArrResponse(rslt)
 	} else if icmd == command.LLEN_I {
 		result, err := list.Len(req)
 		if err != nil {
-			return resp.ErrResponse(err)
+			return resp.ErrResponse(err), err
 		}
 		finalRes = resp.IntResponse(int64(result))
 	} else if icmd == command.LSLICE_I {
 		rslt, err := list.Slice(req)
 		if err != nil {
-			return resp.ErrResponse(err)
+			return resp.ErrResponse(err), err
 		}
 		finalRes = resp.StrArrResponse(rslt)
 	} else if icmd == command.LSET_I {
 		rslt, err := list.Set(req)
 		if err != nil {
-			return resp.ErrResponse(err)
+			return resp.ErrResponse(err), err
 		}
 		finalRes = resp.StrResponse(rslt)
 	} else if icmd == command.TTL_I { // KEY COMMANDS
 		/* TTL */
 		result, err := keyy.Ttl(req)
 		if err != nil {
-			return resp.ErrResponse(err)
+			return resp.ErrResponse(err), err
 		}
 		finalRes = resp.IntResponse(result)
 	} else if icmd == command.KEYS_I {
 		/* KEYS */
 		result, err := keyy.Keys(req)
 		if err != nil {
-			return resp.ErrResponse(err)
+			return resp.ErrResponse(err), err
 		}
 		finalRes = resp.StrArrResponse(result)
 	} else if icmd == command.DEL_I {
 		/* DEL */
 		rslt, err := keyy.Del(req)
 		if err != nil {
-			return resp.ErrResponse(err)
+			return resp.ErrResponse(err), err
 		}
 		finalRes = resp.IntResponse(rslt)
 	} else if icmd == command.EXISTS_I {
 		/* EXISTS */
 		rslt, err := keyy.Exists(req)
 		if err != nil {
-			return resp.ErrResponse(err)
+			return resp.ErrResponse(err), err
 		}
 		finalRes = resp.StrArrResponse(rslt)
 	} else { //Invalid command
 		l.Err(errors.New("Invalid cmd:" + string(icmd)))
-		return resp.ErrResponse(errors.New(consts.RES_INVALID_CMD))
+		return resp.ErrResponse(errors.New(consts.RES_INVALID_CMD)), errors.New(consts.RES_INVALID_CMD)
 	}
-	return finalRes
+
+	return finalRes, nil
 }

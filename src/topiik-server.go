@@ -15,7 +15,6 @@ import (
 	"topiik/internal/logger"
 	"topiik/internal/proto"
 	"topiik/node"
-	"topiik/persistence"
 	"topiik/server"
 )
 
@@ -52,9 +51,9 @@ func main() {
 	}
 
 	// load data
-	if node.IsPersistor() {
-		persistence.Load(executor.Execute1)
-	}
+	//if node.IsPersistor() {
+	//	persistence.Load(executor.Execute1)
+	//}
 
 	// Listen for incoming connections
 	ln, err := net.Listen("tcp", serverConfig.Listen)

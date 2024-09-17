@@ -9,23 +9,70 @@ import (
 	"hash/crc32"
 	"io"
 	"net"
+	"slices"
 	"topiik/cluster"
+	"topiik/internal/command"
 	"topiik/internal/consts"
 	"topiik/internal/datatype"
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/node"
+	"topiik/persistence"
 	"topiik/resp"
 )
 
-// Conn cache from leader to leader
-var ctlwkrConnCache = make(map[string]*net.TCPConn)
+// conn cache from leader to leader
+var leaderConnCache = make(map[string]*net.TCPConn)
 
-type ExeFn func(uint8, datatype.Req) []byte
+// conn cache from leader to follower
+var followerConnCache = make(map[string]*net.TCPConn)
+
+type ExeFn func(uint8, datatype.Req) ([]byte, error)
+
+var persistCmds = []uint8{
+	// String
+	command.SET_I,
+	command.SETM_I,
+	command.INCR_I,
+	// List
+	command.LPUSH_I,
+	command.LPUSHR_I,
+	command.LPOP_I,
+	command.LPOPR_I,
+
+	//command.LPUSHB_I,
+	//command.LPUSHRB_I,
+	command.DEL_I,
+	command.TTL_I, //??
+}
 
 func ExecuteOrForward(targetWorker node.NodeSlim, execute ExeFn, icmd uint8, req datatype.Req, msg []byte) (finalRes []byte) {
 	if targetWorker.Id == node.GetNodeInfo().Id {
-		return execute(icmd, req)
+		finalRes, err := execute(icmd, req)
+
+		if err != nil {
+			// enqueue persistor queue
+			if slices.Contains(persistCmds, icmd) {
+				persistence.Enqueue(msg)
+			}
+
+			// sync to partition follower(s)
+			// Q: what if follower down???
+			ptn := cluster.GetPtnByNodeId(node.GetNodeInfo().Id)
+			if len(ptn.Nodes) > 0 {
+				var ptnFlrs []node.NodeSlim
+				for _, nd := range ptn.Nodes{
+					if nd.Id != node.GetNodeInfo().Id{
+						ptnFlrs = append(ptnFlrs, nd)
+					}
+				}
+				if len(ptnFlrs) > 0{
+					err = persistence.SyncFollower(msg)
+				}
+			}
+		}
+
+		return finalRes
 	} else {
 		//return shared.ForwardByKey(key, msg, targetWorker)
 		return ForwardByWorker(targetWorker, msg)
@@ -39,7 +86,7 @@ func ForwardByKey(key []byte, msg []byte, targetWorker node.NodeSlim) []byte {
 		return resp.ErrResponse(errors.New(resp.RES_NO_WORKER))
 	}
 
-	conn, ok := ctlwkrConnCache[targetWorker.Id]
+	conn, ok := leaderConnCache[targetWorker.Id]
 	if !ok {
 		//conn, err = util.PreapareSocketClientWithPort(targetWorker.Addr, CONTROLLER_FORWORD_PORT)
 		conn, err = util.PreapareSocketClient(targetWorker.Addr)
@@ -47,15 +94,15 @@ func ForwardByKey(key []byte, msg []byte, targetWorker node.NodeSlim) []byte {
 			l.Err(err).Msg(err.Error())
 			return resp.ErrResponse(errors.New(resp.RES_CONN_RESET))
 		}
-		ctlwkrConnCache[targetWorker.Id] = conn
+		leaderConnCache[targetWorker.Id] = conn
 	}
 	// Send
 	_, err = conn.Write(msg)
 	if err != nil {
 		l.Err(err).Msg(err.Error())
-		if _, ok = ctlwkrConnCache[targetWorker.Id]; ok {
+		if _, ok = leaderConnCache[targetWorker.Id]; ok {
 			l.Warn().Msgf("forward::Forward remove tcp cache of worker %s", targetWorker.Id)
-			delete(ctlwkrConnCache, targetWorker.Id)
+			delete(leaderConnCache, targetWorker.Id)
 		}
 		// try reconnect
 		targetWorker, err := GetLeaderNode(key) // the worker may changed because of Worker Leader fail
@@ -88,22 +135,22 @@ func GetLeaderNode(key []byte) (node node.NodeSlim, err error) {
 
 func ForwardByWorker(targetWorker node.NodeSlim, msg []byte) []byte {
 	var err error
-	conn, ok := ctlwkrConnCache[targetWorker.Id]
+	conn, ok := leaderConnCache[targetWorker.Id]
 	if !ok {
 		conn, err = util.PreapareSocketClient(targetWorker.Addr)
 		if err != nil {
 			l.Err(err).Msg(err.Error())
 			return resp.ErrResponse(errors.New(resp.RES_CONN_RESET))
 		}
-		ctlwkrConnCache[targetWorker.Id] = conn
+		leaderConnCache[targetWorker.Id] = conn
 	}
 	// Send
 	_, err = conn.Write(msg)
 	if err != nil {
 		l.Err(err).Msg(err.Error())
-		if _, ok = ctlwkrConnCache[targetWorker.Id]; ok {
+		if _, ok = leaderConnCache[targetWorker.Id]; ok {
 			l.Warn().Msgf("forward::Forward remove tcp cache of worker %s", targetWorker.Id)
-			delete(ctlwkrConnCache, targetWorker.Id)
+			delete(leaderConnCache, targetWorker.Id)
 		}
 		// try reconnect
 		//targetWorker := getWorker(key) // the worker may changed because of Worker Leader fail
@@ -122,4 +169,8 @@ func ForwardByWorker(targetWorker node.NodeSlim, msg []byte) []byte {
 		}
 	}
 	return responseBytes
+}
+
+func syncFollower() {
+
 }

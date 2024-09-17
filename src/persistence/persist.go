@@ -224,6 +224,12 @@ func syncBatch(conn *net.TCPConn, startSeq int64) {
 	}
 }
 
+// sync to partition follower(s)
+func SyncFollower(msg []byte) (err error) {
+
+	return err
+}
+
 // Sync to follower(s)
 func doSync(conn *net.TCPConn, binlogs []byte) (flrSeq int64, err error) {
 	// icmd

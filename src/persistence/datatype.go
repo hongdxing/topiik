@@ -11,5 +11,5 @@ type fetchingCache struct {
 	pos int64
 }
 
-/* type for pass func as parameter for executor.Executor1 */
-type execute1 func(uint8, datatype.Req) []byte
+// type for pass func as parameter for executor.Executor1
+type execute1 func(uint8, datatype.Req) ([]byte, error)
