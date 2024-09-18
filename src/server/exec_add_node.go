@@ -24,9 +24,9 @@ func addNode(pieces []string) (string, error) {
 		return "", errors.New(resp.RES_SYNTAX_ERROR)
 	}
 	clusterId := pieces[0]
-	wrkGrpId := pieces[1]
+	ptnId := pieces[1]
 
-	node.JoinCluster(clusterId, wrkGrpId)
+	node.JoinCluster(clusterId, ptnId)
 
 	// start to RequestVote */
 	go cluster.RequestVote()

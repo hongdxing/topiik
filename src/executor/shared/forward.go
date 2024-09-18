@@ -6,6 +6,7 @@ package shared
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"hash/crc32"
 	"io"
 	"net"
@@ -23,9 +24,6 @@ import (
 
 // conn cache from leader to leader
 var leaderConnCache = make(map[string]*net.TCPConn)
-
-// conn cache from leader to follower
-var followerConnCache = make(map[string]*net.TCPConn)
 
 type ExeFn func(uint8, datatype.Req) ([]byte, error)
 
@@ -58,16 +56,21 @@ func ExecuteOrForward(targetWorker node.NodeSlim, execute ExeFn, icmd uint8, req
 
 			// sync to partition follower(s)
 			// Q: what if follower down???
+			// Q: what if follower fall behind???
 			ptn := cluster.GetPtnByNodeId(node.GetNodeInfo().Id)
 			if len(ptn.Nodes) > 0 {
 				var ptnFlrs []node.NodeSlim
-				for _, nd := range ptn.Nodes{
-					if nd.Id != node.GetNodeInfo().Id{
+				for _, nd := range ptn.Nodes {
+					if nd.Id != node.GetNodeInfo().Id {
 						ptnFlrs = append(ptnFlrs, nd)
 					}
 				}
-				if len(ptnFlrs) > 0{
-					err = persistence.SyncFollower(msg)
+				if len(ptnFlrs) > 0 {
+					// TODO: retry sync to follower
+					err = persistence.SyncFollower(ptnFlrs, msg)
+					if err != nil {
+						return resp.ErrResponse(fmt.Errorf("%s %s", "todo", "todo"))
+					}
 				}
 			}
 		}

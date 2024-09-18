@@ -6,7 +6,7 @@ package node
 type Node struct {
 	Id        string
 	ClusterId string
-	GroupId   string
+	PntId     string
 	Role      string // controller or worker
 	Addr      string
 	Addr2     string

@@ -61,21 +61,21 @@ func doInit(workers map[string]string, ptnCount int) error {
 	}
 
 	// generate cluster id
-	clusterId := strings.ToLower(util.RandStringRunes(10))
+	clusterId := strings.ToLower(util.RandStringRunes(consts.CLUSTER_ID_LEN))
 	partitionInfo.ClusterId = clusterId
 
 	// set controllerInfo
 	var addrIdx = 0
-	var currentNodeWgId string
+	var currentNodePtnId string
 	for i := 0; i < ptnCount; i++ {
 		addrIdx = 0
 		workerGroup := Partition{Nodes: make(map[string]node.NodeSlim)}
-		wgId := strings.ToLower(util.RandStringRunes(10))
-		workerGroup.Id = wgId
-		partitionInfo.Ptns[wgId] = &workerGroup
+		ptnId := strings.ToLower(util.RandStringRunes(consts.PTN_ID_LEN))
+		workerGroup.Id = ptnId
+		partitionInfo.Ptns[ptnId] = &workerGroup
 		for ndId, addr := range workers {
 			if ndId == node.GetNodeInfo().Id {
-				currentNodeWgId = wgId
+				currentNodePtnId = ptnId
 			}
 			if addrIdx%int(ptnCount) == i {
 				host, _, port2, _ := util.SplitAddress2(addr)
@@ -90,7 +90,7 @@ func doInit(workers map[string]string, ptnCount int) error {
 	}
 
 	// update current(controller) node
-	node.InitCluster(clusterId, currentNodeWgId)
+	node.InitCluster(clusterId, currentNodePtnId)
 
 	// save controllerInfo and workerInfo
 	savePartitions()
