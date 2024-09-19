@@ -1,9 +1,5 @@
-/*
-* Author: Duan HongXing
-* Date: 6 Jul, 2024
-* Desc:
-*
- */
+//Author: Duan Hongxing
+//Date: 6 Jul, 2024
 
 package util
 
@@ -11,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"topiik/internal/consts"
 )
 
 func PathExists(path string) (bool, error) {
@@ -31,4 +28,8 @@ func GetMainPath() string {
 	}
 	mainPath := filepath.Dir(ex)
 	return mainPath
+}
+
+func GetDataFullPath() string {
+	return GetMainPath() + consts.SLASH + consts.DATA_DIR + consts.SLASH
 }
