@@ -47,32 +47,35 @@ var persistCmds = []uint8{
 func ExecuteOrForward(targetWorker node.NodeSlim, execute ExeFn, icmd uint8, req datatype.Req, msg []byte) (finalRes []byte) {
 	if targetWorker.Id == node.GetNodeInfo().Id {
 		finalRes, err := execute(icmd, req)
-
 		if err != nil {
-			// enqueue persistor queue
-			if slices.Contains(persistCmds, icmd) {
-				persistence.Enqueue(msg)
-			}
+			return finalRes
+		}
 
-			// sync to partition follower(s)
-			// Q: what if follower down???
-			// Q: what if follower fall behind???
-			ptn := cluster.GetPtnByNodeId(node.GetNodeInfo().Id)
-			if len(ptn.Nodes) > 0 {
-				var ptnFlrs []node.NodeSlim
-				for _, nd := range ptn.Nodes {
-					if nd.Id != node.GetNodeInfo().Id {
-						ptnFlrs = append(ptnFlrs, nd)
-					}
+		// enqueue persistor queue
+		if slices.Contains(persistCmds, icmd) {
+			persistence.Enqueue(msg)
+		}
+
+		// sync to partition follower(s)
+		// Q: what if follower down???
+		// Q: what if follower fall behind???
+		ptn := cluster.GetPtnByNodeId(node.GetNodeInfo().Id)
+		if len(ptn.Nodes) > 0 {
+			var ptnFlrs []node.NodeSlim
+			for _, nd := range ptn.Nodes {
+				if nd.Id != node.GetNodeInfo().Id {
+					ptnFlrs = append(ptnFlrs, nd)
 				}
+			}
+			fmt.Println(ptnFlrs)
+			/*
 				if len(ptnFlrs) > 0 {
 					// TODO: retry sync to follower
 					err = persistence.SyncFollower(ptnFlrs, msg)
 					if err != nil {
 						return resp.ErrResponse(fmt.Errorf("%s %s", "todo", "todo"))
 					}
-				}
-			}
+				}*/
 		}
 
 		return finalRes

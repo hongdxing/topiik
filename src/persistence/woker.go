@@ -80,6 +80,9 @@ func doDequeue() {
 
 	// if connection closed by remote persistor, then set pstConn to nil,
 	// so that next time can re-connect
+	if len(binlogs) == 0 {
+		return
+	}
 	_, err := syncToPersistor(binlogs)
 	if err != nil {
 		switch err.(type) {
