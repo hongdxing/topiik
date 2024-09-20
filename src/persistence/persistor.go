@@ -4,6 +4,7 @@
 package persistence
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"sync"
 	"topiik/internal/consts"
+	"topiik/internal/proto"
 	"topiik/internal/util"
 )
 
@@ -22,6 +24,7 @@ var blseq = make(map[string]int64)
 
 const binlogFileMaxSize = 1073741824 // 1G
 const ptnFolderPrefix = "ptn-"
+const binlogListFilename = "binlog.list"
 
 // Parameters:
 //   - binlogs: one or more logs
@@ -122,17 +125,10 @@ func getPtnActiveBLF(ptnId string) (*os.File, error) {
 	}
 
 	// make sure partition folder exists
-	path := ptnFolder(ptnId)
-	exists, err := util.PathExists(path)
+	err := guaranteePtnFolder(ptnId)
 	if err != nil {
 		l.Err(err).Msgf("persistence::getPtnActiveBLF %s", err.Error())
 		return nil, err
-	}
-	if !exists {
-		err = os.Mkdir(path, 0664)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	// if binlog seq not set in memory yet
@@ -173,15 +169,29 @@ func getPtnActiveBLF(ptnId string) (*os.File, error) {
 		}
 
 	}
+
 	// sequence pre padding 0s, totla lenght 20
 	// eg: 00000000000000000999.bin
-	fname := fmt.Sprintf("%020d.bin", blseq[ptnId])
-	path = path + consts.SLASH + fname
+	blfname := fmt.Sprintf("%020d.bin", blseq[ptnId])
+	path := ptnFolder(ptnId) + blfname
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND, 0664)
 	if err != nil {
 		l.Err(err).Msgf("persistence::getPtnActiveBLF create binlog file failed: %s", err.Error())
 		return nil, err
 	}
+
+	// update binlog.list
+	path = ptnFolder(ptnId) + binlogListFilename
+	listF, err := os.OpenFile(path, os.O_RDONLY|os.O_APPEND, 0664)
+	if err != nil {
+		l.Err(err).Msgf("persistence::getPtnActiveBLF open binlog.list failed: %s", err.Error())
+		return nil, err
+	}
+	writer := bufio.NewWriter(listF)
+	writer.WriteString(blfname)
+	writer.WriteByte(proto.LineFeed)
+	writer.Flush()
+
 	//cache file
 	blfs[ptnId] = f
 	return f, nil
@@ -212,4 +222,32 @@ func maxPtnBLF(ptnId string) (fname string, err error) {
 // the partition folder full path with slash endding
 func ptnFolder(ptnId string) string {
 	return util.GetDataFullPath() + ptnFolderPrefix + ptnId + consts.SLASH
+}
+
+// create partition folder and binlog.list if not created yet
+func guaranteePtnFolder(ptnId string) error {
+	path := ptnFolder(ptnId)
+	exists, err := util.PathExists(path)
+	if err != nil {
+		l.Err(err).Msgf("persistence::guaranteePtnFolder %s", err.Error())
+		return err
+	}
+	if !exists {
+		err = os.Mkdir(path, 0664)
+		if err != nil {
+			l.Err(err).Msgf("persistence::guaranteePtnFolder %s", err.Error())
+			return err
+		}
+
+		// create binlog.list
+		path = path + binlogListFilename
+		f, err := os.OpenFile(path, os.O_CREATE, 0664)
+		if err != nil {
+			l.Err(err).Msgf("persistence::guaranteePtnFolder %s", err.Error())
+			return err
+		}
+		defer f.Close()
+	}
+
+	return nil
 }
