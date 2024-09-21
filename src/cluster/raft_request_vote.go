@@ -31,7 +31,7 @@ const requestVoteInterval = 100
 // Parameters:
 // Follower(s) issue RequestVote RPCs to Controller(s) and Worker(s) to request for votes.
 func RequestVote() {
-	if nodeStatus.Role == RAFT_LEADER {
+	if nodeStatus.RaftRole == RAFT_LEADER {
 		return
 	}
 	wrkGrp := getPartition(node.GetNodeInfo().Id)
@@ -41,7 +41,7 @@ func RequestVote() {
 	}
 
 	if len(wrkGrp.Nodes) == 1 { // if this is the only worker in group, then it alawys Leader
-		nodeStatus.Role = RAFT_LEADER
+		nodeStatus.RaftRole = RAFT_LEADER
 		go AppendEntries(wrkGrp)
 		return
 	}
@@ -59,8 +59,8 @@ func RequestVote() {
 		time.Sleep(heartbeat * time.Millisecond)
 
 		if time.Now().UTC().UnixMilli() < nodeStatus.HeartbeatAt+int64(nodeStatus.Heartbeat) {
-			if nodeStatus.Role != RAFT_FOLLOWER {
-				nodeStatus.Role = RAFT_FOLLOWER
+			if nodeStatus.RaftRole != RAFT_FOLLOWER {
+				nodeStatus.RaftRole = RAFT_FOLLOWER
 			}
 			continue
 		}
@@ -76,7 +76,7 @@ func RequestVote() {
 		host, _, port2, _ := util.SplitAddress2(pstAddr)
 		addr2List = append(addr2List, host+":"+port2)
 
-		nodeStatus.Role = RAFT_CANDIDATOR
+		nodeStatus.RaftRole = RAFT_CANDIDATOR
 		nodeStatus.Term += 1
 		for _, addr := range addr2List {
 			wgRequestVote.Add(1)
@@ -91,7 +91,7 @@ func RequestVote() {
 			}
 			if strings.Compare(strs[0], VOTE_REJECTED) == 0 {
 				if strings.Compare(strs[1], "L") == 0 {
-					nodeStatus.Role = RAFT_FOLLOWER
+					nodeStatus.RaftRole = RAFT_FOLLOWER
 					break
 				}
 			} else if strings.Compare(strs[0], "A") == 0 {
@@ -109,7 +109,7 @@ func RequestVote() {
 		}
 		if canPromote {
 			// promote to Leader
-			nodeStatus.Role = RAFT_LEADER
+			nodeStatus.RaftRole = RAFT_LEADER
 
 			// Leader start to AppendEntries
 			go AppendEntries(wrkGrp)
@@ -126,7 +126,7 @@ func RequestVote() {
 			/* Leader no RequestVote, quite RequestVote */
 			break
 		} else {
-			nodeStatus.Role = RAFT_FOLLOWER
+			nodeStatus.RaftRole = RAFT_FOLLOWER
 		}
 		counter++
 	}

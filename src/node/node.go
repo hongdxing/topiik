@@ -51,6 +51,7 @@ func InitNode(serverConfig config.ServerConfig) (err error) {
 		l.Info().Msg("node::InitNode creating node file...")
 
 		node.Id = strings.ToLower(util.RandStringRunes(consts.NODE_ID_LEN))
+		node.Role = strings.ToLower(serverConfig.Role)
 		node.Addr = serverConfig.Listen
 		node.Addr2 = serverConfig.Host + ":" + serverConfig.Port2
 		buf, _ = json.Marshal(node)

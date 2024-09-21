@@ -31,10 +31,10 @@ func vote(cTerm int) string {
 	//fmt.Printf("vote():: current node role: %v\n", nodeStatus.Role)
 
 	if node.IsWorker() {
-		if cluster.GetNodeStatus().Role == cluster.RAFT_LEADER {
+		if cluster.GetNodeStatus().RaftRole == cluster.RAFT_LEADER {
 			return consts.VOTE_REJECTED + ":L"
 		}
-		if cluster.GetNodeStatus().Role != cluster.RAFT_FOLLOWER {
+		if cluster.GetNodeStatus().RaftRole != cluster.RAFT_FOLLOWER {
 			return consts.VOTE_REJECTED + ":F"
 		}
 		if cluster.GetTerm() > cTerm {

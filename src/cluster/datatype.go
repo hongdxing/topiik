@@ -10,7 +10,7 @@ import (
 
 type PartitionInfo struct {
 	ClusterId string
-	Ptns    map[string]*Partition
+	Ptns      map[string]*Partition
 }
 
 type Partition struct {
@@ -34,7 +34,7 @@ type Cluster struct {
 
 // store dynamic node status in runtime
 type NodeStatus struct {
-	Role                 uint8  // Raft role
+	RaftRole             uint8  // Raft role
 	Term                 uint   // Raft term
 	Heartbeat            uint16 // Raft heartbeat timeout
 	HeartbeatAt          int64  // The UTC milli seconds when heartbeat received from Leader

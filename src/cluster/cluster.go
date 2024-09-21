@@ -16,7 +16,7 @@ import (
 )
 
 func SetRole(role uint8) {
-	nodeStatus.Role = role
+	nodeStatus.RaftRole = role
 }
 
 func SetLeaderCtlAddr(addr string) {

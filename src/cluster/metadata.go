@@ -16,7 +16,7 @@ import (
 var term int
 
 var partitionInfo = &PartitionInfo{Ptns: make(map[string]*Partition)}
-var nodeStatus = &NodeStatus{Role: RAFT_FOLLOWER, Term: 0}
+var nodeStatus = &NodeStatus{RaftRole: RAFT_FOLLOWER, Term: 0}
 
 const (
 	slash   = string(os.PathSeparator)

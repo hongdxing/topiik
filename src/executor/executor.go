@@ -85,7 +85,7 @@ func Execute(msg []byte, srcAddr string, serverConfig *config.ServerConfig) (fin
 		}
 
 		var address string
-		if cluster.GetNodeStatus().Role == cluster.RAFT_LEADER { // if is leader, then just return leader's address
+		if cluster.GetNodeStatus().RaftRole == cluster.RAFT_LEADER { // if is leader, then just return leader's address
 			address = serverConfig.Listen
 		} else {
 			leader := cluster.GetPtnLeader(node.GetNodeInfo().Id)

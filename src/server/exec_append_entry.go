@@ -20,7 +20,7 @@ import (
 func appendEntry(entry []byte, serverConfig *config.ServerConfig) error {
 	// In case of multi Leader, if node can receive appendEntry,
 	// and role is RAFT_LEADER, then step back
-	if node.IsWorker() && cluster.GetNodeStatus().Role == cluster.RAFT_LEADER {
+	if node.IsWorker() && cluster.GetNodeStatus().RaftRole == cluster.RAFT_LEADER {
 		//cluster.GetNodeStatus().Role = cluster.RAFT_FOLLOWER
 		cluster.SetRole(cluster.RAFT_FOLLOWER)
 		go cluster.RequestVote()
