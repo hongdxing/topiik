@@ -68,14 +68,14 @@ func ExecuteOrForward(targetWorker node.NodeSlim, execute ExeFn, icmd uint8, req
 				}
 			}
 			fmt.Println(ptnFlrs)
-			/*
-				if len(ptnFlrs) > 0 {
-					// TODO: retry sync to follower
-					err = persistence.SyncFollower(ptnFlrs, msg)
-					if err != nil {
-						return resp.ErrResponse(fmt.Errorf("%s %s", "todo", "todo"))
-					}
-				}*/
+
+			if len(ptnFlrs) > 0 {
+				// TODO: retry sync to follower
+				err = persistence.SyncFollower(ptnFlrs, msg)
+				if err != nil {
+					return resp.ErrResponse(fmt.Errorf("%s %s", "todo", "todo"))
+				}
+			}
 		}
 
 		return finalRes

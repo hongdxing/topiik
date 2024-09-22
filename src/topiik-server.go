@@ -15,6 +15,7 @@ import (
 	"topiik/internal/logger"
 	"topiik/internal/proto"
 	"topiik/node"
+	"topiik/persistence"
 	"topiik/server"
 )
 
@@ -41,11 +42,17 @@ func main() {
 		return
 	}
 
-	// load controller info on each node
+	// init worker
 	if node.IsWorker() {
+		// load controller info on each node
 		err = cluster.LoadWorkerGroupInfo()
 		if err != nil {
 			l.Panic().Msg(err.Error())
+		}
+		// get partition sequence from persistor
+		err = persistence.GetPtnBinlogSeq(node.GetNodeInfo().PntId)
+		if err != nil {
+			l.Panic().Msgf("Connect to persistor server failed: %s", err.Error())
 		}
 		cluster.RequestVote()
 	}

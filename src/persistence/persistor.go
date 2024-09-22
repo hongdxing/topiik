@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"sync"
 	"topiik/internal/consts"
 	"topiik/internal/proto"
@@ -26,9 +27,23 @@ const binlogFileMaxSize = 1073741824 // 1G
 const ptnFolderPrefix = "ptn-"
 const binlogListFilename = "binlog.list"
 
+// Get binlog seq
+func GetBLSeq(data []byte) (int64, error) {
+	ptnId := string(data)
+	err := checkSequence(ptnId)
+	if err != nil {
+		return 0, err
+	}
+	if seq, ok := blseq[ptnId]; ok {
+		return seq, nil
+	} else {
+		return 0, nil
+	}
+}
+
 // Parameters:
 //   - binlogs: one or more logs
-func ReceiveBinlog(data []byte) (seq int64, err error) {
+func PersistBinlog(data []byte) (seq int64, err error) {
 	ptnId := string(data[:consts.PTN_ID_LEN])
 	binlogs := data[consts.PTN_ID_LEN:]
 	/*
@@ -131,44 +146,7 @@ func getPtnActiveBLF(ptnId string) (*os.File, error) {
 		return nil, err
 	}
 
-	// if binlog seq not set in memory yet
-	// 2 conditions:
-	//  1) brand new partition
-	//	2) the server restarted, lost memory seq, need read last log from binlog
-	if _, ok := blseq[ptnId]; !ok {
-		fname, err := maxPtnBLF(ptnId)
-		if err != nil {
-			l.Err(err).Msgf("persistence::getPtnActiveBLF %s", err.Error())
-			return nil, err
-		}
-		// if binlog sequence not set yet(brand new partition)
-		if fname == "" {
-			blseq[ptnId] = 0
-		} else {
-			// parse file to get biggest
-			fname = ptnFolder(ptnId) + fname
-			f, err := os.OpenFile(fname, os.O_RDONLY, 0664)
-			if err != nil {
-				l.Err(err).Msgf("persistence::getPtnActiveBLF %s", err.Error())
-				return nil, err
-			}
-
-			// parse the binlog one by one to get last
-			// todo: use index
-			var seq int64
-			for {
-				_, err := parseOne(f, &seq)
-				if err != nil {
-					if err != io.EOF {
-						l.Panic().Msg(err.Error())
-					}
-					break
-				}
-			}
-			blseq[ptnId] = seq
-		}
-
-	}
+	checkSequence(ptnId)
 
 	// sequence pre padding 0s, totla lenght 20
 	// eg: 00000000000000000999.bin
@@ -211,7 +189,7 @@ func maxPtnBLF(ptnId string) (fname string, err error) {
 	}
 	for _, f := range fs {
 		if !f.IsDir() {
-			if f.Name() > fname {
+			if strings.HasSuffix(f.Name(), ".bin") && f.Name() > fname {
 				fname = f.Name()
 			}
 		}
@@ -249,5 +227,48 @@ func guaranteePtnFolder(ptnId string) error {
 		defer f.Close()
 	}
 
+	return nil
+}
+
+func checkSequence(ptnId string) error {
+	// if binlog seq not set in memory yet
+	// 2 conditions:
+	//  1) brand new partition
+	//	2) the server restarted, lost memory seq, need read last log from binlog
+	if _, ok := blseq[ptnId]; !ok {
+		fname, err := maxPtnBLF(ptnId)
+		if err != nil {
+			l.Err(err).Msgf("persistence::getPtnActiveBLF %s", err.Error())
+			return err
+		}
+		// if binlog sequence not set yet(brand new partition)
+		if fname == "" {
+			blseq[ptnId] = 0
+		} else {
+			// parse file to get biggest
+			fname = ptnFolder(ptnId) + fname
+
+			f, err := os.OpenFile(fname, os.O_RDONLY, 0664)
+			if err != nil {
+				l.Err(err).Msgf("persistence::getPtnActiveBLF %s", err.Error())
+				return err
+			}
+
+			// parse the binlog one by one to get last
+			// todo: use index
+			var seq int64
+			for {
+				_, err := parseOne(f, &seq)
+				if err != nil {
+					if err != io.EOF {
+						l.Err(err).Msgf("persistence::getPtnActiveBLF %s", err.Error())
+					}
+					break
+				}
+			}
+			blseq[ptnId] = seq
+		}
+
+	}
 	return nil
 }

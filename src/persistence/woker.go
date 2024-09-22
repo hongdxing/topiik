@@ -20,13 +20,16 @@ import (
 	"topiik/resp"
 )
 
+// partition binlog sequence
+var ptnBLSeq int64
+
 // cache tcp conn to persistor
 var pstConn *net.TCPConn
 
 // conn cache from leader to follower
 var followerConnCache = make(map[string]*net.TCPConn)
 
-var msgQ list.List
+var msgQ list.List // msg queue for psersisting
 var lock sync.Mutex
 var dequeueTicker time.Ticker
 
@@ -64,15 +67,7 @@ func doDequeue() {
 	}
 
 	// todo: if connection failed???
-	if pstConn == nil {
-		addr := node.GetConfig().Persistors[0]
-		host, _, port2, _ := util.SplitAddress2(addr)
-		conn, err := util.PreapareSocketClient(host + ":" + port2)
-		pstConn = conn
-		if err != nil {
-			l.Err(err).Msgf("persistence::doDequeue conn: %s", err.Error())
-		}
-	}
+	connectPersistor()
 	if pstConn == nil {
 		l.Warn().Msg("persist::doDequeue No PERSISTOR available!!!")
 		return
@@ -99,7 +94,7 @@ func doDequeue() {
 func syncToPersistor(binlogs []byte) (flrSeq int64, err error) {
 	// icmd
 	bbuf := new(bytes.Buffer)
-	binary.Write(bbuf, binary.LittleEndian, consts.RPC_SYNC_BINLOG)
+	binary.Write(bbuf, binary.LittleEndian, consts.RPC_PERSIST)
 
 	// append partition id
 	ptnId := node.GetNodeInfo().PntId
@@ -153,14 +148,18 @@ func syncToPersistor(binlogs []byte) (flrSeq int64, err error) {
 	return flrSeq, nil
 }
 
+var followerSyncCoordinator = make(map[int][]string)
+
 // sync to partition follower(s)
 func SyncFollower(flrs []node.NodeSlim, binlogs []byte) (err error) {
+
 	// for each follower
 	for _, flr := range flrs {
 		_, err := doSyncFollower(flr, binlogs)
 		if err != nil {
 			switch err.(type) {
-			case *rorre.SoketError: // if is SocketError, close the conn and delete cache
+			// if is SocketError, close the conn and delete cache
+			case *rorre.SoketError:
 				if conn, ok := followerConnCache[flr.Id]; ok {
 					conn.Close()
 					delete(followerConnCache, flr.Id)
@@ -174,7 +173,7 @@ func SyncFollower(flrs []node.NodeSlim, binlogs []byte) (err error) {
 func doSyncFollower(nd node.NodeSlim, binlogs []byte) (flrSeq int64, err error) {
 	// icmd
 	bbuf := new(bytes.Buffer)
-	binary.Write(bbuf, binary.LittleEndian, consts.RPC_SYNC_BINLOG)
+	binary.Write(bbuf, binary.LittleEndian, consts.RPC_SYNC_FLR)
 
 	// binlog
 	buf := bbuf.Bytes()
@@ -191,9 +190,10 @@ func doSyncFollower(nd node.NodeSlim, binlogs []byte) (flrSeq int64, err error) 
 	if cached, ok := followerConnCache[nd.Id]; ok {
 		conn = cached
 	} else {
-		conn, err := util.PreapareSocketClient(nd.Addr2)
+		conn, err = util.PreapareSocketClient(nd.Addr2)
 		if err != nil {
 			l.Err(err).Msgf("persistence::doSyncFollower conn: %s", err.Error())
+			return flrSeq, err
 		}
 		followerConnCache[nd.Id] = conn
 	}
@@ -230,4 +230,67 @@ func doSyncFollower(nd node.NodeSlim, binlogs []byte) (flrSeq int64, err error) 
 
 	return flrSeq, nil
 
+}
+
+func FollowerReceive(binlog []byte) {
+
+}
+
+// get binlog seq from worker
+func GetPtnBinlogSeq(ptnId string) error {
+	//var ok bool
+	err := connectPersistor()
+	if err != nil {
+		return err
+	}
+
+	bbuf := new(bytes.Buffer)
+	binary.Write(bbuf, binary.LittleEndian, consts.RPC_GET_BLSEQ)
+	buf := bbuf.Bytes()
+	buf = append(buf, []byte(ptnId)...)
+	buf, err = proto.EncodeB(buf)
+	if err != nil {
+		return err
+	}
+
+	_, err = pstConn.Write(buf)
+	if err != nil {
+		if err != io.EOF {
+			l.Err(err).Msgf("cluster::getPtnBinlogSeq write %s", err.Error())
+			return err
+		}
+	}
+
+	reader := bufio.NewReader(pstConn)
+	res, err := proto.Decode(reader)
+	if err != nil {
+		return err
+	}
+	if len(res) > resp.RESPONSE_HEADER_SIZE {
+		bbuf = bytes.NewBuffer(res[resp.RESPONSE_HEADER_SIZE:])
+		err = binary.Read(bbuf, binary.LittleEndian, &ptnBLSeq)
+		if err != nil {
+			l.Err(err).Msgf("cluster::getPtnBinlogSeq read %s", err.Error())
+			return err
+		}
+		l.Info().Msgf("partition %s seq is: %v", ptnId, ptnBLSeq)
+	} else {
+		l.Warn().Msgf("cluster::getPtnBinlogSeq failed")
+	}
+	return nil
+}
+
+func connectPersistor() error {
+	if pstConn == nil {
+		// todo: connect to leader instead of 0
+		addr := node.GetConfig().Persistors[0]
+		host, _, port2, _ := util.SplitAddress2(addr)
+		conn, err := util.PreapareSocketClient(host + ":" + port2)
+		pstConn = conn
+		if err != nil {
+			l.Err(err).Msgf("persistence::connectPersistor conn: %s", err.Error())
+			return err
+		}
+	}
+	return nil
 }

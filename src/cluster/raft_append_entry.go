@@ -16,7 +16,6 @@ import (
 	"topiik/internal/proto"
 	"topiik/internal/util"
 	"topiik/node"
-	"topiik/resp"
 )
 
 var hbTicker *time.Ticker // heartbeat ticker
@@ -165,56 +164,4 @@ func send(destAddr string, nodeId string, data []byte) (err error) {
 		}
 	}
 	return err
-}
-
-/*
-* get binlog seq from worker
-*
- */
-func getWorkerBinlogSeq(ndId string, addr2 string, wg *sync.WaitGroup, seqMap *map[string]int64) {
-	defer wg.Done()
-	var conn *net.TCPConn
-	var err error
-	//var ok bool
-	if c, ok := connCache[ndId]; ok {
-		conn = c
-	} else {
-		conn, err = util.PreapareSocketClient(addr2)
-		if err != nil {
-			return
-		}
-		connCache[ndId] = conn
-	}
-	bbuf := new(bytes.Buffer)
-	binary.Write(bbuf, binary.LittleEndian, consts.RPC_GET_BLSEQ)
-	req := bbuf.Bytes()
-	req, err = proto.EncodeB(req)
-	if err != nil {
-		return
-	}
-	_, err = conn.Write(req)
-	if err != nil {
-		if err != io.EOF {
-			l.Err(err).Msgf("cluster::getWorkerBinlogSeq write %s", err.Error())
-			return
-		}
-	}
-	var seq int64
-	reader := bufio.NewReader(conn)
-	res, err := proto.Decode(reader)
-	if err != nil {
-		return
-	}
-	if len(res) > resp.RESPONSE_HEADER_SIZE {
-		bbuf = bytes.NewBuffer(res[resp.RESPONSE_HEADER_SIZE:])
-		err = binary.Read(bbuf, binary.LittleEndian, &seq)
-		if err != nil {
-			l.Err(err).Msgf("cluster::getWorkerBinlogSeq read %s", err.Error())
-			return
-		}
-		l.Info().Msgf("worker %s seq is: %v", ndId, seq)
-		(*seqMap)[ndId] = seq
-	} else {
-		l.Warn().Msgf("cluster::getWorkerBinlogSeq failed")
-	}
 }

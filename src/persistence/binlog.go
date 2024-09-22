@@ -9,18 +9,7 @@ import (
 	"topiik/internal/proto"
 )
 
-/*
-* Get binlog seq
-*
- */
-func GetBLSeq() int64 {
-	return binlogSeq
-}
-
-/*
-* Read one log from binary log
-*
- */
+// Read one log from binary log
 func parseOne(r io.Reader, seq *int64) (res []byte, err error) {
 	//var seq int64
 	var length int32
@@ -41,7 +30,7 @@ func parseOne(r io.Reader, seq *int64) (res []byte, err error) {
 		if err != io.EOF {
 			l.Err(err).Msg(err.Error())
 		}
-		return
+		return nil, err
 	}
 	res = append(res, buf...)
 
@@ -71,10 +60,7 @@ func parseOne(r io.Reader, seq *int64) (res []byte, err error) {
 	return res, nil
 }
 
-/*
-* Replay binlog to load data to RAM
-*
- */
+// Replay binlog to load data to RAM
 func replay(buf []byte, f execute1) error {
 	/* replay msg(load from disk to memory) */
 	buf = buf[preMsgLen:]

@@ -47,24 +47,25 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 
 	dataBytes := msg[1:]
 
-	if icmd == consts.RPC_SYNC_BINLOG {
+	if icmd == consts.RPC_PERSIST {
 		// persistor receive binlog
-		res, err := persistence.ReceiveBinlog(dataBytes)
+		res, err := persistence.PersistBinlog(dataBytes)
 		if err != nil {
 			return resp.ErrResponse(err)
 		}
 		return resp.IntResponse(res)
+	} else if icmd == consts.RPC_SYNC_FLR {
+		persistence.FollowerReceive(dataBytes)
 	} else if icmd == consts.RPC_GET_BLSEQ {
-		/*
-		* controller get worker node binlog seq, to elect new partition leader
-		 */
-		seq := persistence.GetBLSeq()
+		// controller get worker node binlog seq, to elect new partition leader
+		seq, err := persistence.GetBLSeq(dataBytes)
+		if err != nil {
+			return resp.ErrResponse(err)
+		}
 		return resp.IntResponse(seq)
 	} else if icmd == consts.RPC_ADD_NODE {
-		/*
-		* Client connect to controller leader, and issue ADD-NODE command
-		* RPC from controller leader, to add current node to cluster
-		 */
+		//Client connect to controller leader, and issue ADD-NODE command
+		//RPC from controller leader, to add current node to cluster
 		pieces := strings.Split(string(dataBytes), consts.SPACE)
 		result, err := addNode(pieces)
 		if err != nil {
