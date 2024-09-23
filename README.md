@@ -1,5 +1,5 @@
 # Topiik
-A middleware that for both Key/Value store and Message broker
+A middleware that for both key/value store and more
 
 ## How Topiik works
 

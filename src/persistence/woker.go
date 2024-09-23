@@ -8,11 +8,13 @@ import (
 	"bytes"
 	"container/list"
 	"encoding/binary"
+	"encoding/json"
 	"io"
 	"net"
 	"sync"
 	"time"
 	"topiik/internal/consts"
+	"topiik/internal/datatype"
 	"topiik/internal/proto"
 	"topiik/internal/rorre"
 	"topiik/internal/util"
@@ -151,7 +153,7 @@ func syncToPersistor(binlogs []byte) (flrSeq int64, err error) {
 var followerSyncCoordinator = make(map[int][]string)
 
 // sync to partition follower(s)
-func SyncFollower(flrs []node.NodeSlim, binlogs []byte) (err error) {
+func SyncToFollower(flrs []node.NodeSlim, binlogs []byte) (err error) {
 
 	// for each follower
 	for _, flr := range flrs {
@@ -232,8 +234,20 @@ func doSyncFollower(nd node.NodeSlim, binlogs []byte) (flrSeq int64, err error) 
 
 }
 
-func FollowerReceive(binlog []byte) {
-
+// follower receive msg from leader
+// the msg is original msg send from client
+func SyncFollower(msg []byte, execute execute1) (err error) {
+	icmd, _, err := proto.DecodeHeader(msg)
+	if err != nil {
+		return err
+	}
+	var req datatype.Req
+	err = json.Unmarshal(msg[proto.MsgHeaderSize:], &req)
+	if err != nil {
+		return err
+	}
+	execute(icmd, req)
+	return nil
 }
 
 // get binlog seq from worker

@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"topiik/executor"
 	"topiik/internal/config"
 	"topiik/internal/consts"
 	"topiik/persistence"
@@ -55,7 +56,11 @@ func Execute(msg []byte, serverConfig *config.ServerConfig) (result []byte) {
 		}
 		return resp.IntResponse(res)
 	} else if icmd == consts.RPC_SYNC_FLR {
-		persistence.FollowerReceive(dataBytes)
+		err := persistence.SyncFollower(dataBytes, executor.Execute1)
+		if err != nil {
+			return resp.ErrResponse(err)
+		}
+		return resp.IntResponse(1)
 	} else if icmd == consts.RPC_GET_BLSEQ {
 		// controller get worker node binlog seq, to elect new partition leader
 		seq, err := persistence.GetBLSeq(dataBytes)
